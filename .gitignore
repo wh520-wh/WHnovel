@@ -1,0 +1,61 @@
+# Worktrees and AI-tooling state
+.worktrees/
+.claude/
+.codex/
+.idea/
+.vscode/
+.gstack/
+.superpowers/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.pytest_runtime/
+.pytest_tmp/
+
+# Node / frontend
+node_modules/
+dist/
+
+# Runtime artifacts (backend)
+backend/data.db
+backend/data.db-journal
+backend/db_backups/
+backend/test_grok.py
+
+# Transient files
+*.pid
+*.log
+*.bak
+*.tmp
+*.swp
+
+# Frontend dev artifacts
+frontend/EOF
+frontend/vite-dev.*.log
+frontend/vitest_clean_master.log
+
+# Personal content — never in repo
+写小说/
+示例/
+ui-check/
+ui-check-story-manage/
+ui-check-story-manage-after/
+
+# Internal documentation — never in repo
+CLAUDE.md
+AGENTS.md
+ONBOARDING.md
+docs/提示词文档.md
+TODOS.md
+findings.md
+progress.md
+task_plan.md
+docs/superpowers/plans/
+docs/superpowers/specs/
+
+# Runtime-generated image cache
+backend/app/static/images/*.png
+backend/app/static/images/chat_comfyui_*.png

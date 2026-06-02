@@ -1,0 +1,922 @@
+@import './variables.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background 0.3s, color 0.3s;
+}
+
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+  transition: background var(--duration-fast) var(--ease-smooth);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* 选中文字 */
+::selection {
+  background: color-mix(in srgb, var(--accent-color) 35%, transparent);
+  color: var(--text-primary);
+}
+::-moz-selection {
+  background: color-mix(in srgb, var(--accent-color) 35%, transparent);
+  color: var(--text-primary);
+}
+
+/* 焦点状态 */
+:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 路由切换淡入淡出 + 轻微位移 */
+.page-enter-active {
+  transition: opacity 280ms var(--ease-smooth), transform 280ms var(--ease-spring);
+}
+.page-leave-active {
+  transition: opacity 200ms var(--ease-smooth), transform 200ms var(--ease-smooth);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(12px) scale(0.99);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.99);
+}
+
+/* Element Plus 主题覆盖 */
+.el-button--primary {
+  --el-button-bg-color: var(--accent-color);
+  --el-button-border-color: var(--accent-color);
+  --el-button-hover-bg-color: var(--accent-hover);
+  --el-button-hover-border-color: var(--accent-hover);
+}
+
+/* 暗色主题下 Element Plus 样式统一 */
+[data-theme="dark"] .el-card {
+  --el-card-bg-color: var(--bg-card);
+  --el-card-border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+[data-theme="dark"] .el-dialog {
+  --el-dialog-bg-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .el-dialog__title,
+[data-theme="dark"] .el-form-item__label,
+[data-theme="dark"] .el-card__header,
+[data-theme="dark"] .el-table th,
+[data-theme="dark"] .el-table td {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .el-input__wrapper,
+[data-theme="dark"] .el-textarea__inner,
+[data-theme="dark"] .el-select__wrapper,
+[data-theme="dark"] .el-input-number__wrapper {
+  background: var(--bg-input) !important;
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .el-input__wrapper:hover,
+[data-theme="dark"] .el-select__wrapper:hover,
+[data-theme="dark"] .el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px var(--text-muted) inset !important;
+}
+
+[data-theme="dark"] .el-input__wrapper.is-focus,
+[data-theme="dark"] .el-select__wrapper.is-focused,
+[data-theme="dark"] .el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--accent-color) inset !important;
+}
+
+[data-theme="dark"] .el-input__inner,
+[data-theme="dark"] .el-textarea__inner,
+[data-theme="dark"] .el-select__selected-item,
+[data-theme="dark"] .el-select-dropdown__item {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .el-input__inner::placeholder,
+[data-theme="dark"] .el-textarea__inner::placeholder {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .el-select-dropdown,
+[data-theme="dark"] .el-picker-panel {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .el-table {
+  --el-table-bg-color: var(--bg-secondary);
+  --el-table-tr-bg-color: var(--bg-secondary);
+  --el-table-expanded-cell-bg-color: var(--bg-secondary);
+  --el-table-header-bg-color: #1e2236;
+  --el-table-border-color: var(--border-color);
+  --el-table-row-hover-bg-color: #242a42;
+  --el-table-text-color: var(--text-primary);
+  --el-table-header-text-color: var(--text-secondary);
+}
+
+[data-theme="dark"] .el-button:not(.el-button--primary) {
+  --el-button-bg-color: var(--bg-input);
+  --el-button-border-color: var(--border-color);
+  --el-button-text-color: var(--text-primary);
+  --el-button-hover-bg-color: var(--bg-hover);
+  --el-button-hover-border-color: color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
+  --el-button-hover-text-color: var(--text-primary);
+}
+
+[data-theme="dark"] .el-button.is-text:not(.el-button--primary) {
+  --el-button-bg-color: transparent;
+  --el-button-border-color: transparent;
+}
+
+[data-theme="dark"] .el-drawer,
+[data-theme="dark"] .el-dialog,
+[data-theme="dark"] .el-message-box {
+  --el-bg-color: var(--bg-secondary);
+  --el-text-color-primary: var(--text-primary);
+  --el-fill-color-light: var(--bg-input);
+  --el-border-color: var(--border-color);
+}
+
+[data-theme="light"] .el-drawer,
+[data-theme="light"] .el-dialog,
+[data-theme="light"] .el-message-box {
+  --el-bg-color: var(--bg-secondary);
+  --el-text-color-primary: var(--text-primary);
+  --el-fill-color-light: var(--bg-input);
+  --el-border-color: var(--border-color);
+}
+
+[data-theme="dark"] .el-input-number__decrease,
+[data-theme="dark"] .el-input-number__increase {
+  background: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .el-menu {
+  --el-menu-bg-color: var(--bg-secondary);
+  --el-menu-text-color: var(--text-secondary);
+  --el-menu-hover-bg-color: var(--bg-hover);
+  --el-menu-active-color: #ffffff;
+}
+
+[data-theme="dark"] .el-menu-item.is-active {
+  background: color-mix(in srgb, var(--accent-color) 24%, var(--bg-secondary)) !important;
+}
+
+/* 暗色模式补全 */
+[data-theme="dark"] .el-tag {
+  --el-tag-bg-color: color-mix(in srgb, var(--accent-color) 18%, var(--bg-secondary));
+  --el-tag-border-color: color-mix(in srgb, var(--accent-color) 30%, var(--border-color));
+  --el-tag-text-color: var(--text-primary);
+}
+
+/* 下拉菜单暗色适配 */
+[data-theme="dark"] .el-dropdown-menu {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+[data-theme="dark"] .el-dropdown-menu__item {
+  color: var(--text-primary);
+}
+[data-theme="dark"] .el-dropdown-menu__item:hover {
+  background-color: var(--bg-hover);
+  color: var(--accent-color);
+}
+
+[data-theme="dark"] .el-tag--info {
+  --el-tag-bg-color: var(--bg-hover);
+  --el-tag-border-color: var(--border-color);
+  --el-tag-text-color: var(--text-secondary);
+}
+
+[data-theme="dark"] .el-alert {
+  --el-alert-bg-color: var(--bg-card);
+  --el-alert-border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .el-switch__core {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .el-switch.is-checked .el-switch__core {
+  background: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+}
+
+[data-theme="dark"] .el-loading-mask {
+  background: color-mix(in srgb, var(--bg-primary) 80%, transparent);
+}
+
+[data-theme="dark"] .el-table__stripe .el-table__row--striped td {
+  background: color-mix(in srgb, var(--bg-hover) 60%, var(--bg-secondary)) !important;
+}
+
+[data-theme="dark"] .el-pagination {
+  --el-pagination-bg-color: var(--bg-secondary);
+  --el-pagination-text-color: var(--text-primary);
+  --el-pagination-border-radius: 6px;
+  --el-pagination-button-bg-color: var(--bg-input);
+  --el-pagination-button-color: var(--text-primary);
+  --el-pagination-hover-color: var(--accent-color);
+}
+
+/* 亮色模式 Element Plus 基础适配 */
+[data-theme="light"] .el-card {
+  --el-card-bg-color: var(--bg-card);
+  --el-card-border-color: var(--border-color);
+}
+
+/* ============================================================
+   Enigma 主题 Element Plus 覆盖
+   ============================================================ */
+[data-theme="enigma"] .el-card {
+  --el-card-bg-color: var(--bg-card);
+  --el-card-border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="enigma"] .el-dialog {
+  --el-dialog-bg-color: var(--bg-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+
+[data-theme="enigma"] .el-dialog__title,
+[data-theme="enigma"] .el-form-item__label,
+[data-theme="enigma"] .el-card__header,
+[data-theme="enigma"] .el-table th,
+[data-theme="enigma"] .el-table td {
+  color: var(--text-primary);
+}
+
+[data-theme="enigma"] .el-input__wrapper,
+[data-theme="enigma"] .el-textarea__inner,
+[data-theme="enigma"] .el-select__wrapper,
+[data-theme="enigma"] .el-input-number__wrapper {
+  background: var(--bg-input) !important;
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="enigma"] .el-input__wrapper:hover,
+[data-theme="enigma"] .el-select__wrapper:hover,
+[data-theme="enigma"] .el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px var(--text-muted) inset !important;
+}
+
+[data-theme="enigma"] .el-input__wrapper.is-focus,
+[data-theme="enigma"] .el-select__wrapper.is-focused,
+[data-theme="enigma"] .el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--accent-color) inset !important;
+}
+
+[data-theme="enigma"] .el-input__inner,
+[data-theme="enigma"] .el-textarea__inner,
+[data-theme="enigma"] .el-select-selected-item,
+[data-theme="enigma"] .el-select-dropdown__item {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="enigma"] .el-input__inner::placeholder,
+[data-theme="enigma"] .el-textarea__inner::placeholder {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="enigma"] .el-select-dropdown,
+[data-theme="enigma"] .el-picker-panel {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="enigma"] .el-table {
+  --el-table-bg-color: var(--bg-secondary);
+  --el-table-tr-bg-color: var(--bg-secondary);
+  --el-table-expanded-cell-bg-color: var(--bg-secondary);
+  --el-table-header-bg-color: var(--bg-elevated);
+  --el-table-border-color: var(--border-color);
+  --el-table-row-hover-bg-color: var(--bg-hover);
+  --el-table-text-color: var(--text-primary);
+  --el-table-header-text-color: var(--text-secondary);
+}
+
+[data-theme="enigma"] .el-button:not(.el-button--primary) {
+  --el-button-bg-color: var(--bg-input);
+  --el-button-border-color: var(--border-color);
+  --el-button-text-color: var(--text-primary);
+  --el-button-hover-bg-color: var(--bg-hover);
+  --el-button-hover-border-color: color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
+  --el-button-hover-text-color: var(--text-primary);
+}
+
+[data-theme="enigma"] .el-button.is-text:not(.el-button--primary) {
+  --el-button-bg-color: transparent;
+  --el-button-border-color: transparent;
+}
+
+[data-theme="enigma"] .el-drawer,
+[data-theme="enigma"] .el-dialog,
+[data-theme="enigma"] .el-message-box {
+  --el-bg-color: var(--bg-secondary);
+  --el-text-color-primary: var(--text-primary);
+  --el-fill-color-light: var(--bg-input);
+  --el-border-color: var(--border-color);
+  background: var(--bg-secondary);
+}
+
+[data-theme="enigma"] .el-drawer__body {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme="enigma"] .el-input-number__decrease,
+[data-theme="enigma"] .el-input-number__increase {
+  background: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="enigma"] .el-menu {
+  --el-menu-bg-color: var(--bg-secondary);
+  --el-menu-text-color: var(--text-secondary);
+  --el-menu-hover-bg-color: var(--bg-hover);
+  --el-menu-active-color: var(--accent-color);
+}
+
+[data-theme="enigma"] .el-menu-item.is-active {
+  background: color-mix(in srgb, var(--accent-color) 24%, var(--bg-secondary)) !important;
+}
+
+[data-theme="enigma"] .el-tag {
+  --el-tag-bg-color: color-mix(in srgb, var(--accent-color) 18%, var(--bg-secondary));
+  --el-tag-border-color: color-mix(in srgb, var(--accent-color) 30%, var(--border-color));
+  --el-tag-text-color: var(--text-primary);
+}
+
+[data-theme="enigma"] .el-tag--info {
+  --el-tag-bg-color: var(--bg-hover);
+  --el-tag-border-color: var(--border-color);
+  --el-tag-text-color: var(--text-secondary);
+}
+
+[data-theme="enigma"] .el-alert {
+  --el-alert-bg-color: var(--bg-card);
+  --el-alert-border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="enigma"] .el-switch__core {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="enigma"] .el-switch.is-checked .el-switch__core {
+  background: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+}
+
+[data-theme="enigma"] .el-loading-mask {
+  background: color-mix(in srgb, var(--bg-primary) 80%, transparent);
+}
+
+[data-theme="enigma"] .el-table__stripe .el-table__row--striped td {
+  background: color-mix(in srgb, var(--bg-hover) 60%, var(--bg-secondary)) !important;
+}
+
+[data-theme="enigma"] .el-pagination {
+  --el-pagination-bg-color: var(--bg-secondary);
+  --el-pagination-text-color: var(--text-primary);
+  --el-pagination-border-radius: 6px;
+  --el-pagination-button-bg-color: var(--bg-input);
+  --el-pagination-button-color: var(--text-primary);
+  --el-pagination-hover-color: var(--accent-color);
+}
+
+[data-theme="enigma"] .el-popper.is-light,
+[data-theme="enigma"] .el-popover.el-popper {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ============================================================
+   新 Claude 主题 Element Plus 覆盖
+   ============================================================ */
+[data-theme="claude"] .el-card {
+  --el-card-bg-color: var(--bg-card);
+  --el-card-border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="claude"] .el-dialog {
+  --el-dialog-bg-color: var(--bg-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+
+[data-theme="claude"] .el-dialog__title,
+[data-theme="claude"] .el-form-item__label,
+[data-theme="claude"] .el-card__header,
+[data-theme="claude"] .el-table th,
+[data-theme="claude"] .el-table td {
+  color: var(--text-primary);
+}
+
+[data-theme="claude"] .el-input__wrapper,
+[data-theme="claude"] .el-textarea__inner,
+[data-theme="claude"] .el-select__wrapper,
+[data-theme="claude"] .el-input-number__wrapper {
+  background: var(--bg-input) !important;
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="claude"] .el-input__wrapper:hover,
+[data-theme="claude"] .el-select__wrapper:hover,
+[data-theme="claude"] .el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px var(--text-muted) inset !important;
+}
+
+[data-theme="claude"] .el-input__wrapper.is-focus,
+[data-theme="claude"] .el-select__wrapper.is-focused,
+[data-theme="claude"] .el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--accent-color) inset !important;
+}
+
+[data-theme="claude"] .el-input__inner,
+[data-theme="claude"] .el-textarea__inner,
+[data-theme="claude"] .el-select-selected-item,
+[data-theme="claude"] .el-select-dropdown__item {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="claude"] .el-input__inner::placeholder,
+[data-theme="claude"] .el-textarea__inner::placeholder {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="claude"] .el-select-dropdown,
+[data-theme="claude"] .el-picker-panel {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="claude"] .el-table {
+  --el-table-bg-color: var(--bg-secondary);
+  --el-table-tr-bg-color: var(--bg-secondary);
+  --el-table-expanded-cell-bg-color: var(--bg-secondary);
+  --el-table-header-bg-color: var(--bg-elevated);
+  --el-table-border-color: var(--border-color);
+  --el-table-row-hover-bg-color: var(--bg-hover);
+  --el-table-text-color: var(--text-primary);
+  --el-table-header-text-color: var(--text-secondary);
+}
+
+[data-theme="claude"] .el-button:not(.el-button--primary) {
+  --el-button-bg-color: var(--bg-input);
+  --el-button-border-color: var(--border-color);
+  --el-button-text-color: var(--text-primary);
+  --el-button-hover-bg-color: var(--bg-hover);
+  --el-button-hover-border-color: color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
+  --el-button-hover-text-color: var(--text-primary);
+}
+
+[data-theme="claude"] .el-button.is-text:not(.el-button--primary) {
+  --el-button-bg-color: transparent;
+  --el-button-border-color: transparent;
+}
+
+[data-theme="claude"] .el-drawer,
+[data-theme="claude"] .el-dialog,
+[data-theme="claude"] .el-message-box {
+  --el-bg-color: var(--bg-secondary);
+  --el-text-color-primary: var(--text-primary);
+  --el-fill-color-light: var(--bg-input);
+  --el-border-color: var(--border-color);
+  background: var(--bg-secondary);
+}
+
+[data-theme="claude"] .el-drawer__body {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme="claude"] .el-input-number__decrease,
+[data-theme="claude"] .el-input-number__increase {
+  background: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="claude"] .el-menu {
+  --el-menu-bg-color: var(--bg-secondary);
+  --el-menu-text-color: var(--text-secondary);
+  --el-menu-hover-bg-color: var(--bg-hover);
+  --el-menu-active-color: var(--accent-color);
+}
+
+[data-theme="claude"] .el-menu-item.is-active {
+  background: color-mix(in srgb, var(--accent-color) 24%, var(--bg-secondary)) !important;
+}
+
+[data-theme="claude"] .el-tag {
+  --el-tag-bg-color: color-mix(in srgb, var(--accent-color) 18%, var(--bg-secondary));
+  --el-tag-border-color: color-mix(in srgb, var(--accent-color) 30%, var(--border-color));
+  --el-tag-text-color: var(--text-primary);
+}
+
+[data-theme="claude"] .el-tag--info {
+  --el-tag-bg-color: var(--bg-hover);
+  --el-tag-border-color: var(--border-color);
+  --el-tag-text-color: var(--text-secondary);
+}
+
+[data-theme="claude"] .el-alert {
+  --el-alert-bg-color: var(--bg-card);
+  --el-alert-border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="claude"] .el-switch__core {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="claude"] .el-switch.is-checked .el-switch__core {
+  background: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+}
+
+[data-theme="claude"] .el-loading-mask {
+  background: color-mix(in srgb, var(--bg-primary) 80%, transparent);
+}
+
+[data-theme="claude"] .el-table__stripe .el-table__row--striped td {
+  background: color-mix(in srgb, var(--bg-hover) 60%, var(--bg-secondary)) !important;
+}
+
+[data-theme="claude"] .el-pagination {
+  --el-pagination-bg-color: var(--bg-secondary);
+  --el-pagination-text-color: var(--text-primary);
+  --el-pagination-border-radius: 6px;
+  --el-pagination-button-bg-color: var(--bg-input);
+  --el-pagination-button-color: var(--text-primary);
+  --el-pagination-hover-color: var(--accent-color);
+}
+
+[data-theme="claude"] .el-popper.is-light,
+[data-theme="claude"] .el-popover.el-popper {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .el-table {
+  --el-table-bg-color: var(--bg-card);
+  --el-table-tr-bg-color: var(--bg-card);
+  --el-table-header-bg-color: var(--bg-secondary);
+  --el-table-border-color: var(--border-color);
+  --el-table-row-hover-bg-color: var(--bg-hover);
+}
+
+/* 亮色模式 Element Plus 基础适配 */
+[data-theme="light"] .el-input__wrapper,
+[data-theme="light"] .el-textarea__inner,
+[data-theme="light"] .el-select__wrapper {
+  background: var(--bg-input) !important;
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .el-input__wrapper:hover,
+[data-theme="light"] .el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--text-muted) inset !important;
+}
+
+[data-theme="light"] .el-input__wrapper.is-focus,
+[data-theme="light"] .el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--accent-color) inset !important;
+}
+
+[data-theme="light"] .el-input__inner,
+[data-theme="light"] .el-textarea__inner,
+[data-theme="light"] .el-select-selected-item {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .el-input__inner::placeholder,
+[data-theme="light"] .el-textarea__inner::placeholder {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .el-select-dropdown {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* 亮色模式 Element Plus 补全覆盖 */
+[data-theme="light"] .el-menu {
+  --el-menu-bg-color: transparent;
+  --el-menu-text-color: var(--text-secondary);
+  --el-menu-hover-bg-color: var(--bg-hover);
+  --el-menu-active-color: var(--accent-color);
+}
+
+[data-theme="light"] .el-menu-item.is-active {
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent) !important;
+  color: var(--accent-color);
+}
+
+[data-theme="light"] .el-button:not(.el-button--primary) {
+  --el-button-bg-color: var(--bg-input);
+  --el-button-border-color: var(--border-color);
+  --el-button-text-color: var(--text-primary);
+  --el-button-hover-bg-color: var(--bg-hover);
+  --el-button-hover-border-color: color-mix(in srgb, var(--accent-color) 30%, var(--border-color));
+  --el-button-hover-text-color: var(--text-primary);
+}
+
+[data-theme="light"] .el-button.is-text:not(.el-button--primary) {
+  --el-button-bg-color: transparent;
+  --el-button-border-color: transparent;
+}
+
+[data-theme="light"] .el-tag {
+  --el-tag-bg-color: color-mix(in srgb, var(--accent-color) 12%, var(--bg-card));
+  --el-tag-border-color: color-mix(in srgb, var(--accent-color) 25%, var(--border-color));
+  --el-tag-text-color: var(--text-primary);
+}
+
+[data-theme="light"] .el-tag--info {
+  --el-tag-bg-color: var(--bg-hover);
+  --el-tag-border-color: var(--border-color);
+  --el-tag-text-color: var(--text-secondary);
+}
+
+[data-theme="light"] .el-switch__core {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .el-switch.is-checked .el-switch__core {
+  background: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+}
+
+[data-theme="light"] .el-input-number__decrease,
+[data-theme="light"] .el-input-number__increase {
+  background: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .el-pagination {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-text-color: var(--text-primary);
+  --el-pagination-button-bg-color: var(--bg-input);
+  --el-pagination-button-color: var(--text-primary);
+  --el-pagination-hover-color: var(--accent-color);
+}
+
+/* BubbleMenu 亮色主题适配 */
+[data-theme="light"] {
+  --bubble-menu-text: #1e1e2e;
+  --bubble-menu-icon: #0ea5a4;
+}
+
+/* 全局过渡动效 */
+.el-button {
+  transition: transform var(--duration-fast) var(--ease-smooth),
+              box-shadow var(--duration-fast) var(--ease-smooth),
+              background var(--duration-base) var(--ease-smooth),
+              border-color var(--duration-base) var(--ease-smooth) !important;
+}
+
+.el-button:active {
+  transform: scale(0.97);
+}
+
+.el-card {
+  transition: box-shadow var(--duration-base) var(--ease-smooth),
+              border-color var(--duration-base) var(--ease-smooth) !important;
+}
+
+/* 抽屉滑入动画 */
+.el-drawer {
+  transition: transform var(--duration-slow) var(--ease-spring) !important;
+}
+
+/* 弹窗动画 */
+.el-dialog {
+  transition: opacity var(--duration-base) var(--ease-smooth),
+              transform var(--duration-base) var(--ease-spring) !important;
+}
+
+/* 输入框聚焦动画 */
+.el-input__wrapper,
+.el-textarea__inner {
+  transition: border-color var(--duration-fast) var(--ease-smooth),
+              box-shadow var(--duration-fast) var(--ease-smooth) !important;
+}
+
+/* Mobile: responsive el-dialog width */
+@media (max-width: 767px) {
+  .el-dialog {
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  /* Stack form labels above inputs in dialogs on mobile */
+  .el-dialog .el-form-item {
+    flex-direction: column;
+  }
+  .el-dialog .el-form-item__label {
+    text-align: left;
+    width: auto !important;
+    padding-bottom: 4px;
+  }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Touch feedback */
+button:active:not(:disabled),
+a:active,
+[role="button"]:active {
+  opacity: 0.7;
+}
+
+/* Admin table mobile scroll utility + mobile scroll optimization */
+@media (max-width: 767px) {
+  .table-scroll-mobile .el-table__body-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-scroll-mobile .el-table__header-wrapper {
+    overflow-x: auto;
+  }
+
+  /* Mobile scroll optimization */
+  .el-table__body-wrapper,
+  .el-table__header-wrapper,
+  .log-list,
+  .bubble-menu-content,
+  .model-select-dropdown .dropdown-list,
+  .main-content,
+  .story-hall,
+  .story-timeline .timeline-list,
+  .admin-main {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Mobile: eliminate 300ms tap delay globally */
+html {
+  touch-action: manipulation;
+}
+
+/* ============================================================
+   共享动画 (Shared Animations)
+   ============================================================ */
+
+/* ---- 气泡弹出动画（聊天消息入场） ---- */
+@keyframes bubble-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ---- 输入框 Q弹动画（聚焦时） ---- */
+@keyframes input-bounce-in {
+  0%   { transform: scale(0.95); }
+  50%  { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* ---- 打字指示器波浪动画 ---- */
+@keyframes typing-wave {
+  0%, 80%, 100% { opacity: 0.35; }
+  40% { opacity: 1; }
+}
+
+/* ---- 加载旋转动画 ---- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- 加载旋转动画（spinner-spin） ---- */
+@keyframes spinner-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- prefers-reduced-motion 例外：打字/加载动画点核心交互反馈 ---- */
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot,
+  .dot {
+    animation-duration: 600ms !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* ---- 撤回特效（时间回溯，所有主题共享） ----
+   Single-accent, time-unwind feel that works across Nocturne / Light /
+   Enigma / Claude themes.  The previous per-claude variant and the
+   particle `::before/::after` box-shadow lists have been retired. */
+@keyframes bubble-breaking {
+  0%   { transform: scale(1)    translateY(0)    ; opacity: 1    ; filter: brightness(1); }
+  35%  { transform: scale(1.01) translateY(-2px) ; opacity: 1    ; filter: brightness(1.25); }
+  70%  { transform: scale(0.98) translateY(-8px) ; opacity: 0.85 ; filter: brightness(1.1); }
+  100% { transform: scale(0.96) translateY(-14px); opacity: 0   ; filter: brightness(1); }
+}
+
+/* Instant fade-out for users who opt out of motion.  Listed in
+   ChatMessage.vue's animationend allow-list so the recall still emits
+   recall-animation-end without waiting for the 1200ms safety net. */
+@keyframes bubble-breaking-reduced {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.chat-message.removing .msg-bubble {
+  animation: bubble-breaking var(--duration-breaking) var(--ease-smooth) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-message.removing .msg-bubble {
+    animation: bubble-breaking-reduced 0.01ms linear forwards;
+  }
+}
+
+/* 关键词高亮：纯亮度区分，不改颜色 */
+.hl-item {
+  font-weight: 500;
+  filter: brightness(1.2);
+}

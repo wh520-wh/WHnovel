@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>故事大厅 - 视觉预览</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  background: url('https://images.unsplash.com/photo-1518770660439-4636190af475?w=1920&q=80') center/cover no-repeat;
+  color: #1a1a2e;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 图片覆盖暗化层 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(26, 26, 46, 0.85) 0%,
+    rgba(26, 26, 46, 0.7) 50%,
+    rgba(37, 37, 64, 0.75) 100%
+  );
+  z-index: -1;
+}
+
+/* ========== 顶部导航 ========== */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #252540 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 100;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.topbar-title {
+  color: #f0f0f5;
+  font-size: 18px;
+  font-weight: 600;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-box {
+  width: 240px;
+  height: 38px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+}
+
+.search-box input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #f0f0f5;
+  font-size: 14px;
+}
+
+.search-box input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+.search-icon {
+  color: rgba(255,255,255,0.4);
+  font-size: 16px;
+}
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f0f0f5;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 16px;
+}
+
+.icon-btn:hover {
+  background: rgba(255,255,255,0.15);
+  transform: translateY(-1px);
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ========== 主内容区 ========== */
+.main-content {
+  margin-top: 60px;
+  padding: 32px 40px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 页面标题区 */
+.page-header {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.page-title-group h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f0f0f5;
+  font-family: 'Noto Serif SC', serif;
+  letter-spacing: -0.02em;
+}
+
+.page-title-group p {
+  color: #9898a8;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+  transition: all 0.2s;
+}
+
+.create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.45);
+}
+
+/* ========== 筛选区 ========== */
+.filter-section {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 28px;
+  align-items: center;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-pill {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(26, 26, 40, 0.6);
+  color: #9898a8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-pill:hover {
+  border-color: #8b5cf6;
+  color: #f0f0f5;
+  transform: translateY(-1px);
+}
+
+.filter-pill.active {
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.sort-select {
+  padding: 8px 32px 8px 14px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  background: rgba(26, 26, 40, 0.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239898a8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center;
+  font-size: 13px;
+  color: #9898a8;
+  cursor: pointer;
+  appearance: none;
+  margin-left: auto;
+}
+
+/* ========== 故事网格 ========== */
+.story-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+/* ========== 故事卡片 ========== */
+.story-card {
+  background: rgba(26, 26, 40, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.story-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.card-cover {
+  height: 140px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #252540 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.4) 100%);
+}
+
+.card-category {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 12px;
+  background: rgba(139, 92, 246, 0.9);
+  backdrop-filter: blur(8px);
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 20px;
+}
+
+.card-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.story-card:hover .card-actions {
+  opacity: 1;
+}
+
+.card-action-btn {
+  width: 30px;
+  height: 30px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+
+.card-action-btn:hover {
+  background: rgba(139, 92, 246, 0.6);
+  transform: scale(1.05);
+}
+
+.card-body {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f0f0f5;
+  margin-bottom: 8px;
+  font-family: 'Noto Serif SC', serif;
+  line-height: 1.4;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: #9898a8;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  margin-bottom: 12px;
+}
+
+.card-tag {
+  padding: 3px 10px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  color: #8b5cf6;
+  font-size: 11px;
+  border-radius: 12px;
+}
+
+.card-stats {
+  display: flex;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #9898a8;
+}
+
+.stat-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.card-date {
+  margin-left: auto;
+  font-size: 11px;
+  color: #6b6b80;
+}
+
+/* ========== 空状态 ========== */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: #9898a8;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b6b80;
+  margin-bottom: 6px;
+}
+
+.empty-hint {
+  font-size: 13px;
+}
+
+/* ========== 动画 ========== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.story-card {
+  animation: fadeInUp 0.4s ease-out backwards;
+}
+
+.story-card:nth-child(1) { animation-delay: 0ms; }
+.story-card:nth-child(2) { animation-delay: 60ms; }
+.story-card:nth-child(3) { animation-delay: 120ms; }
+.story-card:nth-child(4) { animation-delay: 180ms; }
+.story-card:nth-child(5) { animation-delay: 240ms; }
+.story-card:nth-child(6) { animation-delay: 300ms; }
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 20px 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .create-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-box {
+    width: 180px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- 顶部导航栏 -->
+<nav class="topbar">
+  <div class="topbar-left">
+    <div class="logo">艾</div>
+    <span class="topbar-title">故事大厅</span>
+  </div>
+  <div class="topbar-right">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input type="text" placeholder="搜索故事...">
+    </div>
+    <button class="icon-btn">⚙</button>
+    <button class="icon-btn">☀</button>
+    <div class="avatar">李</div>
+  </div>
+</nav>
+
+<!-- 主内容区 -->
+<main class="main-content">
+
+  <!-- 页面标题 -->
+  <div class="page-header">
+    <div class="page-title-group">
+      <h1>探索故事</h1>
+      <p>发现精彩故事，开启你的冒险之旅</p>
+    </div>
+    <button class="create-btn">
+      <span>+</span> 创建故事
+    </button>
+  </div>
+
+  <!-- 筛选区 -->
+  <div class="filter-section">
+    <div class="filter-pills">
+      <button class="filter-pill active">全部</button>
+      <button class="filter-pill">玄幻奇幻</button>
+      <button class="filter-pill">都市异能</button>
+      <button class="filter-pill">悬疑推理</button>
+      <button class="filter-pill">科幻星际</button>
+      <button class="filter-pill">恋爱日常</button>
+    </div>
+    <select class="sort-select">
+      <option>最新创建</option>
+      <option>最近更新</option>
+      <option>最多阅读</option>
+    </select>
+  </div>
+
+  <!-- 故事卡片网格 -->
+  <div class="story-grid">
+
+    <!-- 卡片1 -->
+    <article class="story-card">
+      <div class="card-cover">
+        <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=300&fit=crop" alt="封面">
+        <div class="card-cover-overlay"></div>
+        <span class="card-category">科幻星际</span>
+        <div class="card-actions">
+          <button class="card-action-btn">📋</button>
+          <button class="card-action-btn">♥</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">星际归途：最后的家园</h3>
+        <p class="card-desc">当地球文明毁灭的最后时刻，一艘承载着人类最后希望的星际飞船开始了漫长的归途之旅。</p>
+        <div class="card-tags">
+          <span class="card-tag">科幻</span>
+          <span class="card-tag">冒险</span>
+          <span class="card-tag">成长</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-icon">👁</span>
+            <span>2.4k</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon">♥</span>
+            <span>328</span>
+          </div>
+          <span class="card-date">3天前</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 卡片2 -->
+    <article class="story-card">
+      <div class="card-cover">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=300&fit=crop" alt="封面">
+        <div class="card-cover-overlay"></div>
+        <span class="card-category">都市异能</span>
+        <div class="card-actions">
+          <button class="card-action-btn">📋</button>
+          <button class="card-action-btn">♥</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">重生之都市修仙</h3>
+        <p class="card-desc">一代仙尊陨落重生，回到都市弥补前世的遗憾，这一世他不会再让任何人伤害他的家人。</p>
+        <div class="card-tags">
+          <span class="card-tag">都市</span>
+          <span class="card-tag">修仙</span>
+          <span class="card-tag">重生</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-icon">👁</span>
+            <span>5.1k</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon">♥</span>
+            <span>892</span>
+          </div>
+          <span class="card-date">昨天</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 卡片3 -->
+    <article class="story-card">
+      <div class="card-cover">
+        <img src="https://images.unsplash.com/photo-1509564324749-471bd272e1ff?w=600&h=300&fit=crop" alt="封面">
+        <div class="card-cover-overlay"></div>
+        <span class="card-category">恋爱日常</span>
+        <div class="card-actions">
+          <button class="card-action-btn">📋</button>
+          <button class="card-action-btn">♥</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">樱花树下的约定</h3>
+        <p class="card-desc">每年樱花盛开的季节，她都会回到那棵树下，等待着那个曾经许下诺言的少年。</p>
+        <div class="card-tags">
+          <span class="card-tag">青春</span>
+          <span class="card-tag">治愈</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-icon">👁</span>
+            <span>1.8k</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon">♥</span>
+            <span>456</span>
+          </div>
+          <span class="card-date">1周前</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 卡片4 -->
+    <article class="story-card">
+      <div class="card-cover">
+        <img src="https://images.unsplash.com/photo-1467951598365-9b1d00be4a85?w=600&h=300&fit=crop" alt="封面">
+        <div class="card-cover-overlay"></div>
+        <span class="card-category">悬疑推理</span>
+        <div class="card-actions">
+          <button class="card-action-btn">📋</button>
+          <button class="card-action-btn">♥</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">消失的第十三层楼</h3>
+        <p class="card-desc">一座废弃的大楼，每到午夜时分，电梯总会自动停在并不存在的第十三层，传来诡异的哭声。</p>
+        <div class="card-tags">
+          <span class="card-tag">悬疑</span>
+          <span class="card-tag">惊悚</span>
+          <span class="card-tag">推理</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-icon">👁</span>
+            <span>3.2k</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon">♥</span>
+            <span>567</span>
+          </div>
+          <span class="card-date">2周前</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 卡片5 -->
+    <article class="story-card">
+      <div class="card-cover">
+        <img src="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&h=300&fit=crop" alt="封面">
+        <div class="card-cover-overlay"></div>
+        <span class="card-category">玄幻奇幻</span>
+        <div class="card-actions">
+          <button class="card-action-btn">📋</button>
+          <button class="card-action-btn">♥</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">龙族血脉觉醒</h3>
+        <p class="card-desc">在魔法与龙族并存的世界，一个被封印千年的少年体内沉睡的血脉开始觉醒。</p>
+        <div class="card-tags">
+          <span class="card-tag">奇幻</span>
+          <span class="card-tag">热血</span>
+          <span class="card-tag">魔法</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-icon">👁</span>
+            <span>4.5k</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon">♥</span>
+            <span>721</span>
+          </div>
+          <span class="card-date">1天前</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 卡片6 -->
+    <article class="story-card">
+      <div class="card-cover">
+        <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&h=300&fit=crop" alt="封面">
+        <div class="card-cover-overlay"></div>
+        <span class="card-category">玄幻奇幻</span>
+        <div class="card-actions">
+          <button class="card-action-btn">📋</button>
+          <button class="card-action-btn">♥</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">深渊入侵</h3>
+        <p class="card-desc">当地狱裂缝在城市中心撕开，英勇与恶魔的史诗之战即将拉开序幕。</p>
+        <div class="card-tags">
+          <span class="card-tag">奇幻</span>
+          <span class="card-tag">战斗</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-icon">👁</span>
+            <span>1.2k</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon">♥</span>
+            <span>189</span>
+          </div>
+          <span class="card-date">5天前</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+</main>
+
+</body>
+</html>
