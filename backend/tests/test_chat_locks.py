@@ -1,11 +1,14 @@
 """Tests for chat_locks — per-archive lock factory."""
+
 import threading
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 
 class FakeRedis:
     """Simulate Redis client for lock testing."""
+
     def __init__(self, available=True, lock_acquire_returns=True):
         self.available = available
         self._lock_returns = lock_acquire_returns
@@ -34,7 +37,7 @@ def test_lock_factory_acquires_and_releases_threading_lock():
     locks_dict: dict[int, threading.Lock] = {}
     guard = threading.Lock()
 
-    with patch('app.api.chat_locks.get_redis', return_value=FakeRedis(available=False)):
+    with patch("app.api.chat_locks.get_redis", return_value=FakeRedis(available=False)):
         with _acquire_per_archive_lock(
             1,
             redis_key="test:archive:1",
@@ -58,7 +61,7 @@ def test_lock_factory_raises_409_when_locked():
     release_now = threading.Event()
 
     def holder():
-        with patch('app.api.chat_locks.get_redis', return_value=FakeRedis(available=False)):
+        with patch("app.api.chat_locks.get_redis", return_value=FakeRedis(available=False)):
             with _acquire_per_archive_lock(
                 1,
                 redis_key="test:archive:1",
@@ -75,7 +78,8 @@ def test_lock_factory_raises_409_when_locked():
     acquired.wait(timeout=2)
 
     from fastapi import HTTPException
-    with patch('app.api.chat_locks.get_redis', return_value=FakeRedis(available=False)):
+
+    with patch("app.api.chat_locks.get_redis", return_value=FakeRedis(available=False)):
         with pytest.raises(HTTPException) as exc:
             with _acquire_per_archive_lock(
                 1,
@@ -100,7 +104,7 @@ def test_lock_factory_uses_redis_when_available():
     guard = threading.Lock()
     fake_redis = FakeRedis(available=True, lock_acquire_returns=True)
 
-    with patch('app.api.chat_locks.get_redis', return_value=fake_redis):
+    with patch("app.api.chat_locks.get_redis", return_value=fake_redis):
         with _acquire_per_archive_lock(
             1,
             redis_key="test:archive:1",

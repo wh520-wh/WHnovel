@@ -1,5 +1,5 @@
 """Test SSE formatting utilities."""
-import pytest
+
 from app.api.chat_sse import _sse_event, _sse_keepalive
 
 

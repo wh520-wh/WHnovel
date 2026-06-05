@@ -1,4 +1,5 @@
 """Image generation prompt builders."""
+
 from __future__ import annotations
 
 _MAX_WORLD_SETTING_CHARS = 800

@@ -1,10 +1,11 @@
 """Main chat body generation prompts and delimiter helpers."""
+
 from __future__ import annotations
 
 import secrets
 import string
 
-from .plot import PLOT_LABEL_RULES, STORY_STATE_RULES
+from .plot import PLOT_LABEL_RULES
 
 STREAM_TAIL_DELIMITER = "<<<STRUCTURED_TAIL>>>"  # kept for backwards compat
 
@@ -13,7 +14,7 @@ _TAIL_DELIMITER_ALPHABET = string.ascii_letters + string.digits
 
 def _make_tail_delimiter() -> str:
     """Generate a per-request opaque delimiter token."""
-    nonce = ''.join(secrets.choice(_TAIL_DELIMITER_ALPHABET) for _ in range(32))
+    nonce = "".join(secrets.choice(_TAIL_DELIMITER_ALPHABET) for _ in range(32))
     return f"<<<TAIL_{nonce}>>>"
 
 
@@ -27,7 +28,8 @@ def _restore_tail_escape(text: str, delimiter: str = STREAM_TAIL_DELIMITER) -> s
     return text.replace(f"<ESCAPED_{delimiter}>", delimiter)
 
 
-JSON_RULE_PROMPT = """
+JSON_RULE_PROMPT = (
+    """
 只返回一个 JSON 对象，不输出额外文字或 markdown 代码块。
 
 示例：
@@ -61,8 +63,11 @@ JSON_RULE_PROMPT = """
 - story_state: {chapter(string), progress(int 0-100只增不减), current_goal(string), current_conflict(string)}
 - memory_update: string[]
 - plot_label: string，4-10个汉字（本轮有重大事件时生成，否则""）
-""" + PLOT_LABEL_RULES + """
+"""
+    + PLOT_LABEL_RULES
+    + """
 """.strip()
+)
 
 STREAM_ERROR_STAGE_UPSTREAM = "upstream"
 STREAM_ERROR_STAGE_PRE_DELTA = "pre_delta"
@@ -73,12 +78,15 @@ STREAM_ERROR_STAGE_TAIL_SCHEMA = "tail_schema"
 
 
 def make_stream_rule_prompt(delimiter: str) -> str:
-    return """
+    return (
+        """
 正文第一句直接开始叙述。不在开头说"好的""我将""根据设定""以下是""请看"。
 
 正文结束后换行输出分隔符，然后是 JSON。正文与 JSON 之间没有过渡语。
 
-分隔符：""" + f"{delimiter.strip()}" + """
+分隔符："""
+        + f"{delimiter.strip()}"
+        + """
 正文：[你的小说内容]
 分隔符（单独一行）
 JSON：[你的JSON对象]
@@ -90,3 +98,4 @@ JSON：{"reply_text":"你缓步走向石碑，指尖拂过冰凉的石面。月�
 
 JSON字段（全部必填）：reply_text, scene, character_state(emotion/fatigue/mood), story_state, memory_update, plot_label
 """.strip()
+    )

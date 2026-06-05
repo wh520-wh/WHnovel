@@ -1,4 +1,5 @@
 """SSE 事件格式化工具"""
+
 from __future__ import annotations
 
 import json

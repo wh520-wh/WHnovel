@@ -1,10 +1,10 @@
 """预设开场缓存"""
+
 from __future__ import annotations
 
 import hashlib
 import time
 from typing import Any
-
 
 _TTL_SECONDS = 3600  # 1 hour
 

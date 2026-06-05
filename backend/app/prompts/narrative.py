@@ -1,4 +1,5 @@
 """Narrative style, quality rules, and length control prompts."""
+
 from __future__ import annotations
 
 STYLE_RULE_PROMPT = """
@@ -48,7 +49,7 @@ HUMANIZED_WRITING_RULES = """
 
 # reply_style -> (min_chars, max_chars, max_paragraphs, max_chars_per_paragraph)
 _LENGTH_SPECS: dict[str, tuple[int, int, int, int]] = {
-    "concise":  (400, 530, 2, 180),
+    "concise": (400, 530, 2, 180),
     "detailed": (530, 800, 3, 220),
     "creative": (670, 1000, 3, 280),
 }

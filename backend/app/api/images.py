@@ -1,7 +1,9 @@
 """图片访问路由"""
+
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
-from pathlib import Path
 
 router = APIRouter(prefix="/api/images", tags=["images"])
 

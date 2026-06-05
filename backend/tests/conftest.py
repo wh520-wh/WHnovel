@@ -1,15 +1,16 @@
 """
 pytest fixtures：每个测试后自动清理，保持 DB 干净。
 """
+
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import shutil
-import pytest
-from sqlalchemy import text
+from pathlib import Path
 from uuid import uuid4
 
+import pytest
+from sqlalchemy import text
 
 TEST_RUNTIME_PARENT = Path(__file__).resolve().parent.parent / ".pytest_runtime"
 TEST_RUNTIME_ROOT = TEST_RUNTIME_PARENT / f"session_{uuid4().hex}"
@@ -55,6 +56,8 @@ def _cleanup_test_data():
     try:
         with db.begin():
             db.execute(text("DELETE FROM model_configs"))
-            db.execute(text("UPDATE user_settings SET primary_model_id = NULL, backup_model_ids = '[]'"))
+            db.execute(
+                text("UPDATE user_settings SET primary_model_id = NULL, backup_model_ids = '[]'")
+            )
     finally:
         db.close()

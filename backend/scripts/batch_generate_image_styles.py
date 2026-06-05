@@ -2,16 +2,17 @@
 为所有没有 image_style 的故事批量生成图片风格描述。
 用法: cd backend && python scripts/batch_generate_image_styles.py
 """
-import sys
+
 import logging
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.database import SessionLocal
 from app import models
 from app.api.story_generate import generate_story_content
 from app.app_settings_service import ensure_app_settings
+from app.database import SessionLocal
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     db = SessionLocal()
-    app_settings = ensure_app_settings(db)
+    ensure_app_settings(db)  # side effect: ensure settings row exists
 
     text_model = (
         db.query(models.ModelConfig)
@@ -36,9 +37,13 @@ def main():
         return
 
     # 查找所有 image_style 为空的故事
-    stories = db.query(models.Story).filter(
-        models.Story.image_style == "",
-    ).all()
+    stories = (
+        db.query(models.Story)
+        .filter(
+            models.Story.image_style == "",
+        )
+        .all()
+    )
 
     logger.info(f"共 {len(stories)} 个故事需要生成图片风格")
 

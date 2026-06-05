@@ -2,16 +2,17 @@
 为所有没有封面图的故事批量生成封面。
 用法: cd backend && python scripts/generate_existing_covers.py
 """
-import sys
+
 import logging
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.database import SessionLocal
 from app import models
 from app.api.story_generate import generate_story_with_cover
 from app.app_settings_service import ensure_app_settings
+from app.database import SessionLocal
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -27,11 +28,15 @@ def main():
         db.close()
         return
 
-    image_model = db.query(models.ModelConfig).filter(
-        models.ModelConfig.id == image_model_id,
-        models.ModelConfig.enabled == 1,
-        models.ModelConfig.model_type == "image",
-    ).first()
+    image_model = (
+        db.query(models.ModelConfig)
+        .filter(
+            models.ModelConfig.id == image_model_id,
+            models.ModelConfig.enabled == 1,
+            models.ModelConfig.model_type == "image",
+        )
+        .first()
+    )
     if not image_model:
         logger.error(f"图片模型 #{image_model_id} 不可用")
         db.close()
@@ -51,9 +56,13 @@ def main():
         db.close()
         return
 
-    stories = db.query(models.Story).filter(
-        models.Story.cover_image == "",
-    ).all()
+    stories = (
+        db.query(models.Story)
+        .filter(
+            models.Story.cover_image == "",
+        )
+        .all()
+    )
 
     logger.info(f"共 {len(stories)} 个故事需要生成封面")
 

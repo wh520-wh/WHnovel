@@ -1,5 +1,5 @@
 """Test body pollution detection."""
-import pytest
+
 from app.prompts.guard import (
     BodyPollutedError,
     _is_likely_option_line,
@@ -38,9 +38,10 @@ def test_detect_body_pollution_pre_vs_post():
     """Pre-delta and post-delta have different patterns."""
     # json_prefix only in pre_delta
     result_pre = detect_body_pollution('{"hello": "world"}', pre_delta=True)
-    result_post = detect_body_pollution('{"hello": "world"}', pre_delta=False)
+    detect_body_pollution(
+        '{"hello": "world"}', pre_delta=False
+    )  # post_delta doesn't have json_prefix pattern
     assert result_pre == "json_prefix"
-    # post_delta doesn't have json_prefix pattern
 
 
 def test_body_polluted_error_pre_delta():

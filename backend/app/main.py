@@ -1,13 +1,14 @@
-from contextlib import asynccontextmanager
 import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .api import admin, archives, chat_router, images, settings, stories
 from .database import Base, SessionLocal, engine
-from .migrations import run_migrations
 from .metrics_service import backfill_missing_hours, get_scheduler
+from .migrations import run_migrations
 from .seed_data import init_db
 
 logger = logging.getLogger(__name__)
@@ -31,20 +32,20 @@ async def lifespan(app: FastAPI):
     get_scheduler().stop()
 
 
-app = FastAPI(title='AI 情景互动小说平台 API', lifespan=lifespan)
+app = FastAPI(title="AI 情景互动小说平台 API", lifespan=lifespan)
 
 # CORS：credentials=True 时不能使用 '*'
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost:5174',
-        'http://127.0.0.1:5174',
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
     ],
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -53,7 +54,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.exception(f"Unhandled exception: {exc}")
     return JSONResponse(
         status_code=500,
-        content={'detail': '服务器内部错误，请稍后重试'},
+        content={"detail": "服务器内部错误，请稍后重试"},
     )
 
 
@@ -65,6 +66,6 @@ app.include_router(admin.router)
 app.include_router(images.router)
 
 
-@app.get('/')
+@app.get("/")
 def root():
-    return {'message': 'AI 情景互动小说平台 API', 'docs': '/docs'}
+    return {"message": "AI 情景互动小说平台 API", "docs": "/docs"}

@@ -1,4 +1,5 @@
 """通用 per-archive 并发锁（Redis + threading fallback）."""
+
 from __future__ import annotations
 
 import threading

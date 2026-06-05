@@ -1,7 +1,9 @@
 """API mode adapters: URL, body, headers, response parsing per api_mode."""
+
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Type aliases
@@ -19,6 +21,7 @@ Adapter = dict[str, Any]
 # URL builders
 # ---------------------------------------------------------------------------
 
+
 def _url_openai_chat(base: str, model_id: str, stream: bool = False) -> str:
     return f"{base.rstrip('/')}/v1/chat/completions"
 
@@ -32,14 +35,14 @@ def _url_claude_messages(base: str, model_id: str, stream: bool = False) -> str:
 
 
 def _url_gemini(base: str, model_id: str, stream: bool = False) -> str:
-    b = base.rstrip('/')
+    b = base.rstrip("/")
     if stream:
         return f"{b}/v1beta/models/{model_id}:streamGenerateContent?alt=sse"
     return f"{b}/v1beta/models/{model_id}:generateContent"
 
 
 def _url_custom_chat(base: str, model_id: str, stream: bool = False) -> str:
-    return base.rstrip('/')
+    return base.rstrip("/")
 
 
 def _url_openai_images(base: str, model_id: str, stream: bool = False) -> str:
@@ -47,12 +50,13 @@ def _url_openai_images(base: str, model_id: str, stream: bool = False) -> str:
 
 
 def _url_custom_image(base: str, model_id: str, stream: bool = False) -> str:
-    return base.rstrip('/')
+    return base.rstrip("/")
 
 
 # ---------------------------------------------------------------------------
 # Body builders — non-streaming
 # ---------------------------------------------------------------------------
+
 
 def _body_openai_chat(
     model_id: str,
@@ -127,10 +131,12 @@ def _body_claude_messages(
         if m.get("role") == "system":
             system_parts.append(str(m.get("content", "")))
         else:
-            user_assistant.append({
-                "role": m.get("role", "user"),
-                "content": str(m.get("content", "")),
-            })
+            user_assistant.append(
+                {
+                    "role": m.get("role", "user"),
+                    "content": str(m.get("content", "")),
+                }
+            )
     body: dict = {
         "model": model_id,
         "messages": user_assistant,
@@ -160,10 +166,12 @@ def _body_gemini(
             system_parts.append(str(m.get("content", "")))
         else:
             role = "model" if m.get("role") == "assistant" else "user"
-            contents.append({
-                "role": role,
-                "parts": [{"text": str(m.get("content", ""))}],
-            })
+            contents.append(
+                {
+                    "role": role,
+                    "parts": [{"text": str(m.get("content", ""))}],
+                }
+            )
     body: dict = {
         "contents": contents,
         "generationConfig": {
@@ -187,12 +195,20 @@ def _body_custom_chat(
     stream: bool = False,
     max_tokens: int = 6000,
 ) -> dict:
-    return _body_openai_chat(model_id, messages, temperature, response_format=response_format, stream=stream, max_tokens=max_tokens)
+    return _body_openai_chat(
+        model_id,
+        messages,
+        temperature,
+        response_format=response_format,
+        stream=stream,
+        max_tokens=max_tokens,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Headers builders
 # ---------------------------------------------------------------------------
+
 
 def _headers_openai(api_key: str) -> dict:
     """Build headers for OpenAI-compatible APIs. api_key must be plaintext (already decrypted)."""
@@ -222,6 +238,7 @@ def _headers_gemini(api_key: str) -> dict:
 # ---------------------------------------------------------------------------
 # Response parsers — non-streaming
 # ---------------------------------------------------------------------------
+
 
 def _parse_openai_chat(resp_json: dict) -> tuple[str, dict]:
     message = ((resp_json.get("choices") or [{}])[0].get("message") or {}).get("content", "")
@@ -273,6 +290,7 @@ def _parse_gemini(resp_json: dict) -> tuple[str, dict]:
 # Stream delta extractors
 # ---------------------------------------------------------------------------
 
+
 def _extract_openai_chat_delta(data: dict) -> str | None:
     choice = (data.get("choices") or [{}])[0]
     delta = choice.get("delta") or {}
@@ -315,6 +333,7 @@ def _extract_gemini_delta(data: dict) -> str | None:
 # Helper
 # ---------------------------------------------------------------------------
 
+
 def _extract_message_content(message: object) -> str:
     if isinstance(message, str):
         return message
@@ -341,6 +360,7 @@ def _extract_message_content(message: object) -> str:
 # Image body builders
 # ---------------------------------------------------------------------------
 
+
 def _body_openai_images(model_id: str, prompt: str, size: str, watermark: bool) -> dict:
     return {
         "model": model_id,
@@ -359,6 +379,7 @@ _body_minimax_images = _body_openai_images
 # Image response parsers
 # ---------------------------------------------------------------------------
 
+
 def _parse_openai_image(data: dict) -> str:
     """OpenAI Images API: { data: [{ url: "..." }] }"""
     return data["data"][0]["url"]
@@ -372,6 +393,7 @@ def _parse_minimax_image(data: dict) -> str:
 # ---------------------------------------------------------------------------
 # Adapter registry
 # ---------------------------------------------------------------------------
+
 
 def get_adapter(api_mode: str) -> Adapter:
     adapters: dict[str, Adapter] = {

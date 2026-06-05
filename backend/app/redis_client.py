@@ -2,8 +2,9 @@
 Redis client wrapper with graceful degradation.
 When Redis is unavailable, all operations become no-ops (do not block the app).
 """
-import os
+
 import logging
+import os
 import threading
 from typing import Optional
 
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -18,7 +20,7 @@ except ImportError:
 
 
 class RedisClient:
-    _instance: Optional['RedisClient'] = None
+    _instance: Optional["RedisClient"] = None
     _lock = threading.Lock()
 
     def __new__(cls):
@@ -31,7 +33,7 @@ class RedisClient:
             return cls._instance
 
     def _init(self):
-        self._client: Optional[redis.Redis] = None
+        self._client: redis.Redis | None = None
         self._available = False
         self._host = os.environ.get("REDIS_HOST", "localhost")
         self._port = int(os.environ.get("REDIS_PORT", "6379"))
@@ -63,7 +65,7 @@ class RedisClient:
     def is_available(self) -> bool:
         return self._available
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         if not self._available:
             return None
         try:
@@ -122,7 +124,9 @@ class RedisClient:
     def lock_release(self, key: str) -> bool:
         """Release a distributed lock."""
         if not self._available:
-            logger.warning(f"Redis lock_release: Redis unavailable, lock may linger until TTL expires")
+            logger.warning(
+                "Redis lock_release: Redis unavailable, lock may linger until TTL expires"
+            )
             return False
         try:
             self._client.delete(key)

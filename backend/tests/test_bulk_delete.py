@@ -1,10 +1,10 @@
 """Tests for bulk message deletion endpoint."""
-import pytest
-from fastapi.testclient import TestClient
 
-from app.main import app
+import pytest
 from app import models
 from app.database import get_db
+from app.main import app
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture(autouse=True)
@@ -28,24 +28,29 @@ def db(client):
 
 def _create_test_story_and_archive(client, db):
     """Create a story and archive for testing."""
-    resp = client.post("/api/stories", json={
-        "title": "Test Story",
-        "description": "test",
-        "tags": [],
-        "category": "其他",
-    })
+    resp = client.post(
+        "/api/stories",
+        json={
+            "title": "Test Story",
+            "description": "test",
+            "tags": [],
+            "category": "其他",
+        },
+    )
     story_id = resp.json()["id"]
-    resp = client.post("/api/archives", json={
-        "story_id": story_id,
-        "name": "Test Archive",
-    })
+    resp = client.post(
+        "/api/archives",
+        json={
+            "story_id": story_id,
+            "name": "Test Archive",
+        },
+    )
     archive_id = resp.json()["id"]
     return story_id, archive_id
 
 
 def _add_messages(db, archive_id, contents):
     """Add test messages directly to DB, return their IDs."""
-    ids = []
     for role, content in contents:
         msg = models.ChatMessage(
             archive_id=archive_id,
@@ -58,21 +63,28 @@ def _add_messages(db, archive_id, contents):
         )
         db.add(msg)
     db.commit()
-    msgs = db.query(models.ChatMessage).filter(
-        models.ChatMessage.archive_id == archive_id
-    ).order_by(models.ChatMessage.created_at.asc()).all()
+    msgs = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.archive_id == archive_id)
+        .order_by(models.ChatMessage.created_at.asc())
+        .all()
+    )
     return [m.id for m in msgs]
 
 
 def test_bulk_delete_removes_messages(client, db):
     """Test that bulk delete removes specified messages."""
     _, archive_id = _create_test_story_and_archive(client, db)
-    msg_ids = _add_messages(db, archive_id, [
-        ("user", "hello"),
-        ("assistant", "hi there"),
-        ("user", "second"),
-        ("assistant", "second reply"),
-    ])
+    msg_ids = _add_messages(
+        db,
+        archive_id,
+        [
+            ("user", "hello"),
+            ("assistant", "hi there"),
+            ("user", "second"),
+            ("assistant", "second reply"),
+        ],
+    )
 
     resp = client.request(
         "DELETE",
@@ -83,9 +95,9 @@ def test_bulk_delete_removes_messages(client, db):
     assert resp.status_code == 200
     assert resp.json()["deleted"] == 2
 
-    remaining = db.query(models.ChatMessage).filter(
-        models.ChatMessage.archive_id == archive_id
-    ).all()
+    remaining = (
+        db.query(models.ChatMessage).filter(models.ChatMessage.archive_id == archive_id).all()
+    )
     assert len(remaining) == 2
     assert [m.content for m in remaining] == ["second", "second reply"]
 

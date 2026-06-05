@@ -1,5 +1,5 @@
 """角色引用展开测试"""
-import pytest
+
 from app.api.chat_storage import _expand_character_references
 
 

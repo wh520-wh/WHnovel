@@ -1,17 +1,14 @@
 import json
 from datetime import datetime, timedelta
 
-from fastapi.testclient import TestClient
-
 from app import config as backup_config
-from app.main import app
-from app.database import SessionLocal
-from app import models
-from app.app_settings_service import ensure_app_settings
-from app.prompts.defaults import DEFAULT_STATE_BROADCAST_PROMPT, DEFAULT_SYSTEM_PROMPT_TEXT
-from app import metrics_service
+from app import metrics_service, models
 from app.api.chat_models import _get_enabled_models
-
+from app.app_settings_service import ensure_app_settings
+from app.database import SessionLocal
+from app.main import app
+from app.prompts.defaults import DEFAULT_STATE_BROADCAST_PROMPT, DEFAULT_SYSTEM_PROMPT_TEXT
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -23,7 +20,9 @@ def test_app_settings_can_read_and_update():
     assert "default_system_prompt" in data
     assert "default_system_prompt_source" in data
 
-    updated = client.put("/api/admin/app-settings", json={"default_system_prompt": "测试默认提示词"})
+    updated = client.put(
+        "/api/admin/app-settings", json={"default_system_prompt": "测试默认提示词"}
+    )
     updated.raise_for_status()
     assert updated.json()["default_system_prompt"] == "测试默认提示词"
 
@@ -463,7 +462,9 @@ def test_export_config_backup_writes_current_db_snapshot():
     assert payload["source"] == "database"
     assert payload["app_settings"]["default_system_prompt"] == "exported-prompt"
     assert payload["app_settings"]["default_image_style"] == "胶片感悬疑封面"
-    exported_model = next(item for item in payload["models"] if item["name"] == "backup-export-model")
+    exported_model = next(
+        item for item in payload["models"] if item["name"] == "backup-export-model"
+    )
     assert exported_model["ssl_verify"] is True
     assert any(item["name"] == "backup-export-model" for item in payload["models"])
 

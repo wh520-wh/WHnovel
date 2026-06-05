@@ -1,16 +1,27 @@
 """Story generation helpers."""
+
 from __future__ import annotations
 
 from .. import models, schemas
-from .ai_contracts import TASK_STORY_GENERATE, build_contract_response_format, get_contract_output_rule
+from .ai_contracts import (
+    TASK_STORY_GENERATE,
+    build_contract_response_format,
+    get_contract_output_rule,
+)
 from .chat_models import _call_model_once, _validate_contract_from_text
 
 
-def _build_story_prompt(category: str, title_hint: str, tags_hint: str, user_image_style: str = "", user_preference: str = "") -> str:
+def _build_story_prompt(
+    category: str,
+    title_hint: str,
+    tags_hint: str,
+    user_image_style: str = "",
+    user_preference: str = "",
+) -> str:
     if category == "其他":
         category_instruction = (
             '注意：分类为"其他"，请生成一个独特、不落俗套的世界观。'
-            '避免常见的科幻、玄幻、都市套路，要有自己的世界规则、文化设定或社会结构。'
+            "避免常见的科幻、玄幻、都市套路，要有自己的世界规则、文化设定或社会结构。"
         )
     else:
         category_instruction = f'故事分类为"{category}"，请围绕该分类的核心特征构建故事。'
@@ -29,9 +40,7 @@ def _build_story_prompt(category: str, title_hint: str, tags_hint: str, user_ima
             "\n请保留其核心视觉意图，并生成一段适合作为封面画风说明的 image_style。"
         )
     else:
-        style_section = (
-            "\n请根据故事氛围自主生成 image_style，作为封面图的视觉风格说明。"
-        )
+        style_section = "\n请根据故事氛围自主生成 image_style，作为封面图的视觉风格说明。"
 
     return (
         "你是一名专业的小说世界观策划。\n"
@@ -66,7 +75,9 @@ def generate_story_content(
         response_format=build_contract_response_format(TASK_STORY_GENERATE),
         timeout=60.0,
     )
-    validated = _validate_contract_from_text(TASK_STORY_GENERATE, raw_content, allow_legacy_text_fallback=False)
+    validated = _validate_contract_from_text(
+        TASK_STORY_GENERATE, raw_content, allow_legacy_text_fallback=False
+    )
     return validated.model_copy(update={"category": category, "cover_url": ""})
 
 

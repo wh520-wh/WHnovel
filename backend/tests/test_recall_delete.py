@@ -1,9 +1,10 @@
 """Tests for recall delete logic."""
+
 import pytest
-from fastapi.testclient import TestClient
-from app.main import app
 from app import models
 from app.database import get_db
+from app.main import app
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture(autouse=True)
@@ -26,23 +27,28 @@ def db(client):
 
 
 def _create_test_story_and_archive(client, db):
-    resp = client.post("/api/stories", json={
-        "title": "Test Story",
-        "description": "test",
-        "tags": [],
-        "category": "其他",
-    })
+    resp = client.post(
+        "/api/stories",
+        json={
+            "title": "Test Story",
+            "description": "test",
+            "tags": [],
+            "category": "其他",
+        },
+    )
     story_id = resp.json()["id"]
-    resp = client.post("/api/archives", json={
-        "story_id": story_id,
-        "name": "Test Archive",
-    })
+    resp = client.post(
+        "/api/archives",
+        json={
+            "story_id": story_id,
+            "name": "Test Archive",
+        },
+    )
     archive_id = resp.json()["id"]
     return story_id, archive_id
 
 
 def _add_messages(db, archive_id, contents):
-    ids = []
     for role, content in contents:
         msg = models.ChatMessage(
             archive_id=archive_id,
@@ -55,29 +61,39 @@ def _add_messages(db, archive_id, contents):
         )
         db.add(msg)
     db.commit()
-    msgs = db.query(models.ChatMessage).filter(
-        models.ChatMessage.archive_id == archive_id
-    ).order_by(models.ChatMessage.created_at.asc()).all()
+    msgs = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.archive_id == archive_id)
+        .order_by(models.ChatMessage.created_at.asc())
+        .all()
+    )
     return [m.id for m in msgs]
 
 
 def test_recall_deletes_ai_and_following_user(client, db):
     """场景: [user1, ai1, user2, ai2]，recall 应删 user2 + ai2，保留 user1 + ai1"""
     _, archive_id = _create_test_story_and_archive(client, db)
-    msg_ids = _add_messages(db, archive_id, [
-        ("user", "hello"),
-        ("assistant", "hi there"),
-        ("user", "second user"),
-        ("assistant", "second reply"),
-    ])
+    _add_messages(
+        db,
+        archive_id,
+        [
+            ("user", "hello"),
+            ("assistant", "hi there"),
+            ("user", "second user"),
+            ("assistant", "second reply"),
+        ],
+    )
 
     resp = client.delete(f"/api/chat/messages/{archive_id}/last-ai")
     assert resp.status_code == 200
     assert resp.json()["deleted"] == 2
 
-    remaining = db.query(models.ChatMessage).filter(
-        models.ChatMessage.archive_id == archive_id
-    ).order_by(models.ChatMessage.created_at.asc()).all()
+    remaining = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.archive_id == archive_id)
+        .order_by(models.ChatMessage.created_at.asc())
+        .all()
+    )
     assert len(remaining) == 2
     assert remaining[0].role == "user"
     assert remaining[0].content == "hello"
@@ -88,10 +104,14 @@ def test_recall_deletes_ai_and_following_user(client, db):
 def test_recall_only_ai_when_no_following_user(client, db):
     """场景: [user1, ai1]，只有一轮，user 后面没有更多消息"""
     _, archive_id = _create_test_story_and_archive(client, db)
-    msg_ids = _add_messages(db, archive_id, [
-        ("user", "hello"),
-        ("assistant", "hi there"),
-    ])
+    _add_messages(
+        db,
+        archive_id,
+        [
+            ("user", "hello"),
+            ("assistant", "hi there"),
+        ],
+    )
 
     resp = client.delete(f"/api/chat/messages/{archive_id}/last-ai")
     assert resp.status_code == 200
@@ -99,7 +119,7 @@ def test_recall_only_ai_when_no_following_user(client, db):
     # so it's considered the "following user" and gets deleted
     assert resp.json()["deleted"] == 2
 
-    remaining = db.query(models.ChatMessage).filter(
-        models.ChatMessage.archive_id == archive_id
-    ).all()
+    remaining = (
+        db.query(models.ChatMessage).filter(models.ChatMessage.archive_id == archive_id).all()
+    )
     assert len(remaining) == 0

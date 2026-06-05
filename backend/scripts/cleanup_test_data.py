@@ -3,13 +3,14 @@
 保留：真实可用的模型和存档。
 关键词：test、stage3、临时、测试
 """
+
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.database import SessionLocal
 from app import models
+from app.database import SessionLocal
 
 TEST_KEYWORDS = ["test", "临时", "测试", "demo", "示例"]
 

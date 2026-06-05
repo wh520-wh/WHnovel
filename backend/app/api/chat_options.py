@@ -1,11 +1,11 @@
 """选项生成锁机制"""
+
 from __future__ import annotations
 
 import threading
 from contextlib import contextmanager
 
-from .chat_locks import _acquire_per_archive_lock, _get_or_create_lock
-
+from .chat_locks import _acquire_per_archive_lock
 
 _option_generation_locks: dict[int, threading.Lock] = {}
 _option_generation_locks_guard = threading.Lock()

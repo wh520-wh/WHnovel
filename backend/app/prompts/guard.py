@@ -1,8 +1,8 @@
 """Body pollution detection — regex patterns and detection functions."""
+
 from __future__ import annotations
 
 import re
-
 
 _OPTION_BLOCK_CUE_RE = re.compile(
     r"(?:你必须立刻行动|你必须行动|你需要立刻行动|你需要马上行动|接下来你|接下来该|下一步|请选择|你的选择|你可以选择|该怎么做|如何行动)",
@@ -14,7 +14,13 @@ _OPTION_LINE_RE = re.compile(
 
 _PRE_DELTA_POLLUTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("code_fence", re.compile(r"```", re.IGNORECASE)),
-    ("structured_field", re.compile(r'"(?:reply_text|scene|options|character_state|story_state|memory_update|plot_label|highlight_terms|content|openings|title|world_setting)"\s*:', re.IGNORECASE)),
+    (
+        "structured_field",
+        re.compile(
+            r'"(?:reply_text|scene|options|character_state|story_state|memory_update|plot_label|highlight_terms|content|openings|title|world_setting)"\s*:',
+            re.IGNORECASE,
+        ),
+    ),
     ("schema_term", re.compile(r"\b(?:response_format|json\s*schema)\b", re.IGNORECASE)),
     ("relay_term", re.compile(r"(系统提示|以下是输出|输出格式|用户输入|根据设定)")),
     ("json_prefix", re.compile(r"^\s*[\[{]\s*(?:\"|$)")),
@@ -22,7 +28,13 @@ _PRE_DELTA_POLLUTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 
 _POST_DELTA_POLLUTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("code_fence", re.compile(r"```", re.IGNORECASE)),
-    ("structured_field", re.compile(r'"(?:reply_text|scene|options|character_state|story_state|memory_update|plot_label|highlight_terms|content|openings|title|world_setting)"\s*:', re.IGNORECASE)),
+    (
+        "structured_field",
+        re.compile(
+            r'"(?:reply_text|scene|options|character_state|story_state|memory_update|plot_label|highlight_terms|content|openings|title|world_setting)"\s*:',
+            re.IGNORECASE,
+        ),
+    ),
     ("schema_term", re.compile(r"\b(?:response_format|json\s*schema)\b", re.IGNORECASE)),
     ("relay_term", re.compile(r"(系统提示|以下是输出|输出格式|用户输入|根据设定)")),
 ]
@@ -49,7 +61,7 @@ def _is_likely_option_line(line: str) -> bool:
         return False
     if re.search(r"[。！？!?；;：:]$", stripped):
         return False
-    if stripped.startswith(("（", "(", "“", "\"", "「")):
+    if stripped.startswith(("（", "(", "“", '"', "「")):
         return False
     return bool(_OPTION_LINE_RE.match(stripped))
 
@@ -103,9 +115,9 @@ def _detect_body_pollution(text: str, *, pre_delta: bool) -> str | None:
     return detect_body_pollution(text, pre_delta=pre_delta)
 
 
-_TRAILING_BRACKET_LINE_RE = re.compile(r'^[ \t]*[（\(].*[\）\)][ \t]*$')
+_TRAILING_BRACKET_LINE_RE = re.compile(r"^[ \t]*[（\(].*[\）\)][ \t]*$")
 
-_TRAILING_BRACKET_STRIP_RE = re.compile(r'\n[ \t]*[（\(].*[\）\)]\s*$')
+_TRAILING_BRACKET_STRIP_RE = re.compile(r"\n[ \t]*[（\(].*[\）\)]\s*$")
 
 
 def _is_trailing_bracket_line(text: str) -> bool:
@@ -116,5 +128,5 @@ def _is_trailing_bracket_line(text: str) -> bool:
 def _strip_trailing_bracket_line(text: str) -> str:
     m = _TRAILING_BRACKET_STRIP_RE.search(text)
     if m:
-        return text[:m.start()]
+        return text[: m.start()]
     return text

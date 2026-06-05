@@ -1,6 +1,5 @@
-from fastapi.testclient import TestClient
-
 from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -73,42 +72,51 @@ def test_list_models_includes_api_mode():
 
 def test_update_model_api_mode():
     # create first
-    create_resp = client.post("/api/admin/models", json={
-        "name": "update-test",
-        "model_id": "gpt-4",
-        "api_base_url": "https://api.openai.com/v1",
-        "api_key": "k",
-        "api_mode": "openai_chat_completions",
-        "model_type": "chat",
-        "priority": 3,
-    })
+    create_resp = client.post(
+        "/api/admin/models",
+        json={
+            "name": "update-test",
+            "model_id": "gpt-4",
+            "api_base_url": "https://api.openai.com/v1",
+            "api_key": "k",
+            "api_mode": "openai_chat_completions",
+            "model_type": "chat",
+            "priority": 3,
+        },
+    )
     create_resp.raise_for_status()
     model_id = create_resp.json()["id"]
 
     # update api_mode
-    update_resp = client.put(f"/api/admin/models/{model_id}", json={
-        "name": "update-test",
-        "model_id": "gpt-4",
-        "api_base_url": "https://api.openai.com/v1",
-        "api_key": "",
-        "api_mode": "openai_responses",
-        "model_type": "chat",
-        "priority": 3,
-    })
+    update_resp = client.put(
+        f"/api/admin/models/{model_id}",
+        json={
+            "name": "update-test",
+            "model_id": "gpt-4",
+            "api_base_url": "https://api.openai.com/v1",
+            "api_key": "",
+            "api_mode": "openai_responses",
+            "model_type": "chat",
+            "priority": 3,
+        },
+    )
     update_resp.raise_for_status()
     assert update_resp.json()["api_mode"] == "openai_responses"
 
 
 def test_test_endpoint_with_claude_mode():
-    create_resp = client.post("/api/admin/models", json={
-        "name": "claude-test-endpoint",
-        "model_id": "claude-3-5-sonnet-20241022",
-        "api_base_url": "https://api.anthropic.com",
-        "api_key": "fake-key",
-        "api_mode": "claude_messages",
-        "model_type": "chat",
-        "priority": 10,
-    })
+    create_resp = client.post(
+        "/api/admin/models",
+        json={
+            "name": "claude-test-endpoint",
+            "model_id": "claude-3-5-sonnet-20241022",
+            "api_base_url": "https://api.anthropic.com",
+            "api_key": "fake-key",
+            "api_mode": "claude_messages",
+            "model_type": "chat",
+            "priority": 10,
+        },
+    )
     create_resp.raise_for_status()
     model_id = create_resp.json()["id"]
 
@@ -118,17 +126,20 @@ def test_test_endpoint_with_claude_mode():
 
 
 def test_test_endpoint_with_image_model():
-    create_resp = client.post("/api/admin/models", json={
-        "name": "img-test-endpoint",
-        "model_id": "dall-e-3",
-        "api_base_url": "https://api.openai.com",
-        "api_key": "fake-key",
-        "image_api_mode": "openai_images",
-        "model_type": "image",
-        "image_api_base": "https://api.openai.com",
-        "image_model_id": "dall-e-3",
-        "priority": 11,
-    })
+    create_resp = client.post(
+        "/api/admin/models",
+        json={
+            "name": "img-test-endpoint",
+            "model_id": "dall-e-3",
+            "api_base_url": "https://api.openai.com",
+            "api_key": "fake-key",
+            "image_api_mode": "openai_images",
+            "model_type": "image",
+            "image_api_base": "https://api.openai.com",
+            "image_model_id": "dall-e-3",
+            "priority": 11,
+        },
+    )
     create_resp.raise_for_status()
     model_id = create_resp.json()["id"]
 

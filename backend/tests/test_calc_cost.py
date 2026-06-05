@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+
 from app.api.chat_models import _calc_cost
 
 
@@ -16,7 +17,7 @@ def test_calc_cost_per_1k():
 def test_calc_cost_per_1m():
     cfg = MagicMock()
     cfg.pricing_unit = "per_1m"
-    cfg.price_input_per_1k = 1.5   # $1.50 per 1M tokens
+    cfg.price_input_per_1k = 1.5  # $1.50 per 1M tokens
     cfg.price_output_per_1k = 3.0  # $3.00 per 1M tokens
 
     cost = _calc_cost(cfg, prompt_tokens=500_000, completion_tokens=200_000)

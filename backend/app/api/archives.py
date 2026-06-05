@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
-from ..database import get_db
+
 from .. import models, schemas
+from ..database import get_db
 from .chat_storage import _init_state_from_story
 
 router = APIRouter(prefix="/api/archives", tags=["archives"])
 
 
-@router.get("/by_story/{story_id}", response_model=List[schemas.ArchiveOut])
+@router.get("/by_story/{story_id}", response_model=list[schemas.ArchiveOut])
 def list_archives(story_id: int, db: Session = Depends(get_db)):
     return (
         db.query(models.Archive)

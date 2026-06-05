@@ -1,18 +1,27 @@
 """数据持久化和消息构建"""
+
 from __future__ import annotations
 
 import json
 import re
 from datetime import datetime
-import time
-import uuid
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
+from ..app_settings_service import ensure_app_settings
+from ..prompts import (
+    _TAIL_META_PROMPT,
+    HUMANIZED_WRITING_RULES,
+    PLOT_LABEL_FORCED_PROMPT,
+    STREAM_TAIL_DELIMITER,
+    STYLE_RULE_PROMPT,
+    _escape_tail_delimiter,
+    _restore_tail_escape,
+)
+from ..prompts.chat_tail import TAIL_SYSTEM_PROMPT
 from ..redis_client import get_redis
-
 
 _CHAR_REF_PATTERN = re.compile(r"\{char:(\d+)\}")
 
@@ -45,18 +54,7 @@ def _expand_character_references(world_setting: str, characters: list[dict]) -> 
         return match.group(0)
 
     return _CHAR_REF_PATTERN.sub(replace_one, world_setting)
-from ..app_settings_service import ensure_app_settings
-from ..prompts import (
-    HUMANIZED_WRITING_RULES,
-    _escape_tail_delimiter,
-    _restore_tail_escape,
-    _TAIL_META_PROMPT,
-    STREAM_TAIL_DELIMITER,
-    STYLE_RULE_PROMPT,
-    PLOT_LABEL_FORCED_PROMPT,
-    MAX_ROUNDS_WITHOUT_PLOT_LABEL,
-)
-from ..prompts.chat_tail import TAIL_SYSTEM_PROMPT
+
 
 MAX_MEMORY_LOG = 100
 
@@ -77,7 +75,13 @@ def _get_story_characters(db: Session, story_id: int) -> list[dict]:
 
     rows = db.query(models.Character).filter(models.Character.story_id == story_id).all()
     result = [
-        {"id": r.id, "name": r.name, "personality": r.personality or "", "background": r.background or "", "avatar": r.avatar or ""}
+        {
+            "id": r.id,
+            "name": r.name,
+            "personality": r.personality or "",
+            "background": r.background or "",
+            "avatar": r.avatar or "",
+        }
         for r in rows
     ]
 
@@ -116,7 +120,9 @@ def _init_state_from_story(story: models.Story) -> dict:
     return {f["key"]: f.get("default", 0) for f in (story.state_config or []) if f.get("key")}
 
 
-def _ensure_archive_for_story(db: Session, story: models.Story, archive_id: int | None = None) -> models.Archive:
+def _ensure_archive_for_story(
+    db: Session, story: models.Story, archive_id: int | None = None
+) -> models.Archive:
     from fastapi import HTTPException
 
     if archive_id is not None:
@@ -181,7 +187,10 @@ def _build_prompt_sections(
     if global_default_system_prompt:
         sections.append("【全局默认系统提示词】\n" + global_default_system_prompt)
     if (story.system_prompt or "").strip():
-        sections.append("【故事专属系统提示词】\n" + _escape_tail_delimiter(story.system_prompt.strip(), delimiter))
+        sections.append(
+            "【故事专属系统提示词】\n"
+            + _escape_tail_delimiter(story.system_prompt.strip(), delimiter)
+        )
     if world_text:
         sections.append("【故事世界观提示词】\n" + _escape_tail_delimiter(world_text, delimiter))
     sections.append("【叙事增强规则】\n" + STYLE_RULE_PROMPT)
@@ -209,16 +218,24 @@ def _count_rounds_without_plot_label(db: Session, archive_id: int) -> int:
         .first()
     )
     if not last_with_label:
-        return db.query(models.ChatMessage).filter(
+        return (
+            db.query(models.ChatMessage)
+            .filter(
+                models.ChatMessage.archive_id == archive_id,
+                models.ChatMessage.role == "assistant",
+            )
+            .count()
+        )
+
+    return (
+        db.query(models.ChatMessage)
+        .filter(
             models.ChatMessage.archive_id == archive_id,
             models.ChatMessage.role == "assistant",
-        ).count()
-
-    return db.query(models.ChatMessage).filter(
-        models.ChatMessage.archive_id == archive_id,
-        models.ChatMessage.role == "assistant",
-        models.ChatMessage.created_at > last_with_label.created_at,
-    ).count()
+            models.ChatMessage.created_at > last_with_label.created_at,
+        )
+        .count()
+    )
 
 
 def _build_messages(
@@ -248,7 +265,9 @@ def _build_messages(
     messages: list[dict] = [{"role": "system", "content": "\n\n".join(sections)}]
 
     if include_history:
-        effective_context_length = context_length if context_length is not None else (settings.context_length or 10)
+        effective_context_length = (
+            context_length if context_length is not None else (settings.context_length or 10)
+        )
         history = (
             db.query(models.ChatMessage)
             .filter(models.ChatMessage.archive_id == archive.id)
@@ -276,7 +295,9 @@ def _build_tail_messages(
     recent_memory: list[str],
 ) -> list[dict]:
     """构建第二次调用（元数据提取）的 messages。"""
-    recent_memory_text = "\n".join(f"- {m}" for m in recent_memory[-5:]) if recent_memory else "（无）"
+    recent_memory_text = (
+        "\n".join(f"- {m}" for m in recent_memory[-5:]) if recent_memory else "（无）"
+    )
 
     user_content = _TAIL_META_PROMPT.format(
         body_text=body_text,
@@ -291,7 +312,6 @@ def _build_tail_messages(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content},
     ]
-
 
 
 def _persist_exchange(
@@ -415,19 +435,22 @@ def _persist_draft_exchange(
 
 def bulk_delete_messages(db: Session, archive_id: int, message_ids: list[int]) -> int:
     """物理删除指定存档中的消息。返回实际删除数量。"""
-    from fastapi import HTTPException
 
     # 同时删除关联的 StoryNode（如果有 plot_label）
-    nodes = db.query(models.StoryNode).filter(
-        models.StoryNode.archive_id == archive_id,
-        models.StoryNode.message_id.in_(message_ids)
-    ).all()
+    nodes = (
+        db.query(models.StoryNode)
+        .filter(
+            models.StoryNode.archive_id == archive_id, models.StoryNode.message_id.in_(message_ids)
+        )
+        .all()
+    )
     for node in nodes:
         db.delete(node)
 
-    deleted = db.query(models.ChatMessage).filter(
-        models.ChatMessage.archive_id == archive_id,
-        models.ChatMessage.id.in_(message_ids)
-    ).delete(synchronize_session=False)
+    deleted = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.archive_id == archive_id, models.ChatMessage.id.in_(message_ids))
+        .delete(synchronize_session=False)
+    )
     db.commit()
     return deleted

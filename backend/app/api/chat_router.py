@@ -1,10 +1,11 @@
 """Chat API routes."""
+
 from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Callable, Iterable
 from datetime import datetime
-from typing import Callable, Iterable, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
@@ -13,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
+from ..prompts import PLOT_PROGRESS_RULE_PROMPT, PRESET_OPENINGS_PROMPT
 from .ai_contracts import (
     TASK_OPTIONS_GENERATE,
     TASK_PRESET_OPENINGS,
@@ -20,7 +22,6 @@ from .ai_contracts import (
     get_contract_output_rule,
 )
 from .chat_cache import get_or_generate
-from .chat_options_validator import validate_options_list
 from .chat_models import (
     _call_ai_with_failover,
     _call_text_model_once,
@@ -31,7 +32,7 @@ from .chat_models import (
     _stream_model_once,
 )
 from .chat_options import _acquire_option_generation_lock
-from ..prompts import PLOT_PROGRESS_RULE_PROMPT, PRESET_OPENINGS_PROMPT
+from .chat_options_validator import validate_options_list
 from .chat_storage import (
     _build_messages,
     _ensure_archive_for_story,
@@ -41,7 +42,12 @@ from .chat_storage import (
     _persist_exchange,
     bulk_delete_messages,
 )
-from .chat_stream import _acquire_image_generation_lock, _acquire_stream_generation_lock, _generate_chat_response, _stream_chat_response
+from .chat_stream import (
+    _acquire_image_generation_lock,
+    _acquire_stream_generation_lock,
+    _generate_chat_response,
+    _stream_chat_response,
+)
 from .image_generation import generate_chat_image
 
 logger = logging.getLogger(__name__)
@@ -49,7 +55,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 
-def _locked_streaming_response(archive_id: int, stream_factory: Callable[[], Iterable[str]]) -> StreamingResponse:
+def _locked_streaming_response(
+    archive_id: int, stream_factory: Callable[[], Iterable[str]]
+) -> StreamingResponse:
     lock_context = _acquire_stream_generation_lock(archive_id)
     lock_context.__enter__()
 
@@ -287,7 +295,10 @@ def generate_options(payload: schemas.OptionsGenerateIn, db: Session = Depends(g
             retry_messages = [msg.copy() if isinstance(msg, dict) else msg for msg in messages]
             for i in range(len(retry_messages) - 1, -1, -1):
                 if isinstance(retry_messages[i], dict) and retry_messages[i].get("role") == "user":
-                    retry_messages[i] = {**retry_messages[i], "content": retry_messages[i]["content"] + RETRY_HINT}
+                    retry_messages[i] = {
+                        **retry_messages[i],
+                        "content": retry_messages[i]["content"] + RETRY_HINT,
+                    }
                     break
             validated_retry = _call_ai_with_failover(
                 db,
@@ -327,7 +338,11 @@ def generate_chat_image_endpoint(
                 .first()
             )
             if existing:
-                return schemas.GenerateImageOut(image_url=existing.image_url or "", message_id=existing.id, model_name=existing.model_name or "")
+                return schemas.GenerateImageOut(
+                    image_url=existing.image_url or "",
+                    message_id=existing.id,
+                    model_name=existing.model_name or "",
+                )
 
         app_settings = _get_or_create_app_settings(db)
         story = archive.story
@@ -419,7 +434,7 @@ def generate_chat_image_endpoint(
             )
         except Exception as exc:  # noqa: BLE001
             logger.error(f"图片生成失败: {exc}")
-            raise HTTPException(500, "图片生成失败，请稍后重试")
+            raise HTTPException(500, "图片生成失败，请稍后重试") from exc
 
         ai_msg = models.ChatMessage(
             archive_id=archive.id,
@@ -450,13 +465,19 @@ def generate_chat_image_endpoint(
                 .first()
             )
             if existing:
-                return schemas.GenerateImageOut(image_url=existing.image_url or "", message_id=existing.id, model_name=existing.model_name or "")
+                return schemas.GenerateImageOut(
+                    image_url=existing.image_url or "",
+                    message_id=existing.id,
+                    model_name=existing.model_name or "",
+                )
             raise
 
-        return schemas.GenerateImageOut(image_url=image_url, message_id=ai_msg.id, model_name=image_model_cfg.model_id)
+        return schemas.GenerateImageOut(
+            image_url=image_url, message_id=ai_msg.id, model_name=image_model_cfg.model_id
+        )
 
 
-@router.get("/messages/{archive_id}", response_model=List[schemas.ChatMessageOut])
+@router.get("/messages/{archive_id}", response_model=list[schemas.ChatMessageOut])
 def get_messages(
     archive_id: int,
     limit: int = Query(default=100, ge=1, le=1000),
@@ -473,7 +494,7 @@ def get_messages(
     )
 
 
-@router.get("/nodes/{archive_id}", response_model=List[schemas.StoryNodeOut])
+@router.get("/nodes/{archive_id}", response_model=list[schemas.StoryNodeOut])
 def get_story_nodes(archive_id: int, db: Session = Depends(get_db)):
     return (
         db.query(models.StoryNode)
@@ -485,7 +506,9 @@ def get_story_nodes(archive_id: int, db: Session = Depends(get_db)):
 
 @router.delete("/messages/{archive_id}/last-ai")
 def delete_last_ai_message(archive_id: int, db: Session = Depends(get_db)):
-    archive = db.query(models.Archive).filter(models.Archive.id == archive_id).with_for_update().first()
+    archive = (
+        db.query(models.Archive).filter(models.Archive.id == archive_id).with_for_update().first()
+    )
     if not archive:
         raise HTTPException(404, "会话不存在")
 
@@ -526,9 +549,7 @@ def delete_last_ai_message(archive_id: int, db: Session = Depends(get_db)):
 
 @router.delete("/messages/{archive_id}/bulk", response_model=schemas.BulkDeleteResponse)
 def bulk_delete_messages_endpoint(
-    archive_id: int,
-    body: schemas.BulkDeleteRequest,
-    db: Session = Depends(get_db)
+    archive_id: int, body: schemas.BulkDeleteRequest, db: Session = Depends(get_db)
 ):
     archive = db.query(models.Archive).filter(models.Archive.id == archive_id).first()
     if not archive:

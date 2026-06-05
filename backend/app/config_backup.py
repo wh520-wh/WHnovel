@@ -173,10 +173,7 @@ def import_backup_file(db: Session) -> dict[str, Any]:
         seen_ids.add(model_pk)
         normalized_models.append(normalized)
 
-    current_models = {
-        item.id: item
-        for item in db.query(models.ModelConfig).all()
-    }
+    current_models = {item.id: item for item in db.query(models.ModelConfig).all()}
     restored_ids = {item["id"] for item in normalized_models}
     removed_ids = [model_id for model_id in current_models.keys() if model_id not in restored_ids]
 
@@ -225,17 +222,31 @@ def import_backup_file(db: Session) -> dict[str, Any]:
                 continue
             backup_model_ids.append(raw_id)
 
-        user_settings.model_name = str(user_payload.get("model_name") or user_settings.model_name or "")
-        user_settings.api_base_url = str(user_payload.get("api_base_url") or user_settings.api_base_url or "")
-        user_settings.context_length = _coerce_int(user_payload.get("context_length"), user_settings.context_length or 10)
-        user_settings.reply_style = str(user_payload.get("reply_style") or user_settings.reply_style or "detailed")
+        user_settings.model_name = str(
+            user_payload.get("model_name") or user_settings.model_name or ""
+        )
+        user_settings.api_base_url = str(
+            user_payload.get("api_base_url") or user_settings.api_base_url or ""
+        )
+        user_settings.context_length = _coerce_int(
+            user_payload.get("context_length"), user_settings.context_length or 10
+        )
+        user_settings.reply_style = str(
+            user_payload.get("reply_style") or user_settings.reply_style or "detailed"
+        )
         user_settings.primary_model_id = primary_model_id
         user_settings.backup_model_ids = backup_model_ids
-        user_settings.auto_generate_options = 1 if bool(user_payload.get("auto_generate_options", True)) else 0
+        user_settings.auto_generate_options = (
+            1 if bool(user_payload.get("auto_generate_options", True)) else 0
+        )
         user_settings.theme = str(user_payload.get("theme") or user_settings.theme or "dark")
         user_settings.options_prompt = str(user_payload.get("options_prompt") or "")
-        user_settings.copy_image_format = str(user_payload.get("copy_image_format") or user_settings.copy_image_format or "url")
-        user_settings.disable_chat_bubble_elastic = 1 if bool(user_payload.get("disable_chat_bubble_elastic", False)) else 0
+        user_settings.copy_image_format = str(
+            user_payload.get("copy_image_format") or user_settings.copy_image_format or "url"
+        )
+        user_settings.disable_chat_bubble_elastic = (
+            1 if bool(user_payload.get("disable_chat_bubble_elastic", False)) else 0
+        )
 
     app_payload = payload.get("app_settings")
     if isinstance(app_payload, dict):
@@ -251,9 +262,13 @@ def import_backup_file(db: Session) -> dict[str, Any]:
         app_settings.state_broadcast_prompt = str(
             app_payload.get("state_broadcast_prompt") or app_settings.state_broadcast_prompt or ""
         )
-        app_settings.enable_image_generation = 1 if bool(app_payload.get("enable_image_generation", False)) else 0
+        app_settings.enable_image_generation = (
+            1 if bool(app_payload.get("enable_image_generation", False)) else 0
+        )
         app_settings.default_image_model_id = default_image_model_id
-        app_settings.image_size = str(app_payload.get("image_size") or app_settings.image_size or "2K")
+        app_settings.image_size = str(
+            app_payload.get("image_size") or app_settings.image_size or "2K"
+        )
         app_settings.image_watermark = 1 if bool(app_payload.get("image_watermark", False)) else 0
         app_settings.default_image_style = str(
             app_payload.get("default_image_style") or app_settings.default_image_style or ""
@@ -263,7 +278,9 @@ def import_backup_file(db: Session) -> dict[str, Any]:
         if user_settings.primary_model_id in removed_ids:
             user_settings.primary_model_id = None
         user_settings.backup_model_ids = [
-            model_id for model_id in (user_settings.backup_model_ids or []) if model_id not in removed_ids
+            model_id
+            for model_id in (user_settings.backup_model_ids or [])
+            if model_id not in removed_ids
         ]
         if app_settings.default_image_model_id in removed_ids:
             app_settings.default_image_model_id = None

@@ -1,4 +1,5 @@
 """Tail metadata extraction prompts (second-pass structured call)."""
+
 from __future__ import annotations
 
 _TAIL_META_PROMPT = """【当前正文】

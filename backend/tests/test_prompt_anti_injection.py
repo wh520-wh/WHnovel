@@ -1,4 +1,5 @@
 """Test anti-injection clause is included in system prompt."""
+
 from app.api.chat_storage import ANTI_INJECTION_CLAUSE
 
 
@@ -12,8 +13,8 @@ def test_anti_injection_clause_exists_and_non_empty():
 
 def test_anti_injection_clause_valid_utf8():
     """The clause must be valid UTF-8 — no encoding breakage."""
-    encoded = ANTI_INJECTION_CLAUSE.encode('utf-8')
-    decoded = encoded.decode('utf-8')
+    encoded = ANTI_INJECTION_CLAUSE.encode("utf-8")
+    decoded = encoded.decode("utf-8")
     assert decoded == ANTI_INJECTION_CLAUSE
 
 

@@ -3,8 +3,6 @@ import inspect
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pydantic import ValidationError
-
 from app.api import chat_models
 from app.api.ai_contracts import (
     TASK_CHAT_RESPONSE,
@@ -18,6 +16,7 @@ from app.api.ai_contracts import (
 )
 from app.api.chat_fallback import _fallback_parse_options
 from app.models import ModelConfig
+from pydantic import ValidationError
 
 
 def test_response_format_sent_for_all_openai_models():
@@ -81,7 +80,9 @@ def test_contract_call_uses_strict_json_schema_response_format():
 
         def json(self):
             return {
-                "choices": [{"message": {"content": '{"options":["继续调查","后退观察","尝试交流"]}'}}],
+                "choices": [
+                    {"message": {"content": '{"options":["继续调查","后退观察","尝试交流"]}'}}
+                ],
                 "usage": {},
             }
 
@@ -125,7 +126,13 @@ def test_call_model_once_retries_same_format_on_400():
         resp = MagicMock()
         resp.status_code = 200
         resp.json.return_value = {
-            "choices": [{"message": {"content": '{"reply_text":"ok","scene":"","character_state":{},"story_state":{},"memory_update":[],"plot_label":"","highlight_terms":[]}'}}],
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"reply_text":"ok","scene":"","character_state":{},"story_state":{},"memory_update":[],"plot_label":"","highlight_terms":[]}'
+                    }
+                }
+            ],
             "usage": {},
         }
         return resp
@@ -180,6 +187,7 @@ def test_call_model_once_json_object_mode_uses_json_object():
 
     class FakeResponse:
         status_code = 200
+
         def json(self):
             return {
                 "choices": [{"message": {"content": '{"test":"ok"}'}}],
@@ -254,7 +262,12 @@ def test_chat_contract_invalid_plot_label_is_dropped_and_highlight_terms_default
             "reply_text": "测试回复",
             "scene": "测试场景",
             "character_state": {"emotion": "平静", "fatigue": 10, "mood": "稳"},
-            "story_state": {"chapter": "第一章", "progress": 10, "current_goal": "", "current_conflict": ""},
+            "story_state": {
+                "chapter": "第一章",
+                "progress": 10,
+                "current_goal": "",
+                "current_conflict": "",
+            },
             "memory_update": [],
             "plot_label": '{"bad": true}',
         },
@@ -298,6 +311,7 @@ def test_preset_openings_contract_requires_exactly_five_items():
 # ---------------------------------------------------------------------------
 # _coerce_flat_kv_to_content tests
 # ---------------------------------------------------------------------------
+
 
 def test_coerce_flat_kv_to_content_converts_flat_dict():
     result = chat_models._coerce_flat_kv_to_content({"姓名": "林逸", "地点": "教学楼"})

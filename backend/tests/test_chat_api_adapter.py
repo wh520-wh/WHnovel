@@ -1,4 +1,4 @@
-from app.api.chat_api_adapter import get_adapter, _headers_openai, _headers_claude, _headers_gemini
+from app.api.chat_api_adapter import _headers_claude, _headers_gemini, _headers_openai, get_adapter
 
 
 def test_headers_openai_uses_plaintext_key():
@@ -15,6 +15,7 @@ def test_headers_openai_empty_key():
 def test_headers_openai_no_decrypt_import():
     """chat_api_adapter must not import decrypt — that would enable double-decrypt bugs."""
     import app.api.chat_api_adapter as mod
+
     assert not hasattr(mod, "decrypt"), "chat_api_adapter should not import decrypt"
 
 
@@ -37,17 +38,21 @@ def test_openai_chat_url():
 
 def test_openai_chat_body():
     ad = get_adapter("openai_chat_completions")
-    body = ad["body"]("gpt-4", [{"role": "user", "content": "hi"}], 0.7, response_format={"type": "json_object"})
+    body = ad["body"](
+        "gpt-4", [{"role": "user", "content": "hi"}], 0.7, response_format={"type": "json_object"}
+    )
     assert body["model"] == "gpt-4"
     assert body["response_format"] == {"type": "json_object"}
 
 
 def test_openai_chat_parser():
     ad = get_adapter("openai_chat_completions")
-    text, usage = ad["parser"]({
-        "choices": [{"message": {"content": "Hello"}}],
-        "usage": {"total_tokens": 10},
-    })
+    text, usage = ad["parser"](
+        {
+            "choices": [{"message": {"content": "Hello"}}],
+            "usage": {"total_tokens": 10},
+        }
+    )
     assert text == "Hello"
     assert usage["total_tokens"] == 10
 
@@ -67,10 +72,12 @@ def test_openai_responses_body():
 
 def test_openai_responses_parser():
     ad = get_adapter("openai_responses")
-    text, usage = ad["parser"]({
-        "output": [{"type": "message", "content": [{"type": "output_text", "text": "Hello"}]}],
-        "usage": {"total_tokens": 5},
-    })
+    text, usage = ad["parser"](
+        {
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "Hello"}]}],
+            "usage": {"total_tokens": 5},
+        }
+    )
     assert text == "Hello"
 
 
@@ -97,10 +104,12 @@ def test_claude_body_extracts_system():
 
 def test_claude_parser():
     ad = get_adapter("claude_messages")
-    text, usage = ad["parser"]({
-        "content": [{"type": "text", "text": "Hello there"}],
-        "usage": {"input_tokens": 5, "output_tokens": 3},
-    })
+    text, usage = ad["parser"](
+        {
+            "content": [{"type": "text", "text": "Hello there"}],
+            "usage": {"input_tokens": 5, "output_tokens": 3},
+        }
+    )
     assert text == "Hello there"
 
 
@@ -113,7 +122,9 @@ def test_claude_headers():
 
 def test_claude_delta_extractor():
     ad = get_adapter("claude_messages")
-    result = ad["extractor"]({"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Hi"}})
+    result = ad["extractor"](
+        {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Hi"}}
+    )
     assert result == "Hi"
     assert ad["extractor"]({"type": "message_start"}) is None
 
@@ -121,13 +132,19 @@ def test_claude_delta_extractor():
 def test_gemini_url():
     ad = get_adapter("gemini_generate_content")
     url = ad["url"]("https://generativelanguage.googleapis.com", "gemini-2.0-flash", False)
-    assert url == "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    assert (
+        url
+        == "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    )
 
 
 def test_gemini_stream_url():
     ad = get_adapter("gemini_generate_content")
     url = ad["url"]("https://generativelanguage.googleapis.com", "gemini-2.0-flash", True)
-    assert url == "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse"
+    assert (
+        url
+        == "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse"
+    )
 
 
 def test_gemini_body_extracts_system():
@@ -146,10 +163,16 @@ def test_gemini_body_extracts_system():
 
 def test_gemini_parser():
     ad = get_adapter("gemini_generate_content")
-    text, usage = ad["parser"]({
-        "candidates": [{"content": {"parts": [{"text": "Hello"}]}}],
-        "usageMetadata": {"promptTokenCount": 5, "candidatesTokenCount": 3, "totalTokenCount": 8},
-    })
+    text, usage = ad["parser"](
+        {
+            "candidates": [{"content": {"parts": [{"text": "Hello"}]}}],
+            "usageMetadata": {
+                "promptTokenCount": 5,
+                "candidatesTokenCount": 3,
+                "totalTokenCount": 8,
+            },
+        }
+    )
     assert text == "Hello"
     assert usage["total_tokens"] == 8
 

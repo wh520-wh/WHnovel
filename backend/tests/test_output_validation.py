@@ -1,16 +1,14 @@
-from fastapi.testclient import TestClient
-
 from app import models, schemas
+from app.api import chat_router as chat_api
 from app.api.ai_contracts import (
     TASK_CHAT_RESPONSE,
     TASK_OPTIONS_GENERATE,
     TASK_STATE_BROADCAST,
     get_contract_output_rule,
 )
-from app.api import chat_router as chat_api
 from app.database import SessionLocal
 from app.main import app
-
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -88,7 +86,13 @@ def test_options_generate_uses_plot_progress_and_json_rule_prompts(monkeypatch):
 
     def fake_call(*args, **kwargs):
         captured["messages"] = kwargs["messages"]
-        return schemas.OptionsGenerateOut(options=["深入遗迹内部进行全面探索", "向同伴仔细询问关键线索详情", "冷静分析当前局势的具体情况"])
+        return schemas.OptionsGenerateOut(
+            options=[
+                "深入遗迹内部进行全面探索",
+                "向同伴仔细询问关键线索详情",
+                "冷静分析当前局势的具体情况",
+            ]
+        )
 
     monkeypatch.setattr(chat_api, "_call_ai_with_failover", fake_call)
 

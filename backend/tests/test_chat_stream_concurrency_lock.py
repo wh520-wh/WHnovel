@@ -1,16 +1,17 @@
 """Test that concurrent streaming requests for the same archive are serialized."""
+
+import asyncio
 import threading
 import time
-import asyncio
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from fastapi import HTTPException
-
 from app.api.chat_stream import (
+    _acquire_image_generation_lock,
     _acquire_stream_generation_lock,
     _stream_generation_locks,
 )
+from fastapi import HTTPException
 
 
 def test_acquire_lock_blocks_second_request():
@@ -121,9 +122,9 @@ def test_send_endpoint_acquires_stream_lock(monkeypatch):
 
     from app.api import chat_router
 
-    monkeypatch.setattr(chat_router, '_get_or_create_settings', MagicMock(return_value=MagicMock()))
-    monkeypatch.setattr(chat_router, '_persist_exchange', MagicMock())
-    monkeypatch.setattr(chat_router, '_call_ai_with_failover', MagicMock())
+    monkeypatch.setattr(chat_router, "_get_or_create_settings", MagicMock(return_value=MagicMock()))
+    monkeypatch.setattr(chat_router, "_persist_exchange", MagicMock())
+    monkeypatch.setattr(chat_router, "_call_ai_with_failover", MagicMock())
 
     # Use an event to make _generate_chat_response block while holding the real lock
     generate_block = threading.Event()
@@ -132,7 +133,7 @@ def test_send_endpoint_acquires_stream_lock(monkeypatch):
         generate_block.wait()  # block until released
         return MagicMock(options=[], plot_label=None, highlight_terms=[])
 
-    monkeypatch.setattr(chat_router, '_generate_chat_response', blocking_generate)
+    monkeypatch.setattr(chat_router, "_generate_chat_response", blocking_generate)
 
     results = []
     errors = []
@@ -160,7 +161,9 @@ def test_send_endpoint_acquires_stream_lock(monkeypatch):
     assert not t2.is_alive(), "Second request should complete (be rejected), not hang"
 
     # Second request should have been rejected because the lock is held
-    assert any(r != "ok" for r in results), f"Second request should be rejected, got results: {results}, errors: {errors}"
+    assert any(
+        r != "ok" for r in results
+    ), f"Second request should be rejected, got results: {results}, errors: {errors}"
 
     # Release t1
     generate_block.set()
@@ -180,14 +183,14 @@ def test_stream_endpoint_holds_lock_while_body_iterator_is_active(monkeypatch):
 
     from app.api import chat_router
 
-    monkeypatch.setattr(chat_router, '_get_or_create_settings', MagicMock(return_value=MagicMock()))
+    monkeypatch.setattr(chat_router, "_get_or_create_settings", MagicMock(return_value=MagicMock()))
 
     def blocking_stream(*args, **kwargs):
         yield 'event: delta\ndata: {"text":"a"}\n\n'
         time.sleep(0.5)
-        yield 'event: done\ndata: {}\n\n'
+        yield "event: done\ndata: {}\n\n"
 
-    monkeypatch.setattr(chat_router, '_stream_chat_response', blocking_stream)
+    monkeypatch.setattr(chat_router, "_stream_chat_response", blocking_stream)
 
     payload = MagicMock()
     payload.archive_id = archive_id
@@ -214,9 +217,6 @@ def test_stream_endpoint_holds_lock_while_body_iterator_is_active(monkeypatch):
     assert exc.value.status_code == 409
 
     t1.join(timeout=2)
-
-
-from app.api.chat_stream import _acquire_image_generation_lock
 
 
 def test_image_lock_blocks_concurrent_requests():

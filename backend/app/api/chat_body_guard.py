@@ -1,8 +1,9 @@
 """Re-export shim — body pollution detection moved to app.prompts.guard."""
+
 from ..prompts.guard import (  # noqa: F401
-    BodyPollutedError,
     _OPTION_BLOCK_CUE_RE,
     _OPTION_LINE_RE,
+    BodyPollutedError,
     _detect_body_pollution,
     _has_sentence_boundary,
     _is_likely_option_line,

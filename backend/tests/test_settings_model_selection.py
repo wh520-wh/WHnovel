@@ -1,10 +1,8 @@
-from fastapi.testclient import TestClient
-
-from app.main import app
-from app.database import SessionLocal
 from app import models
 from app.api.chat_models import _get_enabled_models
-
+from app.database import SessionLocal
+from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 

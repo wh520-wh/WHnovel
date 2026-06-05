@@ -1,14 +1,15 @@
 """Model calling helpers."""
+
 from __future__ import annotations
 
-import certifi
 import json
 import logging
 import re
 import time
 import uuid
-from typing import Iterable
+from collections.abc import Iterable
 
+import certifi
 import httpx
 from sqlalchemy.orm import Session
 
@@ -53,7 +54,9 @@ def _request_model_once(
     api_key = decrypt(raw_key) if raw_key else ""
     headers = ad["headers"](api_key)
 
-    with httpx.Client(timeout=timeout, verify=certifi.where() if model_cfg.ssl_verify else False) as client:
+    with httpx.Client(
+        timeout=timeout, verify=certifi.where() if model_cfg.ssl_verify else False
+    ) as client:
         resp = client.post(url, json=body, headers=headers)
 
     if resp.status_code >= 400:
@@ -146,6 +149,7 @@ def _parse_sse_data(data: str, usage_ref: dict, extractor=None) -> Iterable[str]
 
     if extractor is None:
         from .chat_api_adapter import get_adapter
+
         extractor = get_adapter("openai_chat_completions")["extractor"]
 
     for data_str in data.split("\n"):
@@ -213,7 +217,9 @@ def _stream_model_once(
     api_key = decrypt(raw_key) if raw_key else ""
     headers = ad["headers"](api_key)
 
-    with httpx.Client(timeout=300.0, verify=certifi.where() if model_cfg.ssl_verify else False) as client:
+    with httpx.Client(
+        timeout=300.0, verify=certifi.where() if model_cfg.ssl_verify else False
+    ) as client:
         with client.stream("POST", url, json=body, headers=headers) as resp:
             if resp.status_code >= 400:
                 resp.read()
@@ -323,7 +329,9 @@ def _coerce_flat_kv_to_content(payload: dict) -> dict:
     """Convert flat key-value dict to {"content": "key | val\n..."} for state_broadcast."""
     if not payload:
         return payload
-    if "content" not in payload and all(isinstance(v, (str, int, float, bool)) for v in payload.values()):
+    if "content" not in payload and all(
+        isinstance(v, str | int | float | bool) for v in payload.values()
+    ):
         lines = [f"{k} | {v}" for k, v in payload.items()]
         return {"content": "\n".join(lines)}
     return payload
@@ -335,7 +343,11 @@ def _validate_contract_from_text(
     *,
     allow_legacy_text_fallback: bool | None = None,
 ):
-    use_legacy_fallback = contract_allows_legacy_text_fallback(task) if allow_legacy_text_fallback is None else allow_legacy_text_fallback
+    use_legacy_fallback = (
+        contract_allows_legacy_text_fallback(task)
+        if allow_legacy_text_fallback is None
+        else allow_legacy_text_fallback
+    )
     payload = _extract_json_payload(text, fallback_options=use_legacy_fallback)
     if task == TASK_STATE_BROADCAST:
         payload = _coerce_flat_kv_to_content(payload)
@@ -343,7 +355,9 @@ def _validate_contract_from_text(
 
 
 def _coerce_stream_tail_payload(raw_tail: str, reply_text: str):
-    validated = _validate_contract_from_text(TASK_CHAT_RESPONSE, raw_tail, allow_legacy_text_fallback=False)
+    validated = _validate_contract_from_text(
+        TASK_CHAT_RESPONSE, raw_tail, allow_legacy_text_fallback=False
+    )
     return validated.model_copy(update={"reply_text": reply_text})
 
 
@@ -357,7 +371,9 @@ MODEL_CACHE_KEY = "cache:models:enabled"
 MODEL_CACHE_TTL = 300
 
 
-def _get_enabled_models(db: Session, *, model_type: str | None = "chat") -> list[models.ModelConfig]:
+def _get_enabled_models(
+    db: Session, *, model_type: str | None = "chat"
+) -> list[models.ModelConfig]:
     redis = get_redis()
     use_cache = model_type == "chat"
     if use_cache and redis.is_available():
@@ -365,7 +381,9 @@ def _get_enabled_models(db: Session, *, model_type: str | None = "chat") -> list
         if cached:
             model_ids = json.loads(cached)
             if model_ids:
-                return db.query(models.ModelConfig).filter(models.ModelConfig.id.in_(model_ids)).all()
+                return (
+                    db.query(models.ModelConfig).filter(models.ModelConfig.id.in_(model_ids)).all()
+                )
             return []
 
     query = db.query(models.ModelConfig).filter(models.ModelConfig.enabled == 1)
@@ -406,7 +424,9 @@ def _order_model_chain(
     return ordered
 
 
-def _get_normal_model_candidates(db: Session, settings: models.UserSettings) -> list[models.ModelConfig]:
+def _get_normal_model_candidates(
+    db: Session, settings: models.UserSettings
+) -> list[models.ModelConfig]:
     from fastapi import HTTPException
 
     enabled = _get_enabled_models(db)
@@ -437,6 +457,7 @@ def _call_ai_with_failover(
 ):
     from fastapi import HTTPException
     from pydantic import ValidationError
+
     from .chat_metrics import _log_call
 
     request_id = uuid.uuid4().hex

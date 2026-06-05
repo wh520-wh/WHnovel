@@ -1,30 +1,18 @@
 """SSE streaming response logic."""
+
 from __future__ import annotations
 
-import json
 import logging
-import re
-import time
 import threading
+import time
 import uuid
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
-
-from .chat_locks import _acquire_per_archive_lock, _get_or_create_lock
 
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
-from .ai_contracts import TASK_CHAT_RESPONSE, build_contract_response_format, get_contract_output_rule
-from .chat_models import (
-    _calc_cost,
-    _call_model_once,
-    _get_normal_model_candidates,
-    _get_temperature,
-    _stream_model_once,
-    _validate_contract_from_text,
-)
 from ..prompts import (
     HUMANIZED_WRITING_RULES,
     MAX_ROUNDS_WITHOUT_PLOT_LABEL,
@@ -36,6 +24,34 @@ from ..prompts import (
     STREAM_ERROR_STAGE_UPSTREAM,
     _restore_tail_escape,
 )
+from ..prompts.guard import (
+    BodyPollutedError,
+    _detect_body_pollution,
+    _has_sentence_boundary,
+    _is_trailing_bracket_line,
+    _strip_trailing_bracket_line,
+)
+from ..prompts.narrative import (
+    _STREAM_BODY_NARRATIVE_PROMPT,
+    _build_length_prompt,
+    _length_spec_for_style,
+)
+from .ai_contracts import (
+    TASK_CHAT_RESPONSE,
+    build_contract_response_format,
+    get_contract_output_rule,
+)
+from .chat_locks import _acquire_per_archive_lock
+from .chat_metrics import _log_call
+from .chat_models import (
+    _calc_cost,
+    _call_model_once,
+    _get_normal_model_candidates,
+    _get_temperature,
+    _stream_model_once,
+    _validate_contract_from_text,
+)
+from .chat_sse import _sse_event, _sse_keepalive
 from .chat_storage import (
     ANTI_INJECTION_CLAUSE,
     _build_messages,
@@ -47,25 +63,6 @@ from .chat_storage import (
     _get_story_characters,
     _persist_draft_exchange,
     _persist_exchange,
-)
-from .chat_metrics import _log_call
-from .chat_sse import _sse_event, _sse_keepalive
-from ..prompts.guard import (
-    BodyPollutedError,
-    _OPTION_BLOCK_CUE_RE,
-    _OPTION_LINE_RE,
-    _has_sentence_boundary,
-    _is_likely_option_line,
-    _is_trailing_bracket_line,
-    _looks_like_trailing_option_block,
-    _detect_body_pollution,
-    _strip_trailing_bracket_line,
-)
-
-from ..prompts.narrative import (
-    _STREAM_BODY_NARRATIVE_PROMPT,
-    _build_length_prompt,
-    _length_spec_for_style,
 )
 
 # Concurrency lock for stream generation (per-archive)
@@ -108,6 +105,7 @@ def _acquire_stream_generation_lock(archive_id: int):
     ):
         yield
 
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_CHAPTER = "第一章"
@@ -142,7 +140,9 @@ def _build_stream_prompt_sections(
         sections.append("【故事世界观提示词】\n" + world_text)
     # Inject writing style skill if enabled
     if app_settings.style_skill_enabled and (app_settings.style_skill_content or "").strip():
-        sections.append("【文笔风格约束 - 仅影响正文叙事】\n" + app_settings.style_skill_content.strip())
+        sections.append(
+            "【文笔风格约束 - 仅影响正文叙事】\n" + app_settings.style_skill_content.strip()
+        )
     sections.append(_STREAM_BODY_NARRATIVE_PROMPT)
     sections.append(HUMANIZED_WRITING_RULES)
     sections.append(_build_length_prompt(_length_spec_for_style(reply_style)))
@@ -195,7 +195,12 @@ def _stream_chat_response(
         )
         history.reverse()
         for item in history:
-            messages.append({"role": "assistant" if item.role == "assistant" else "user", "content": item.content})
+            messages.append(
+                {
+                    "role": "assistant" if item.role == "assistant" else "user",
+                    "content": item.content,
+                }
+            )
     messages.append({"role": "user", "content": _restore_tail_escape(user_content)})
 
     candidates = _get_normal_model_candidates(db, settings)
@@ -212,7 +217,6 @@ def _stream_chat_response(
         visible_chunks: list[str] = []
         pending_chunks: list[str] = []
         emitted_delta = False
-        received_any_text = False
         ttfb_ms = 0
         delta_count = 0
         reply_text = ""
@@ -224,7 +228,6 @@ def _stream_chat_response(
                 if not chunk:
                     continue
 
-                received_any_text = True
                 if not ttfb_ms:
                     ttfb_ms = int((time.perf_counter() - started_at) * 1000)
 
@@ -234,7 +237,11 @@ def _stream_chat_response(
                     pollution_reason = _detect_body_pollution(buffered, pre_delta=True)
                     if pollution_reason:
                         raise BodyPollutedError(pollution_reason, pre_delta=True)
-                    if len(buffered) < _STREAM_GUARD_MIN_CHARS and len(buffered) < _STREAM_GUARD_MAX_CHARS and not _has_sentence_boundary(buffered):
+                    if (
+                        len(buffered) < _STREAM_GUARD_MIN_CHARS
+                        and len(buffered) < _STREAM_GUARD_MAX_CHARS
+                        and not _has_sentence_boundary(buffered)
+                    ):
                         continue
                     for buffered_chunk in pending_chunks:
                         visible_chunks.append(buffered_chunk)
@@ -247,7 +254,9 @@ def _stream_chat_response(
                     pending_chunks = []
                     continue
 
-                pollution_reason = _detect_body_pollution((recent_window + chunk)[-400:], pre_delta=False)
+                pollution_reason = _detect_body_pollution(
+                    (recent_window + chunk)[-400:], pre_delta=False
+                )
                 if pollution_reason:
                     raise BodyPollutedError(pollution_reason, pre_delta=False)
 
@@ -314,7 +323,8 @@ def _stream_chat_response(
                 tail_messages = _build_tail_messages(
                     body_text=reply_text,
                     prev_character_state=archive.state_data or {},
-                    prev_story_state=archive.story_state or {"chapter": DEFAULT_CHAPTER, "progress": 0},
+                    prev_story_state=archive.story_state
+                    or {"chapter": DEFAULT_CHAPTER, "progress": 0},
                     recent_memory=archive.memory_log or [],
                 )
 
@@ -330,9 +340,11 @@ def _stream_chat_response(
                     tail_content,
                     allow_legacy_text_fallback=False,
                 )
-                validated = validated.model_copy(update={
-                    "reply_text": reply_text,
-                })
+                validated = validated.model_copy(
+                    update={
+                        "reply_text": reply_text,
+                    }
+                )
 
                 user_id, ai_id = _persist_exchange(
                     db,
@@ -344,10 +356,18 @@ def _stream_chat_response(
                 )
 
                 latency_ms = int((time.perf_counter() - started_at) * 1000)
-                prompt_tokens = int(usage.get("prompt_tokens") or 0) + int(tail_usage.get("prompt_tokens") or 0)
-                completion_tokens = int(usage.get("completion_tokens") or 0) + int(tail_usage.get("completion_tokens") or 0)
+                prompt_tokens = int(usage.get("prompt_tokens") or 0) + int(
+                    tail_usage.get("prompt_tokens") or 0
+                )
+                completion_tokens = int(usage.get("completion_tokens") or 0) + int(
+                    tail_usage.get("completion_tokens") or 0
+                )
                 total_tokens = int(usage.get("total_tokens") or 0) + int(
-                    tail_usage.get("total_tokens") or (int(tail_usage.get("prompt_tokens") or 0) + int(tail_usage.get("completion_tokens") or 0))
+                    tail_usage.get("total_tokens")
+                    or (
+                        int(tail_usage.get("prompt_tokens") or 0)
+                        + int(tail_usage.get("completion_tokens") or 0)
+                    )
                 )
                 cost = _calc_cost(model_cfg, prompt_tokens, completion_tokens)
 
@@ -393,7 +413,11 @@ def _stream_chat_response(
                 elif "json" in lower_error or "schema" in lower_error or "校验" in lower_error:
                     error_stage = STREAM_ERROR_STAGE_TAIL_JSON
                 else:
-                    error_stage = STREAM_ERROR_STAGE_UPSTREAM if last_error.strip().startswith("HTTP") else STREAM_ERROR_STAGE_POST_DELTA
+                    error_stage = (
+                        STREAM_ERROR_STAGE_UPSTREAM
+                        if last_error.strip().startswith("HTTP")
+                        else STREAM_ERROR_STAGE_POST_DELTA
+                    )
 
                 user_id, ai_id = _persist_draft_exchange(
                     db,
@@ -442,7 +466,9 @@ def _stream_chat_response(
             latency_ms = int((time.perf_counter() - started_at) * 1000)
             last_error = str(exc)
             last_error_code = "STREAM_BODY_POLLUTED"
-            error_stage = STREAM_ERROR_STAGE_PRE_DELTA if exc.pre_delta else STREAM_ERROR_STAGE_POST_DELTA
+            error_stage = (
+                STREAM_ERROR_STAGE_PRE_DELTA if exc.pre_delta else STREAM_ERROR_STAGE_POST_DELTA
+            )
 
             _log_call(
                 db,
@@ -555,7 +581,11 @@ def _stream_chat_response(
             latency_ms = int((time.perf_counter() - started_at) * 1000)
             last_error = str(exc)
             last_error_code = "STREAM_MODEL_FAILED"
-            error_stage = STREAM_ERROR_STAGE_UPSTREAM if last_error.strip().startswith("HTTP") else STREAM_ERROR_STAGE_PRE_DELTA
+            error_stage = (
+                STREAM_ERROR_STAGE_UPSTREAM
+                if last_error.strip().startswith("HTTP")
+                else STREAM_ERROR_STAGE_PRE_DELTA
+            )
 
             _log_call(
                 db,
@@ -599,7 +629,15 @@ def _stream_chat_response(
                 yield _sse_event("done", {"ok": False})
                 return
 
-    yield _sse_event("error", {"code": last_error_code, "message": last_error[:200], "task": "chat_stream", "draft": False})
+    yield _sse_event(
+        "error",
+        {
+            "code": last_error_code,
+            "message": last_error[:200],
+            "task": "chat_stream",
+            "draft": False,
+        },
+    )
     yield _sse_event("done", {"ok": False})
 
 

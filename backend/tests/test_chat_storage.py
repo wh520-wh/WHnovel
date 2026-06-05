@@ -1,9 +1,17 @@
 """Tests for chat_storage utilities."""
+
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
-from app import models
+
+import pytest
+from app import models, schemas
+from app.api.chat_storage import (
+    _count_rounds_without_plot_label,
+    _get_or_create_settings,
+    _persist_exchange,
+)
 from app.database import SessionLocal
-from app.api.chat_storage import _count_rounds_without_plot_label, _get_or_create_settings
+from sqlalchemy.exc import IntegrityError
 
 
 def test_get_or_create_settings_existing_record_no_extra_commit():
@@ -48,12 +56,6 @@ def test_get_or_create_settings_existing_null_fields_commits_once():
     assert db.refresh.call_count == 1
 
 
-from sqlalchemy.exc import IntegrityError
-import pytest
-from app.api.chat_storage import _persist_exchange
-from app import schemas
-
-
 def test_persist_exchange_rollback_on_integrity_error():
     """db.commit 抛出 IntegrityError 时，应 rollback 并重新抛出异常。"""
     db = MagicMock()
@@ -87,10 +89,24 @@ def test_count_rounds_without_plot_label_counts_messages_after_latest_label():
     archive = models.Archive(story=story, name="plot count archive")
     base_time = datetime(2026, 1, 1, 12, 0, 0)
     archive.messages = [
-        models.ChatMessage(role="assistant", content="labeled", plot_label="破局", created_at=base_time),
-        models.ChatMessage(role="assistant", content="plain 1", plot_label=None, created_at=base_time + timedelta(minutes=1)),
-        models.ChatMessage(role="user", content="user", created_at=base_time + timedelta(minutes=2)),
-        models.ChatMessage(role="assistant", content="plain 2", plot_label="", created_at=base_time + timedelta(minutes=3)),
+        models.ChatMessage(
+            role="assistant", content="labeled", plot_label="破局", created_at=base_time
+        ),
+        models.ChatMessage(
+            role="assistant",
+            content="plain 1",
+            plot_label=None,
+            created_at=base_time + timedelta(minutes=1),
+        ),
+        models.ChatMessage(
+            role="user", content="user", created_at=base_time + timedelta(minutes=2)
+        ),
+        models.ChatMessage(
+            role="assistant",
+            content="plain 2",
+            plot_label="",
+            created_at=base_time + timedelta(minutes=3),
+        ),
     ]
     db.add(story)
     db.commit()

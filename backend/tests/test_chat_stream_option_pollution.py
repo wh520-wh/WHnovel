@@ -1,11 +1,9 @@
-from fastapi.testclient import TestClient
-
 from app import models
 from app.api import chat_router as chat_api
 from app.api import chat_stream
 from app.database import SessionLocal
 from app.main import app
-
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -47,7 +45,9 @@ def _ensure_model_config() -> int:
 
 
 def _create_archive(story_id: int) -> dict:
-    resp = client.post("/api/archives", json={"story_id": story_id, "name": "option-pollution-test"})
+    resp = client.post(
+        "/api/archives", json={"story_id": story_id, "name": "option-pollution-test"}
+    )
     resp.raise_for_status()
     return resp.json()
 
@@ -79,7 +79,9 @@ def test_stream_body_pollution_option_block_after_delta_returns_special_error(mo
 
     monkeypatch.setattr(chat_api, "_stream_model_once", polluted_stream)
 
-    resp = client.post("/api/chat/send-stream", json={"archive_id": archive["id"], "message": "继续推进剧情"})
+    resp = client.post(
+        "/api/chat/send-stream", json={"archive_id": archive["id"], "message": "继续推进剧情"}
+    )
     assert resp.status_code == 200
     assert '"code": "STREAM_BODY_POLLUTED"' in resp.text
     assert '"draft": false' in resp.text.lower()

@@ -1,4 +1,5 @@
 """Structured output contract prompt rules and options validation."""
+
 from __future__ import annotations
 
 # ============================================================

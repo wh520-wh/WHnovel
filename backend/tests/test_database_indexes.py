@@ -1,4 +1,5 @@
 """Tests for database indexes used by hot query paths."""
+
 from __future__ import annotations
 
 from app.database import engine

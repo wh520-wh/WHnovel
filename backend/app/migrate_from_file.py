@@ -4,6 +4,7 @@
 用法：
     python -m app.migrate_from_file
 """
+
 from __future__ import annotations
 
 import sys

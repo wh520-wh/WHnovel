@@ -1,7 +1,7 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,7 +28,7 @@ class StoryCreate(StoryBase):
 
 
 class StoryUpdate(StoryBase):
-    title: Optional[str] = Field(default=None, max_length=100)
+    title: str | None = Field(default=None, max_length=100)
 
 
 class StoryOut(StoryBase):
@@ -126,7 +126,7 @@ class ChatInput(BaseModel):
 class ChatStartInput(BaseModel):
     story_id: int
     opening_requirement: str = Field(min_length=1, max_length=2000)
-    archive_id: Optional[int] = None
+    archive_id: int | None = None
 
 
 class PresetOpeningItem(BaseModel):
@@ -137,7 +137,9 @@ class PresetOpeningItem(BaseModel):
 
 class PresetOpeningsRequest(BaseModel):
     """仅 story_id，不要求 opening_requirement（preset-openings 由前端单独调用）"""
+
     story_id: int
+
 
 class PresetOpeningsResponse(BaseModel):
     openings: list[PresetOpeningItem]
@@ -145,6 +147,7 @@ class PresetOpeningsResponse(BaseModel):
 
 class CharacterState(BaseModel):
     """角色状态快照"""
+
     name: str = ""
     location: str = ""
     mood: str = ""
@@ -157,6 +160,7 @@ class CharacterState(BaseModel):
 
 class StoryState(BaseModel):
     """故事状态快照"""
+
     chapter: str = ""
     progress: int = 0
     current_goal: str = ""
@@ -173,7 +177,7 @@ class ChatResponse(BaseModel):
     story_state: StoryState = Field(default_factory=StoryState)
     memory_update: list[str] = []
     plot_label: str | None = None  # 剧情标签，非流式响应时由AI直接生成
-    highlight_terms: list[str] = []   # 需要高亮的关键词列表
+    highlight_terms: list[str] = []  # 需要高亮的关键词列表
 
 
 class OptionsGenerateIn(BaseModel):
@@ -204,11 +208,11 @@ class UserSettingsOut(BaseModel):
     api_base_url: str
     context_length: int
     reply_style: str
-    primary_model_id: Optional[int] = None
+    primary_model_id: int | None = None
     backup_model_ids: list[int] = []
     auto_generate_options: bool = True
     theme: str
-    options_prompt: Optional[str] = None
+    options_prompt: str | None = None
     copy_image_format: str = "url"
     disable_chat_bubble_elastic: bool = False
     show_background_image: bool = True
@@ -216,19 +220,19 @@ class UserSettingsOut(BaseModel):
 
 class UserSettingsUpdate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
-    model_name: Optional[str] = None
-    api_base_url: Optional[str] = None
-    api_key: Optional[str] = None
-    context_length: Optional[int] = None
-    reply_style: Optional[str] = None
-    primary_model_id: Optional[int] = None
-    backup_model_ids: Optional[list[int]] = None
-    auto_generate_options: Optional[bool] = None
-    theme: Optional[str] = None
-    options_prompt: Optional[str] = None
-    copy_image_format: Optional[str] = None
-    disable_chat_bubble_elastic: Optional[bool] = None
-    show_background_image: Optional[bool] = None
+    model_name: str | None = None
+    api_base_url: str | None = None
+    api_key: str | None = None
+    context_length: int | None = None
+    reply_style: str | None = None
+    primary_model_id: int | None = None
+    backup_model_ids: list[int] | None = None
+    auto_generate_options: bool | None = None
+    theme: str | None = None
+    options_prompt: str | None = None
+    copy_image_format: str | None = None
+    disable_chat_bubble_elastic: bool | None = None
+    show_background_image: bool | None = None
 
 
 # ---- ModelConfig ----
@@ -283,7 +287,7 @@ class AppSettingsOut(BaseModel):
     default_system_prompt_source: str = "custom"
     state_broadcast_prompt: str = ""
     enable_image_generation: bool = False
-    default_image_model_id: Optional[int] = None
+    default_image_model_id: int | None = None
     image_size: str = "2K"
     image_watermark: bool = False
     default_image_style: str = "唯美、氛围感强，适合作为小说封面"
@@ -293,15 +297,15 @@ class AppSettingsOut(BaseModel):
 
 class AppSettingsUpdate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
-    default_system_prompt: Optional[str] = None
-    state_broadcast_prompt: Optional[str] = None
-    enable_image_generation: Optional[bool] = None
-    default_image_model_id: Optional[int] = None
-    image_size: Optional[str] = None
-    image_watermark: Optional[bool] = None
-    default_image_style: Optional[str] = None
-    style_skill_enabled: Optional[int] = None
-    style_skill_content: Optional[str] = None
+    default_system_prompt: str | None = None
+    state_broadcast_prompt: str | None = None
+    enable_image_generation: bool | None = None
+    default_image_model_id: int | None = None
+    image_size: str | None = None
+    image_watermark: bool | None = None
+    default_image_style: str | None = None
+    style_skill_enabled: int | None = None
+    style_skill_content: str | None = None
 
 
 class SystemShutdownOut(BaseModel):
@@ -328,7 +332,7 @@ class MetricsSummaryOut(BaseModel):
 
 class MetricsByModelItem(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
-    model_config_id: Optional[int] = None
+    model_config_id: int | None = None
     model_name: str
     total_calls: int
     success_calls: int
@@ -358,8 +362,8 @@ class StreamRequestLogItem(BaseModel):
     id: int
     request_id: str
     created_at: datetime
-    archive_id: Optional[int] = None
-    story_id: Optional[int] = None
+    archive_id: int | None = None
+    story_id: int | None = None
     model_name: str
     success: bool
     error_code: str
@@ -384,9 +388,9 @@ class StoryGenerateIn(BaseModel):
     image_style: str = Field(default="", max_length=500)  # 用户预填的风格，留空则AI自动生成
     preference: str = Field(default="", max_length=500)  # 用户对故事的偏好要求
     generate_cover: bool = False  # 是否生成封面图
-    cover_image_model_id: Optional[int] = None  # 封面图模型ID
+    cover_image_model_id: int | None = None  # 封面图模型ID
     generate_background: bool = False  # 是否生成背景图
-    background_image_model_id: Optional[int] = None  # 背景图模型ID
+    background_image_model_id: int | None = None  # 背景图模型ID
 
 
 class StoryGenerateOut(BaseModel):

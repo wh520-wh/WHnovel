@@ -4,9 +4,8 @@ from sqlalchemy.orm import Session
 
 from . import models
 from .prompts.defaults import (
-    DEFAULT_SYSTEM_PROMPT_TEXT,
     DEFAULT_STATE_BROADCAST_PROMPT,
-    infer_prompt_source,
+    DEFAULT_SYSTEM_PROMPT_TEXT,
 )
 
 

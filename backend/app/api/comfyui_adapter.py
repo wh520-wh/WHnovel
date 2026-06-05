@@ -1,4 +1,5 @@
 """ComfyUI adapter — submit workflow, poll for result, download image."""
+
 from __future__ import annotations
 
 import json
@@ -17,7 +18,7 @@ _MAX_WAIT = 120.0  # seconds total timeout
 
 def _inject_prompt(workflow: dict, prompt: str) -> dict:
     """Replace all string values equal to '{prompt}' with the actual prompt."""
-    for node_id, node in workflow.items():
+    for _node_id, node in workflow.items():
         if not isinstance(node, dict):
             continue
         inputs = node.get("inputs", {})
@@ -31,13 +32,13 @@ def _inject_prompt(workflow: dict, prompt: str) -> dict:
 
 def _randomize_seed(workflow: dict) -> dict:
     """Randomize all seed values in the workflow."""
-    for node_id, node in workflow.items():
+    for _node_id, node in workflow.items():
         if not isinstance(node, dict):
             continue
         inputs = node.get("inputs", {})
         if not isinstance(inputs, dict):
             continue
-        if "seed" in inputs and isinstance(inputs["seed"], (int, float)):
+        if "seed" in inputs and isinstance(inputs["seed"], int | float):
             inputs["seed"] = random.randint(0, 2**63 - 1)
     return workflow
 
@@ -91,7 +92,7 @@ def _call_comfyui_api(
             if not outputs:
                 continue
             # Find the first image output across all nodes
-            for node_id, node_output in outputs.items():
+            for _node_id, node_output in outputs.items():
                 images = node_output.get("images", [])
                 if images:
                     img = images[0]
@@ -114,4 +115,6 @@ def _call_comfyui_api(
                     save_path.write_bytes(download_resp.content)
                     return f"/api/images/{local_name}"
 
-        raise RuntimeError(f"ComfyUI generation timed out after {_MAX_WAIT}s for prompt_id={prompt_id}")
+        raise RuntimeError(
+            f"ComfyUI generation timed out after {_MAX_WAIT}s for prompt_id={prompt_id}"
+        )

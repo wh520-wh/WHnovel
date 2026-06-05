@@ -1,13 +1,11 @@
 import json
 
-from fastapi.testclient import TestClient
-
 from app import models, schemas
 from app.api import chat_router as chat_api
 from app.api import story_generate as story_generate_api
 from app.database import SessionLocal
 from app.main import app
-
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -88,11 +86,21 @@ def test_preset_openings_route_returns_wrapped_openings(monkeypatch):
     def fake_call(*args, **kwargs):
         return schemas.PresetOpeningsResponse(
             openings=[
-                schemas.PresetOpeningItem(id=1, label="转学生", value="你在雨夜拖着行李走进陌生校园。"),
-                schemas.PresetOpeningItem(id=2, label="失忆者", value="你从病房醒来，只记得一个模糊名字。"),
-                schemas.PresetOpeningItem(id=3, label="追捕者", value="你刚踏入城门，就被通缉令上的画像惊到。"),
-                schemas.PresetOpeningItem(id=4, label="见习生", value="你第一次值夜班，就听见停尸房传来敲门声。"),
-                schemas.PresetOpeningItem(id=5, label="归乡人", value="你回到故乡时，整条街的人都在躲着你。"),
+                schemas.PresetOpeningItem(
+                    id=1, label="转学生", value="你在雨夜拖着行李走进陌生校园。"
+                ),
+                schemas.PresetOpeningItem(
+                    id=2, label="失忆者", value="你从病房醒来，只记得一个模糊名字。"
+                ),
+                schemas.PresetOpeningItem(
+                    id=3, label="追捕者", value="你刚踏入城门，就被通缉令上的画像惊到。"
+                ),
+                schemas.PresetOpeningItem(
+                    id=4, label="见习生", value="你第一次值夜班，就听见停尸房传来敲门声。"
+                ),
+                schemas.PresetOpeningItem(
+                    id=5, label="归乡人", value="你回到故乡时，整条街的人都在躲着你。"
+                ),
             ]
         )
 
@@ -161,6 +169,3 @@ def test_story_generate_route_overrides_category_and_cover_url(monkeypatch):
     assert data["category"] == "悬疑"
     assert data["cover_url"] == ""
     assert data["title"] == "雾港异闻"
-
-
-

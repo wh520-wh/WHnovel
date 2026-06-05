@@ -1,6 +1,19 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, Float, Boolean, Index
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
+
 from .database import Base
 
 
@@ -28,9 +41,7 @@ class Story(Base):
 
 class Character(Base):
     __tablename__ = "characters"
-    __table_args__ = (
-        Index("ix_characters_story_id", "story_id"),
-    )
+    __table_args__ = (Index("ix_characters_story_id", "story_id"),)
 
     id = Column(Integer, primary_key=True, index=True)
     story_id = Column(Integer, ForeignKey("stories.id"), nullable=False)
@@ -44,9 +55,7 @@ class Character(Base):
 
 class Archive(Base):
     __tablename__ = "archives"
-    __table_args__ = (
-        Index("ix_archives_story_id", "story_id"),
-    )
+    __table_args__ = (Index("ix_archives_story_id", "story_id"),)
 
     id = Column(Integer, primary_key=True, index=True)
     story_id = Column(Integer, ForeignKey("stories.id"), nullable=False)
@@ -65,6 +74,7 @@ class Archive(Base):
 
 class StoryNode(Base):
     """剧情节点表 - 存储 AI 生成的剧情标签节点"""
+
     __tablename__ = "story_nodes"
     __table_args__ = (
         Index("ix_story_nodes_archive_id", "archive_id"),
@@ -84,8 +94,8 @@ class StoryNode(Base):
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
     __table_args__ = (
-        Index('ix_chat_messages_archive_created', 'archive_id', 'created_at'),
-        Index('ix_chat_messages_archive_idempotency', 'archive_id', 'idempotency_key', unique=True),
+        Index("ix_chat_messages_archive_created", "archive_id", "created_at"),
+        Index("ix_chat_messages_archive_idempotency", "archive_id", "idempotency_key", unique=True),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -149,7 +159,9 @@ class ModelConfig(Base):
     image_workflow_template = Column(Text, nullable=True)  # ComfyUI workflow JSON template
     temperature = Column(Float, nullable=True)  # None = use style-based default
     max_tokens = Column(Integer, nullable=True)  # None = no limit
-    response_format_mode = Column(String(20), default="json_schema")  # "json_schema" | "json_object"
+    response_format_mode = Column(
+        String(20), default="json_schema"
+    )  # "json_schema" | "json_object"
 
 
 class AppSettings(Base):
@@ -164,7 +176,9 @@ class AppSettings(Base):
     image_watermark = Column(Integer, default=0)  # 水印开关，默认关闭
     style_skill_enabled = Column(Integer, default=0)  # 0=off, 1=on
     style_skill_content = Column(Text, default="")  # Skill prompt content
-    default_image_style = Column(String(500), default="唯美、氛围感强，适合作为小说封面")  # 全局默认画风
+    default_image_style = Column(
+        String(500), default="唯美、氛围感强，适合作为小说封面"
+    )  # 全局默认画风
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 

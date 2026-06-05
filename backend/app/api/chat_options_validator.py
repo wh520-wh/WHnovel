@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Optional
+from ..prompts.contracts import OPTIONS_FORBIDDEN_WORDS, OPTIONS_MAX_LENGTH, OPTIONS_MIN_LENGTH
 
-from ..prompts.contracts import OPTIONS_FORBIDDEN_WORDS, OPTIONS_MIN_LENGTH, OPTIONS_MAX_LENGTH
 
 class OptionsValidationError(Exception):
     pass
 
-def validate_options_list(options: list[str]) -> tuple[bool, Optional[str]]:
+
+def validate_options_list(options: list[str]) -> tuple[bool, str | None]:
     """
     五层校验，返回 (is_valid, error_message)
     """

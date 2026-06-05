@@ -5,26 +5,27 @@ JSON 备份文件读写模块。
 例如将当前 DB 配置导出到 `backend/config/user_config.json`。
 pytest 等场景可通过环境变量切到独立备份文件，避免污染正式备份。
 """
+
 from __future__ import annotations
 
 import json
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 _DEFAULT_CONFIG_FILE = Path(__file__).resolve().parent.parent / "config" / "user_config.json"
 _CONFIG_FILE = Path(os.environ.get("WHAINOEL_CONFIG_FILE") or _DEFAULT_CONFIG_FILE).resolve()
 _CONFIG_DIR = _CONFIG_FILE.parent
 _CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-_cached_config: Optional[dict[str, Any]] = None
+_cached_config: dict[str, Any] | None = None
 
 
 def _load_raw() -> dict[str, Any]:
     if _CONFIG_FILE.exists():
         try:
-            with open(_CONFIG_FILE, "r", encoding="utf-8") as f:
+            with open(_CONFIG_FILE, encoding="utf-8") as f:
                 return json.load(f)
         except (json.JSONDecodeError, OSError):
             bak = _CONFIG_FILE.with_suffix(".bak")

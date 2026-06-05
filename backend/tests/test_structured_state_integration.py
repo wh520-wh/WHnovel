@@ -1,11 +1,9 @@
 import pytest
-from fastapi.testclient import TestClient
-
 from app import models, schemas
 from app.api import chat_router as chat_api
 from app.database import SessionLocal
 from app.main import app  # noqa: E402
-
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -112,7 +110,9 @@ def test_send_message_persists_archive_structured_state():
 def test_get_messages_returns_structured_fields():
     _ensure_chat_model()
     archive = _create_archive()
-    send_resp = client.post("/api/chat/send", json={"archive_id": archive["id"], "message": "观察细节"})
+    send_resp = client.post(
+        "/api/chat/send", json={"archive_id": archive["id"], "message": "观察细节"}
+    )
     send_resp.raise_for_status()
 
     msg_resp = client.get(f"/api/chat/messages/{archive['id']}")
@@ -138,7 +138,9 @@ def test_send_failure_should_not_persist_user_message(monkeypatch):
     monkeypatch.setattr(chat_api, "_call_ai_with_failover", _raise_fail)
 
     archive = _create_archive()
-    resp = client.post("/api/chat/send", json={"archive_id": archive["id"], "message": "这条会失败"})
+    resp = client.post(
+        "/api/chat/send", json={"archive_id": archive["id"], "message": "这条会失败"}
+    )
     assert resp.status_code == 503
 
     msg_resp = client.get(f"/api/chat/messages/{archive['id']}")

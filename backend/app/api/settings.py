@@ -1,6 +1,7 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 import json
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
@@ -85,7 +86,9 @@ def get_settings(db: Session = Depends(get_db)):
             "disable_chat_bubble_elastic": bool(s.disable_chat_bubble_elastic),
             "show_background_image": bool(s.show_background_image),
         }
-        redis.set(SETTINGS_CACHE_KEY, json.dumps(cache_data, ensure_ascii=False), ttl=SETTINGS_CACHE_TTL)
+        redis.set(
+            SETTINGS_CACHE_KEY, json.dumps(cache_data, ensure_ascii=False), ttl=SETTINGS_CACHE_TTL
+        )
 
     return s
 

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import logging
@@ -6,21 +6,20 @@ import subprocess
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
-import httpx
-
 from .. import models, schemas
 from ..app_settings_service import ensure_app_settings
-from ..prompts.defaults import infer_prompt_source
 from ..config_backup import export_backup_file, import_backup_file
+from ..crypto import decrypt, encrypt
 from ..database import get_db
+from ..prompts.defaults import infer_prompt_source
 from ..redis_client import get_redis
-from ..crypto import encrypt, decrypt, mask_secret
+
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 logger = logging.getLogger(__name__)
 METRICS_RESET_CONFIRM_TEXT = "RESET_METRICS"
@@ -80,7 +79,7 @@ def _to_model_out(m: models.ModelConfig) -> schemas.ModelConfigOut:
     )
 
 
-@router.get("/models", response_model=List[schemas.ModelConfigOut])
+@router.get("/models", response_model=list[schemas.ModelConfigOut])
 def list_models(db: Session = Depends(get_db)):
     rows = (
         db.query(models.ModelConfig)
@@ -360,7 +359,11 @@ def get_app_settings(db: Session = Depends(get_db)):
             "style_skill_enabled": s.style_skill_enabled or 0,
             "style_skill_content": s.style_skill_content or "",
         }
-        redis.set(APPSETTINGS_CACHE_KEY, json.dumps(cache_data, ensure_ascii=False), ttl=APPSETTINGS_CACHE_TTL)
+        redis.set(
+            APPSETTINGS_CACHE_KEY,
+            json.dumps(cache_data, ensure_ascii=False),
+            ttl=APPSETTINGS_CACHE_TTL,
+        )
 
     return result
 
@@ -374,11 +377,15 @@ def update_app_settings(payload: schemas.AppSettingsUpdate, db: Session = Depend
     if "default_image_model_id" in data:
         img_id = data["default_image_model_id"]
         if img_id is not None:
-            img_model = db.query(models.ModelConfig).filter(
-                models.ModelConfig.id == img_id,
-                models.ModelConfig.enabled == 1,
-                models.ModelConfig.model_type == "image",
-            ).first()
+            img_model = (
+                db.query(models.ModelConfig)
+                .filter(
+                    models.ModelConfig.id == img_id,
+                    models.ModelConfig.enabled == 1,
+                    models.ModelConfig.model_type == "image",
+                )
+                .first()
+            )
             if not img_model:
                 raise HTTPException(400, "默认图片模型未启用或不存在")
 
@@ -392,7 +399,10 @@ def update_app_settings(payload: schemas.AppSettingsUpdate, db: Session = Depend
                 raise HTTPException(400, "Skill内容至少需要200字")
             if len(skill_content) > 1500:
                 raise HTTPException(400, "Skill内容不能超过1500字")
-            if "----- SKILL START -----" not in skill_content or "----- SKILL END -----" not in skill_content:
+            if (
+                "----- SKILL START -----" not in skill_content
+                or "----- SKILL END -----" not in skill_content
+            ):
                 raise HTTPException(400, "Skill内容必须包含边界符标记")
 
     for k, v in data.items():
@@ -421,7 +431,9 @@ def _current_hour_str() -> str:
 
 
 @router.get("/metrics/summary", response_model=schemas.MetricsSummaryOut)
-def metrics_summary(start: str | None = None, end: str | None = None, db: Session = Depends(get_db)):
+def metrics_summary(
+    start: str | None = None, end: str | None = None, db: Session = Depends(get_db)
+):
     start_dt, end_dt = _resolve_time_window(start, end)
     current_hour = _current_hour_str()
 
@@ -481,26 +493,50 @@ def metrics_summary(start: str | None = None, end: str | None = None, db: Sessio
         )
         total_calls += current_q.count()
         success_calls += current_q.filter(models.ApiCallLog.success == 1).count()
-        total_latency_ms += int(current_q.with_entities(func.sum(models.ApiCallLog.latency_ms)).scalar() or 0)
-        total_prompt_tokens += int(current_q.with_entities(func.sum(models.ApiCallLog.prompt_tokens)).scalar() or 0)
-        total_completion_tokens += int(current_q.with_entities(func.sum(models.ApiCallLog.completion_tokens)).scalar() or 0)
-        total_tokens += int(current_q.with_entities(func.sum(models.ApiCallLog.total_tokens)).scalar() or 0)
-        total_cost += float(current_q.with_entities(func.sum(models.ApiCallLog.cost_estimate)).scalar() or 0)
-        plot_label_calls += int(current_q.with_entities(func.sum(models.ApiCallLog.plot_label_generated)).scalar() or 0)
-        plot_label_cost += float(current_q.with_entities(
-            func.sum(case(
-                (models.ApiCallLog.plot_label_generated == 1, models.ApiCallLog.cost_estimate),
-                else_=0.0
-            ))
-        ).scalar() or 0)
+        total_latency_ms += int(
+            current_q.with_entities(func.sum(models.ApiCallLog.latency_ms)).scalar() or 0
+        )
+        total_prompt_tokens += int(
+            current_q.with_entities(func.sum(models.ApiCallLog.prompt_tokens)).scalar() or 0
+        )
+        total_completion_tokens += int(
+            current_q.with_entities(func.sum(models.ApiCallLog.completion_tokens)).scalar() or 0
+        )
+        total_tokens += int(
+            current_q.with_entities(func.sum(models.ApiCallLog.total_tokens)).scalar() or 0
+        )
+        total_cost += float(
+            current_q.with_entities(func.sum(models.ApiCallLog.cost_estimate)).scalar() or 0
+        )
+        plot_label_calls += int(
+            current_q.with_entities(func.sum(models.ApiCallLog.plot_label_generated)).scalar() or 0
+        )
+        plot_label_cost += float(
+            current_q.with_entities(
+                func.sum(
+                    case(
+                        (
+                            models.ApiCallLog.plot_label_generated == 1,
+                            models.ApiCallLog.cost_estimate,
+                        ),
+                        else_=0.0,
+                    )
+                )
+            ).scalar()
+            or 0
+        )
     else:
         # Full range from api_call_logs (for avg latency calculation)
         q = db.query(models.ApiCallLog).filter(
             models.ApiCallLog.created_at >= start_dt,
             models.ApiCallLog.created_at <= end_dt,
         )
-        total_prompt_tokens = int(q.with_entities(func.sum(models.ApiCallLog.prompt_tokens)).scalar() or 0)
-        total_completion_tokens = int(q.with_entities(func.sum(models.ApiCallLog.completion_tokens)).scalar() or 0)
+        total_prompt_tokens = int(
+            q.with_entities(func.sum(models.ApiCallLog.prompt_tokens)).scalar() or 0
+        )
+        total_completion_tokens = int(
+            q.with_entities(func.sum(models.ApiCallLog.completion_tokens)).scalar() or 0
+        )
 
     avg_latency = float(total_latency_ms / total_calls) if total_calls > 0 else 0.0
 
@@ -518,8 +554,10 @@ def metrics_summary(start: str | None = None, end: str | None = None, db: Sessio
     )
 
 
-@router.get("/metrics/by-model", response_model=List[schemas.MetricsByModelItem])
-def metrics_by_model(start: str | None = None, end: str | None = None, db: Session = Depends(get_db)):
+@router.get("/metrics/by-model", response_model=list[schemas.MetricsByModelItem])
+def metrics_by_model(
+    start: str | None = None, end: str | None = None, db: Session = Depends(get_db)
+):
     start_dt, end_dt = _resolve_time_window(start, end)
     current_hour = _current_hour_str()
     end_hour_dt = end_dt.replace(minute=0, second=0, microsecond=0)
@@ -566,22 +604,31 @@ def metrics_by_model(start: str | None = None, end: str | None = None, db: Sessi
 
     # Supplement with api_call_logs for current hour
     if include_current_hour:
-        live_q = db.query(
-            models.ApiCallLog.model_config_id.label("model_config_id"),
-            func.count(models.ApiCallLog.id).label("total_calls"),
-            func.sum(models.ApiCallLog.success).label("success_calls"),
-            func.avg(models.ApiCallLog.latency_ms).label("avg_latency_ms"),
-            func.sum(models.ApiCallLog.total_tokens).label("total_tokens"),
-            func.sum(models.ApiCallLog.cost_estimate).label("total_cost"),
-            func.sum(models.ApiCallLog.plot_label_generated).label("plot_label_calls"),
-            func.sum(case(
-                (models.ApiCallLog.plot_label_generated == 1, models.ApiCallLog.cost_estimate),
-                else_=0.0
-            )).label("plot_label_cost"),
-        ).filter(
-            models.ApiCallLog.created_at >= end_hour_dt,
-            models.ApiCallLog.created_at <= end_dt,
-        ).group_by(models.ApiCallLog.model_config_id)
+        live_q = (
+            db.query(
+                models.ApiCallLog.model_config_id.label("model_config_id"),
+                func.count(models.ApiCallLog.id).label("total_calls"),
+                func.sum(models.ApiCallLog.success).label("success_calls"),
+                func.avg(models.ApiCallLog.latency_ms).label("avg_latency_ms"),
+                func.sum(models.ApiCallLog.total_tokens).label("total_tokens"),
+                func.sum(models.ApiCallLog.cost_estimate).label("total_cost"),
+                func.sum(models.ApiCallLog.plot_label_generated).label("plot_label_calls"),
+                func.sum(
+                    case(
+                        (
+                            models.ApiCallLog.plot_label_generated == 1,
+                            models.ApiCallLog.cost_estimate,
+                        ),
+                        else_=0.0,
+                    )
+                ).label("plot_label_cost"),
+            )
+            .filter(
+                models.ApiCallLog.created_at >= end_hour_dt,
+                models.ApiCallLog.created_at <= end_dt,
+            )
+            .group_by(models.ApiCallLog.model_config_id)
+        )
 
         for r in live_q.all():
             cid = r.model_config_id
@@ -599,7 +646,9 @@ def metrics_by_model(start: str | None = None, end: str | None = None, db: Sessi
                 old_total = d["total_calls"] - total
                 old_latency = d["avg_latency_ms"] * old_total if old_total > 0 else 0
                 new_latency = float(r.avg_latency_ms or 0) * total
-                d["avg_latency_ms"] = (old_latency + new_latency) / d["total_calls"] if d["total_calls"] > 0 else 0
+                d["avg_latency_ms"] = (
+                    (old_latency + new_latency) / d["total_calls"] if d["total_calls"] > 0 else 0
+                )
             else:
                 model_data[cid] = {
                     "total_calls": total,
@@ -637,8 +686,10 @@ def metrics_by_model(start: str | None = None, end: str | None = None, db: Sessi
     return result
 
 
-@router.get("/metrics/timeseries", response_model=List[schemas.MetricsTimeseriesItem])
-def metrics_timeseries(start: str | None = None, end: str | None = None, db: Session = Depends(get_db)):
+@router.get("/metrics/timeseries", response_model=list[schemas.MetricsTimeseriesItem])
+def metrics_timeseries(
+    start: str | None = None, end: str | None = None, db: Session = Depends(get_db)
+):
     start_dt, end_dt = _resolve_time_window(start, end)
     current_hour = _current_hour_str()
     end_hour_dt = end_dt.replace(minute=0, second=0, microsecond=0)
@@ -653,12 +704,12 @@ def metrics_timeseries(start: str | None = None, end: str | None = None, db: Ses
     # Aggregate from metrics_hourly by day (past complete hours)
     daily_data: dict[str, dict] = {}
     hourly_q = db.query(
-            models.MetricsHourly.hour.label("hour"),
-            func.sum(models.MetricsHourly.total_calls).label("total_calls"),
-            func.sum(models.MetricsHourly.success_calls).label("success_calls"),
-            func.sum(models.MetricsHourly.total_tokens).label("total_tokens"),
-            func.sum(models.MetricsHourly.total_cost).label("total_cost"),
-        )
+        models.MetricsHourly.hour.label("hour"),
+        func.sum(models.MetricsHourly.total_calls).label("total_calls"),
+        func.sum(models.MetricsHourly.success_calls).label("success_calls"),
+        func.sum(models.MetricsHourly.total_tokens).label("total_tokens"),
+        func.sum(models.MetricsHourly.total_cost).label("total_cost"),
+    )
     if start_hour_str:
         hourly_q = hourly_q.filter(models.MetricsHourly.hour >= start_hour_str)
     hourly_q = hourly_q.filter(models.MetricsHourly.hour <= past_end_hour)
@@ -666,7 +717,12 @@ def metrics_timeseries(start: str | None = None, end: str | None = None, db: Ses
     for r in hourly_q.group_by(models.MetricsHourly.hour).all():
         day_str = r.hour[:10]  # 'YYYY-MM-DD'
         if day_str not in daily_data:
-            daily_data[day_str] = {"total_calls": 0, "success_calls": 0, "total_tokens": 0, "total_cost": 0.0}
+            daily_data[day_str] = {
+                "total_calls": 0,
+                "success_calls": 0,
+                "total_tokens": 0,
+                "total_cost": 0.0,
+            }
         d = daily_data[day_str]
         d["total_calls"] += int(r.total_calls or 0)
         d["success_calls"] += int(r.success_calls or 0)
@@ -675,21 +731,30 @@ def metrics_timeseries(start: str | None = None, end: str | None = None, db: Ses
 
     # Supplement with api_call_logs for current hour
     if include_current_hour:
-        live_q = db.query(
-            func.date(models.ApiCallLog.created_at).label("day"),
-            func.count(models.ApiCallLog.id).label("total_calls"),
-            func.sum(models.ApiCallLog.success).label("success_calls"),
-            func.sum(models.ApiCallLog.total_tokens).label("total_tokens"),
-            func.sum(models.ApiCallLog.cost_estimate).label("total_cost"),
-        ).filter(
-            models.ApiCallLog.created_at >= end_hour_dt,
-            models.ApiCallLog.created_at <= end_dt,
-        ).group_by(func.date(models.ApiCallLog.created_at))
+        live_q = (
+            db.query(
+                func.date(models.ApiCallLog.created_at).label("day"),
+                func.count(models.ApiCallLog.id).label("total_calls"),
+                func.sum(models.ApiCallLog.success).label("success_calls"),
+                func.sum(models.ApiCallLog.total_tokens).label("total_tokens"),
+                func.sum(models.ApiCallLog.cost_estimate).label("total_cost"),
+            )
+            .filter(
+                models.ApiCallLog.created_at >= end_hour_dt,
+                models.ApiCallLog.created_at <= end_dt,
+            )
+            .group_by(func.date(models.ApiCallLog.created_at))
+        )
 
         for r in live_q.all():
             day_str = str(r.day)
             if day_str not in daily_data:
-                daily_data[day_str] = {"total_calls": 0, "success_calls": 0, "total_tokens": 0, "total_cost": 0.0}
+                daily_data[day_str] = {
+                    "total_calls": 0,
+                    "success_calls": 0,
+                    "total_tokens": 0,
+                    "total_cost": 0.0,
+                }
             d = daily_data[day_str]
             d["total_calls"] += int(r.total_calls or 0)
             d["success_calls"] += int(r.success_calls or 0)
@@ -714,7 +779,7 @@ def metrics_timeseries(start: str | None = None, end: str | None = None, db: Ses
     return result
 
 
-@router.get("/metrics/stream-requests", response_model=List[schemas.StreamRequestLogItem])
+@router.get("/metrics/stream-requests", response_model=list[schemas.StreamRequestLogItem])
 def metrics_stream_requests(
     start: str | None = None,
     end: str | None = None,

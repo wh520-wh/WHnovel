@@ -1,14 +1,21 @@
 """Unified AI output contracts and strict schema helpers."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from .. import schemas
-from ..prompts import JSON_RULE_PROMPT, _OPTIONS_RULE_PROMPT, _STATE_BROADCAST_RULE_PROMPT, _STORY_GENERATE_RULE_PROMPT, _PRESET_OPENINGS_RULE_PROMPT
+from ..prompts import (
+    _OPTIONS_RULE_PROMPT,
+    _PRESET_OPENINGS_RULE_PROMPT,
+    _STATE_BROADCAST_RULE_PROMPT,
+    _STORY_GENERATE_RULE_PROMPT,
+    JSON_RULE_PROMPT,
+)
 
 ContractTask = Literal[
     "chat_response",

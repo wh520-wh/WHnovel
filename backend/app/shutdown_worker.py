@@ -6,10 +6,11 @@ kills their process trees, and cleans up pid files.
 Designed to survive the backend's own termination (it runs in a separate
 process, not a child thread).
 """
+
 import os
+import subprocess
 import sys
 import time
-import subprocess
 from pathlib import Path
 
 
@@ -17,12 +18,14 @@ def _find_port_processes(port: int) -> list[int]:
     """Find PIDs listening on the given TCP port using netstat."""
     try:
         result = subprocess.run(
-            ['netstat', '-ano'],
-            capture_output=True, text=True, timeout=5,
+            ["netstat", "-ano"],
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         pids: list[int] = []
         for line in result.stdout.splitlines():
-            if f':{port}' in line and 'LISTENING' in line.strip():
+            if f":{port}" in line and "LISTENING" in line.strip():
                 parts = line.strip().split()
                 if parts and parts[-1].isdigit():
                     pid = int(parts[-1])
@@ -37,7 +40,7 @@ def _kill_process_tree(pid: int) -> bool:
     """Kill a process and all its children."""
     try:
         subprocess.run(
-            ['taskkill', '/PID', str(pid), '/T', '/F'],
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             timeout=10,
@@ -54,7 +57,7 @@ def _stop_port(port: int, pid_file: Path, max_passes: int = 6) -> None:
 
         # Read PIDs from pid file
         try:
-            text = pid_file.read_text(encoding='utf-8').strip()
+            text = pid_file.read_text(encoding="utf-8").strip()
             for line in text.splitlines():
                 stripped = line.strip()
                 if stripped.isdigit():
@@ -88,17 +91,17 @@ def main() -> None:
 
     # Phase 1: wait for HTTP response to be delivered, then kill backend
     time.sleep(backend_delay_ms / 1000)
-    _stop_port(8000, project_root / 'backend' / 'app.pid')
+    _stop_port(8000, project_root / "backend" / "app.pid")
 
     # Phase 2: wait, then kill frontend
     remaining_ms = max(frontend_delay_ms - backend_delay_ms, 400)
     time.sleep(remaining_ms / 1000)
-    _stop_port(5173, project_root / 'frontend' / 'app.pid')
+    _stop_port(5173, project_root / "frontend" / "app.pid")
 
     # Clean up pid files
     for pid_file in [
-        project_root / 'backend' / 'app.pid',
-        project_root / 'frontend' / 'app.pid',
+        project_root / "backend" / "app.pid",
+        project_root / "frontend" / "app.pid",
     ]:
         try:
             pid_file.unlink(missing_ok=True)
@@ -106,5 +109,5 @@ def main() -> None:
             pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

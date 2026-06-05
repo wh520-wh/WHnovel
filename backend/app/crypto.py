@@ -2,16 +2,17 @@
 AES-256-GCM encryption for sensitive strings (e.g., API keys).
 Key is loaded from environment or .env file.
 """
-import os
+
 import base64
 import hashlib
 import logging
-from typing import Optional
+import os
 
 logger = logging.getLogger(__name__)
 
 try:
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
     CRYPTO_AVAILABLE = True
 except ImportError:
     CRYPTO_AVAILABLE = False
@@ -19,7 +20,7 @@ except ImportError:
     logger.warning("cryptography package not installed; encryption disabled")
 
 
-def _load_key() -> Optional[bytes]:
+def _load_key() -> bytes | None:
     """Load 32-byte encryption key from environment."""
     env_key = os.environ.get("ENCRYPTION_KEY", "")
     if env_key:
@@ -27,22 +28,23 @@ def _load_key() -> Optional[bytes]:
         if len(env_key) == 64:
             return bytes.fromhex(env_key)
         # Otherwise treat as raw bytes (ensure 32 bytes)
-        return env_key.encode()[:32].ljust(32, b'\0')
+        return env_key.encode()[:32].ljust(32, b"\0")
 
     # Try to load from .env file in project root
     env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
     if os.path.exists(env_path):
-        with open(env_path, "r", encoding="utf-8") as f:
+        with open(env_path, encoding="utf-8") as f:
             for line in f:
                 if line.startswith("ENCRYPTION_KEY="):
                     val = line.split("=", 1)[1].strip()
                     if len(val) == 64:
                         return bytes.fromhex(val)
-                    return val.encode()[:32].ljust(32, b'\0')
+                    return val.encode()[:32].ljust(32, b"\0")
 
     # Derive a key from a machine-specific secret (better than nothing)
     try:
         import uuid
+
         machine_id = uuid.getnode()
         secret = f"whainoel_secret_{machine_id}".encode()
         return hashlib.sha256(secret).digest()
@@ -50,10 +52,10 @@ def _load_key() -> Optional[bytes]:
         return None
 
 
-_encryption_key: Optional[bytes] = None
+_encryption_key: bytes | None = None
 
 
-def _get_key() -> Optional[bytes]:
+def _get_key() -> bytes | None:
     global _encryption_key
     if _encryption_key is None:
         _encryption_key = _load_key()

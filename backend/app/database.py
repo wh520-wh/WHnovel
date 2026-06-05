@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 # 默认使用固定绝对路径，防止不同工作目录启动时连到不同 DB。
 # pytest 等场景可通过环境变量切到独立测试库，避免污染正式数据。

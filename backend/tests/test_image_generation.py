@@ -1,6 +1,8 @@
 """图片生成模块测试"""
+
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from app.api.image_generation import _call_image_api, _download_and_save_image
 from app.prompts.image_gen import _build_cover_prompt
 
@@ -25,7 +27,9 @@ class TestCallImageApi:
         mock_get_adapter.return_value = {
             "url": MagicMock(return_value="https://fake.api/v1/images/generations"),
             "headers": MagicMock(return_value={"Authorization": "Bearer test-key"}),
-            "image_body": MagicMock(return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}),
+            "image_body": MagicMock(
+                return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}
+            ),
             "image_parser": MagicMock(return_value="https://example.com/img.png"),
         }
 
@@ -33,7 +37,9 @@ class TestCallImageApi:
         mock_instance.__enter__ = MagicMock(return_value=mock_instance)
         mock_instance.__exit__ = MagicMock(return_value=False)
         mock_instance.post.return_value.status_code = 200
-        mock_instance.post.return_value.json.return_value = {"data": [{"url": "https://example.com/img.png"}]}
+        mock_instance.post.return_value.json.return_value = {
+            "data": [{"url": "https://example.com/img.png"}]
+        }
         mock_client_cls.return_value = mock_instance
 
         result = _call_image_api(
@@ -51,7 +57,9 @@ class TestCallImageApi:
         mock_get_adapter.return_value = {
             "url": MagicMock(return_value="https://fake.api/v1/images/generations"),
             "headers": MagicMock(return_value={"Authorization": "Bearer test-key"}),
-            "image_body": MagicMock(return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}),
+            "image_body": MagicMock(
+                return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}
+            ),
             "image_parser": MagicMock(),
         }
 
@@ -72,7 +80,9 @@ class TestCallImageApi:
         mock_get_adapter.return_value = {
             "url": MagicMock(return_value="https://fake.api/v1/images/generations"),
             "headers": MagicMock(return_value={"Authorization": "Bearer test-key"}),
-            "image_body": MagicMock(return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}),
+            "image_body": MagicMock(
+                return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}
+            ),
             "image_parser": MagicMock(side_effect=KeyError("url")),
         }
 
@@ -92,8 +102,11 @@ class TestCallImageApi:
     def test_raises_on_invalid_size(self, mock_client_cls, mock_get_adapter, mock_certifi):
         with pytest.raises(ValueError, match="Invalid image_size"):
             _call_image_api(
-                api_key="key", api_base="https://base", model="model",
-                prompt="prompt", size="4K",
+                api_key="key",
+                api_base="https://base",
+                model="model",
+                prompt="prompt",
+                size="4K",
             )
 
     @patch("app.api.image_generation.certifi.where", return_value=True)
@@ -103,7 +116,9 @@ class TestCallImageApi:
         mock_get_adapter.return_value = {
             "url": MagicMock(return_value="https://fake.api/v1/images/generations"),
             "headers": MagicMock(return_value={"Authorization": "Bearer "}),
-            "image_body": MagicMock(return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}),
+            "image_body": MagicMock(
+                return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}
+            ),
             "image_parser": MagicMock(),
         }
 
@@ -127,13 +142,16 @@ class TestSaveImageLocally:
         mock_instance.get.return_value.content = b"fake_image_bytes"
         mock_client_cls.return_value = mock_instance
 
-        result = _download_and_save_image("https://example.com/img.png", "story_42_cover_1234567890.png")
+        result = _download_and_save_image(
+            "https://example.com/img.png", "story_42_cover_1234567890.png"
+        )
         assert result.endswith("/api/images/story_42_cover_1234567890.png")
 
 
 class TestBuildBackgroundPrompt:
     def test_includes_key_elements(self):
         from app.prompts.image_gen import _build_background_prompt
+
         result = _build_background_prompt(
             world_setting="一座古老的城堡矗立在悬崖之上",
             title="星辰与剑",
@@ -146,6 +164,7 @@ class TestBuildBackgroundPrompt:
 
     def test_no_style(self):
         from app.prompts.image_gen import _build_background_prompt
+
         result = _build_background_prompt(
             world_setting="未来都市",
             title="机械之心",

@@ -1,4 +1,5 @@
 """Plot progression, label generation, preset opening prompts."""
+
 from __future__ import annotations
 
 # ============================================================
@@ -30,7 +31,8 @@ story_state 字段：
 - current_conflict: string，当前核心冲突或威胁
 """
 
-PLOT_PROGRESS_RULE_PROMPT = """
+PLOT_PROGRESS_RULE_PROMPT = (
+    """
 每轮至少推进一个维度：场景、关系、目标、风险、信息、情绪。选其一即可。
 
 连续两轮氛围描写而没有新事件发生，会让故事停滞。
@@ -40,8 +42,11 @@ options 类型差异化：
 - 对话型——与角色对话 / 回应 / 说服
 - 探索型——调查 / 思考 / 发现线索
 三个选项各选一种类型，不重复。
-""" + STORY_STATE_RULES + """
+"""
+    + STORY_STATE_RULES
+    + """
 """.strip()
+)
 
 MAX_ROUNDS_WITHOUT_PLOT_LABEL = 3
 

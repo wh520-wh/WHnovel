@@ -1,14 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from sqlalchemy.orm import Session
-from typing import List
 import json
 
-from ..database import get_db
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy.orm import Session
+
 from .. import models, schemas
+from ..database import get_db
 from ..redis_client import get_redis
-from .story_generate import generate_story_content, generate_story_with_cover
-from .image_generation import generate_cover_image, generate_background_image
-from ..crypto import decrypt
+from .image_generation import generate_background_image, generate_cover_image
+from .story_generate import generate_story_with_cover
 
 router = APIRouter(prefix="/api/stories", tags=["stories"])
 
@@ -28,7 +27,7 @@ def _invalidate_char_cache(story_id: int):
         redis.delete(CHAR_CACHE_KEY.format(story_id=story_id))
 
 
-@router.get("", response_model=List[schemas.StoryOut])
+@router.get("", response_model=list[schemas.StoryOut])
 def list_stories(db: Session = Depends(get_db)):
     redis = get_redis()
     if redis.is_available():
@@ -58,7 +57,9 @@ def list_stories(db: Session = Depends(get_db)):
             }
             for s in stories
         ]
-        redis.set(STORIES_CACHE_KEY, json.dumps(cache_data, ensure_ascii=False), ttl=STORIES_CACHE_TTL)
+        redis.set(
+            STORIES_CACHE_KEY, json.dumps(cache_data, ensure_ascii=False), ttl=STORIES_CACHE_TTL
+        )
     return stories
 
 
@@ -106,7 +107,7 @@ def delete_story(story_id: int, db: Session = Depends(get_db)):
 
 
 # ---- Characters ----
-@router.get("/{story_id}/characters", response_model=List[schemas.CharacterOut])
+@router.get("/{story_id}/characters", response_model=list[schemas.CharacterOut])
 def list_characters(story_id: int, db: Session = Depends(get_db)):
     return db.query(models.Character).filter(models.Character.story_id == story_id).all()
 
@@ -122,7 +123,9 @@ def create_character(story_id: int, payload: schemas.CharacterBase, db: Session 
 
 
 @router.put("/characters/{character_id}", response_model=schemas.CharacterOut)
-def update_character(character_id: int, payload: schemas.CharacterBase, db: Session = Depends(get_db)):
+def update_character(
+    character_id: int, payload: schemas.CharacterBase, db: Session = Depends(get_db)
+):
     c = db.query(models.Character).filter(models.Character.id == character_id).first()
     if not c:
         raise HTTPException(404, "角色不存在")
@@ -153,11 +156,15 @@ def ai_generate_story(
 ):
     # 1. 获取文字模型
     if payload.model_id is not None:
-        text_model = db.query(models.ModelConfig).filter(
-            models.ModelConfig.id == payload.model_id,
-            models.ModelConfig.enabled == 1,
-            models.ModelConfig.model_type == "chat",
-        ).first()
+        text_model = (
+            db.query(models.ModelConfig)
+            .filter(
+                models.ModelConfig.id == payload.model_id,
+                models.ModelConfig.enabled == 1,
+                models.ModelConfig.model_type == "chat",
+            )
+            .first()
+        )
         if not text_model:
             raise HTTPException(503, "指定的文字模型不可用，请检查模型配置")
     else:
@@ -183,11 +190,15 @@ def ai_generate_story(
     if payload.generate_cover:
         cover_model_id = payload.cover_image_model_id or payload.image_model_id
         if cover_model_id:
-            cover_model_cfg = db.query(models.ModelConfig).filter(
-                models.ModelConfig.id == cover_model_id,
-                models.ModelConfig.enabled == 1,
-                models.ModelConfig.model_type == "image",
-            ).first()
+            cover_model_cfg = (
+                db.query(models.ModelConfig)
+                .filter(
+                    models.ModelConfig.id == cover_model_id,
+                    models.ModelConfig.enabled == 1,
+                    models.ModelConfig.model_type == "image",
+                )
+                .first()
+            )
             if not cover_model_cfg:
                 raise HTTPException(503, "指定的封面图片模型不可用")
 
@@ -196,11 +207,15 @@ def ai_generate_story(
     if payload.generate_background:
         bg_model_id = payload.background_image_model_id
         if bg_model_id:
-            bg_model_cfg = db.query(models.ModelConfig).filter(
-                models.ModelConfig.id == bg_model_id,
-                models.ModelConfig.enabled == 1,
-                models.ModelConfig.model_type == "image",
-            ).first()
+            bg_model_cfg = (
+                db.query(models.ModelConfig)
+                .filter(
+                    models.ModelConfig.id == bg_model_id,
+                    models.ModelConfig.enabled == 1,
+                    models.ModelConfig.model_type == "image",
+                )
+                .first()
+            )
             if not bg_model_cfg:
                 raise HTTPException(503, "指定的背景图片模型不可用")
 
@@ -238,7 +253,7 @@ def ai_generate_story(
 
         return result
     except Exception as e:
-        raise HTTPException(500, f"生成失败：{str(e)[:200]}")
+        raise HTTPException(500, f"生成失败：{str(e)[:200]}") from e
 
 
 @router.post("/ai-generate-cover", response_model=schemas.GenerateCoverOut)
@@ -249,15 +264,21 @@ def ai_generate_cover(
     """独立生成封面图，用于分阶段调用：先调 ai-generate 获取内容，再调此接口生成封面。"""
     app_settings = db.query(models.AppSettings).first()
 
-    image_model_id = payload.image_model_id or (app_settings.default_image_model_id if app_settings else None)
+    image_model_id = payload.image_model_id or (
+        app_settings.default_image_model_id if app_settings else None
+    )
     if not image_model_id:
         raise HTTPException(400, "未配置图片模型")
 
-    image_model_cfg = db.query(models.ModelConfig).filter(
-        models.ModelConfig.id == image_model_id,
-        models.ModelConfig.enabled == 1,
-        models.ModelConfig.model_type == "image",
-    ).first()
+    image_model_cfg = (
+        db.query(models.ModelConfig)
+        .filter(
+            models.ModelConfig.id == image_model_id,
+            models.ModelConfig.enabled == 1,
+            models.ModelConfig.model_type == "image",
+        )
+        .first()
+    )
     if not image_model_cfg:
         raise HTTPException(503, "指定的图片模型不可用")
 
@@ -273,7 +294,7 @@ def ai_generate_cover(
         )
         return schemas.GenerateCoverOut(cover_url=cover_url)
     except Exception as e:
-        raise HTTPException(500, f"封面生成失败：{str(e)[:200]}")
+        raise HTTPException(500, f"封面生成失败：{str(e)[:200]}") from e
 
 
 @router.post("/{story_id}/regenerate-cover", response_model=schemas.StoryOut)
@@ -295,16 +316,21 @@ def regenerate_cover(
 
     image_model_cfg = None
     if app_settings.default_image_model_id:
-        image_model_cfg = db.query(models.ModelConfig).filter(
-            models.ModelConfig.id == app_settings.default_image_model_id,
-            models.ModelConfig.enabled == 1,
-            models.ModelConfig.model_type == "image",
-        ).first()
+        image_model_cfg = (
+            db.query(models.ModelConfig)
+            .filter(
+                models.ModelConfig.id == app_settings.default_image_model_id,
+                models.ModelConfig.enabled == 1,
+                models.ModelConfig.model_type == "image",
+            )
+            .first()
+        )
     if not image_model_cfg:
         raise HTTPException(503, "没有可用的图片模型配置")
 
     try:
         from .image_generation import generate_cover_image
+
         new_cover_url = generate_cover_image(
             image_model_cfg=image_model_cfg,
             world_setting=story.world_setting,
@@ -320,7 +346,7 @@ def regenerate_cover(
         _invalidate_stories_cache()
         return story
     except Exception as e:
-        raise HTTPException(500, f"封面生成失败：{str(e)[:200]}")
+        raise HTTPException(500, f"封面生成失败：{str(e)[:200]}") from e
 
 
 @router.post("/{story_id}/generate-cover")
@@ -334,11 +360,15 @@ def generate_cover_for_story(
     if not story:
         raise HTTPException(404, "故事不存在")
 
-    image_model_cfg = db.query(models.ModelConfig).filter(
-        models.ModelConfig.id == payload.image_model_id,
-        models.ModelConfig.enabled == 1,
-        models.ModelConfig.model_type == "image",
-    ).first()
+    image_model_cfg = (
+        db.query(models.ModelConfig)
+        .filter(
+            models.ModelConfig.id == payload.image_model_id,
+            models.ModelConfig.enabled == 1,
+            models.ModelConfig.model_type == "image",
+        )
+        .first()
+    )
     if not image_model_cfg:
         raise HTTPException(503, "指定的图片模型不可用")
 
@@ -362,7 +392,7 @@ def generate_cover_for_story(
         _invalidate_stories_cache()
         return {"cover_image": cover_path}
     except Exception as e:
-        raise HTTPException(500, f"封面生成失败：{str(e)[:200]}")
+        raise HTTPException(500, f"封面生成失败：{str(e)[:200]}") from e
 
 
 @router.post("/{story_id}/generate-background")
@@ -376,11 +406,15 @@ def generate_background_for_story(
     if not story:
         raise HTTPException(404, "故事不存在")
 
-    image_model_cfg = db.query(models.ModelConfig).filter(
-        models.ModelConfig.id == payload.image_model_id,
-        models.ModelConfig.enabled == 1,
-        models.ModelConfig.model_type == "image",
-    ).first()
+    image_model_cfg = (
+        db.query(models.ModelConfig)
+        .filter(
+            models.ModelConfig.id == payload.image_model_id,
+            models.ModelConfig.enabled == 1,
+            models.ModelConfig.model_type == "image",
+        )
+        .first()
+    )
     if not image_model_cfg:
         raise HTTPException(503, "指定的图片模型不可用")
 
@@ -404,7 +438,7 @@ def generate_background_for_story(
         _invalidate_stories_cache()
         return {"background_image": bg_path}
     except Exception as e:
-        raise HTTPException(500, f"背景生成失败：{str(e)[:200]}")
+        raise HTTPException(500, f"背景生成失败：{str(e)[:200]}") from e
 
 
 @router.post("/{story_id}/upload-image")
@@ -424,7 +458,11 @@ def upload_image_for_story(
 
     # Security: validate file extension
     ALLOWED_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
-    ext = (file.filename or "image.png").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else "png"
+    ext = (
+        (file.filename or "image.png").rsplit(".", 1)[-1].lower()
+        if "." in (file.filename or "")
+        else "png"
+    )
     if ext not in ALLOWED_EXT:
         raise HTTPException(400, f"不支持的图片格式：.{ext}")
 
@@ -432,8 +470,9 @@ def upload_image_for_story(
     if not story:
         raise HTTPException(404, "故事不存在")
 
-    from .image_generation import STATIC_IMAGES_DIR
     import time
+
+    from .image_generation import STATIC_IMAGES_DIR
 
     STATIC_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 

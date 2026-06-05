@@ -1,4 +1,5 @@
 """Seed story system prompts (from seed_data.py)."""
+
 from __future__ import annotations
 
 SEED_STORY_SYSTEM_PROMPTS: list[dict] = [

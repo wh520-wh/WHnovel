@@ -7,7 +7,6 @@ from pathlib import Path
 
 from .database import DB_PATH
 
-
 SCHEMA_VERSION = 26
 
 
@@ -193,7 +192,9 @@ def _migrate_to_v17(conn: sqlite3.Connection) -> None:
         "image_api_mode TEXT NOT NULL DEFAULT 'openai_images'",
     )
     # 现有图片模型使用豆包原生接口，标记为 custom_image
-    conn.execute("UPDATE model_configs SET image_api_mode = 'custom_image' WHERE model_type = 'image'")
+    conn.execute(
+        "UPDATE model_configs SET image_api_mode = 'custom_image' WHERE model_type = 'image'"
+    )
     conn.commit()
 
 
@@ -240,8 +241,9 @@ def _migrate_to_v19(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_to_v20(conn: sqlite3.Connection) -> None:
-    _add_column_if_missing(conn, "stories", "background_image",
-                           "background_image VARCHAR(500) NOT NULL DEFAULT ''")
+    _add_column_if_missing(
+        conn, "stories", "background_image", "background_image VARCHAR(500) NOT NULL DEFAULT ''"
+    )
     conn.commit()
 
 

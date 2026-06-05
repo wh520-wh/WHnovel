@@ -2,12 +2,12 @@
 Metrics aggregation service.
 Aggregates api_call_logs into metrics_hourly table for fast metric queries.
 """
+
 from __future__ import annotations
 
 import logging
 import threading
 from datetime import datetime, timedelta
-from typing import Optional
 
 from sqlalchemy import Integer, case, func
 from sqlalchemy.orm import Session
@@ -42,7 +42,9 @@ def aggregate_hourly_metrics(db: Session, hour: str | None = None) -> int:
             func.sum(models.ApiCallLog.latency_ms).label("total_latency_ms"),
             func.sum(models.ApiCallLog.total_tokens).label("total_tokens"),
             func.sum(models.ApiCallLog.cost_estimate).label("total_cost"),
-            func.sum(func.cast(models.ApiCallLog.plot_label_generated, Integer)).label("plot_label_calls"),
+            func.sum(func.cast(models.ApiCallLog.plot_label_generated, Integer)).label(
+                "plot_label_calls"
+            ),
             func.sum(
                 case(
                     (models.ApiCallLog.plot_label_generated == 1, models.ApiCallLog.cost_estimate),
@@ -50,9 +52,7 @@ def aggregate_hourly_metrics(db: Session, hour: str | None = None) -> int:
                 )
             ).label("plot_label_cost"),
         )
-        .filter(
-            func.strftime("%Y-%m-%d %H:00", models.ApiCallLog.created_at) == hour
-        )
+        .filter(func.strftime("%Y-%m-%d %H:00", models.ApiCallLog.created_at) == hour)
         .group_by(models.ApiCallLog.model_config_id)
         .all()
     )
@@ -104,9 +104,7 @@ def backfill_missing_hours(db: Session, max_hours: int = 168) -> int:
     Returns total number of rows aggregated across all missing hours.
     """
     now = datetime.now().replace(minute=0, second=0, microsecond=0)
-    existing_hours = set(
-        r.hour for r in db.query(models.MetricsHourly.hour).distinct().all()
-    )
+    existing_hours = set(r.hour for r in db.query(models.MetricsHourly.hour).distinct().all())
 
     total_rows = 0
     for i in range(1, max_hours + 1):
@@ -138,14 +136,15 @@ class BackgroundScheduler:
     Simple hourly scheduler using threading.Timer.
     Runs aggregation every hour (on the hour + small jitter).
     """
-    _instance: Optional['BackgroundScheduler'] = None
+
+    _instance: BackgroundScheduler | None = None
 
     def __new__(cls):
         if cls._instance is not None:
             return cls._instance
         cls._instance = super().__new__(cls)
         cls._instance._started = False
-        cls._instance._timer: Optional[threading.Timer] = None
+        cls._instance._timer: threading.Timer | None = None
         return cls._instance
 
     def _schedule_next(self):
@@ -175,7 +174,7 @@ class BackgroundScheduler:
         self._started = False
 
 
-_scheduler: Optional[BackgroundScheduler] = None
+_scheduler: BackgroundScheduler | None = None
 
 
 def get_scheduler() -> BackgroundScheduler:
