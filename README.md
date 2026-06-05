@@ -3,42 +3,42 @@
 [![CI](https://github.com/wh520-wh/WHnovel/actions/workflows/ci.yml/badge.svg)](https://github.com/wh520-wh/WHnovel/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-An AI interactive fiction platform with streaming chat, structured story state, and configurable model providers.
+一个 AI 情景互动小说平台，提供流式聊天、结构化剧情状态与可配置的模型接入。
 
-## Features
+## 功能
 
-- Streaming chat over Server-Sent Events with `delta`, `text_end`, `tail`, and `done` events.
-- Two-phase streaming: text body is sent first, then a structured tail (status, tags, highlights) follows as a separate request.
-- Archive management: create, export, import, and inline-rename conversation archives.
-- Story timeline navigation with clickable plot tags that jump to the matching segment.
-- AI image generation driven by a configurable image model, used for cover art and in-chat illustrations.
-- Admin panel for configuring chat and image models, prompts, and per-archive options.
-- Structured-output governance: a single contract layer (`ai_contracts.py`) defines schemas, validates model JSON, fills defaults, and surfaces uniform error codes.
-- Mobile-friendly input bar with virtual-keyboard offset handling managed by a dedicated composable.
+- 基于 Server-Sent Events 的流式聊天，事件包括 `delta`、`text_end`、`tail`、`done`。
+- 两段式流式输出：先发送正文文本，再以独立请求回写结构化尾部（状态、标签、高亮词等）。
+- 存档管理：支持创建、导出、导入和行内重命名。
+- 剧情时间线导航：可点击的剧情标签，跳转到对应段落。
+- AI 图片生成：封面与聊天内插图共用一个可配置的图片模型。
+- 管理面板：配置聊天与图片模型、提示词和单存档选项。
+- 结构化输出治理：统一契约层（`ai_contracts.py`）定义 schema、校验模型 JSON、补默认值并返回统一错误码。
+- 移动端输入栏：虚拟键盘偏移由专用 composable 统一处理。
 
-## Tech stack
+## 技术栈
 
-- Frontend: Vue 3, Vite, TypeScript, Pinia, Element Plus.
-- Backend: FastAPI, SQLAlchemy, SQLite, Pydantic.
-- AI: chat and image models accessed through OpenAI-compatible HTTP APIs.
-- Streaming: Server-Sent Events (SSE) with a per-archive generation lock.
+- 前端：Vue 3、Vite、TypeScript、Pinia、Element Plus。
+- 后端：FastAPI、SQLAlchemy、SQLite、Pydantic。
+- AI：通过 OpenAI 兼容的 HTTP API 接入聊天与图片模型。
+- 流式：Server-Sent Events（SSE），配以单存档生成锁。
 
-## Quick start
+## 快速开始
 
-Prerequisites:
+前置条件：
 
-- Node.js 18+ and npm.
-- Python 3.10+.
-- On Windows: Git Bash (used by the bundled `start.ps1` helper) or PowerShell.
+- Node.js 18+ 与 npm。
+- Python 3.10+。
+- Windows 上需要 Git Bash（`start.ps1` 启动器会用到）或 PowerShell。
 
-Clone and run:
+克隆并运行：
 
 ```bash
 git clone https://github.com/wh520-wh/WHnovel.git
 cd WHnovel
 ```
 
-Backend:
+后端：
 
 ```bash
 cd backend
@@ -46,7 +46,7 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Frontend (in a second terminal):
+前端（在另一个终端中）：
 
 ```bash
 cd frontend
@@ -54,56 +54,56 @@ npm install
 npm run dev
 ```
 
-Or from the repository root on Windows, use the bundled launcher:
+或者在 Windows 上从仓库根目录直接使用启动脚本：
 
 ```bash
 ./start.ps1
-# or
+# 或
 start.bat
 ```
 
-Stop the dev servers with:
+停止开发服务：
 
 ```bash
 stop.bat
 ```
 
-Default local addresses:
+默认本地地址：
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:8000`
+- 前端：`http://localhost:5173`
+- 后端：`http://localhost:8000`
 
-Admin mode is enabled by setting `localStorage.admin_mode = '1'` in the browser console.
+在浏览器控制台执行 `localStorage.admin_mode = '1'` 即可开启管理员入口。
 
-## Project structure
+## 目录结构
 
 ```
 WHnovel/
-├── backend/                FastAPI service, SQLAlchemy models, chat pipeline
+├── backend/                FastAPI 服务、SQLAlchemy 模型、聊天流水线
 │   ├── app/
 │   ├── tests/
 │   └── run.py
-├── frontend/               Vue 3 SPA (Vite + TS)
+├── frontend/               Vue 3 SPA（Vite + TS）
 │   ├── src/
 │   │   ├── stores/
 │   │   ├── composables/
 │   │   ├── views/
 │   │   └── api/
 │   └── package.json
-├── docs/                   Design notes and AI output governance docs
-├── scripts/                Repo maintenance scripts
-├── start.ps1, start.bat    Local dev launchers (backend + frontend)
-├── stop.bat                Stop dev servers
+├── docs/                   设计笔记与 AI 输出治理文档
+├── scripts/                仓库维护脚本
+├── start.ps1, start.bat    本地开发启动器（后端 + 前端）
+├── stop.bat                停止开发服务
 ├── LICENSE
 ├── README.md
 ├── README.zh.md
-└── .github/                Issue and PR templates, code of conduct
+└── .github/                Issue / PR 模板与行为准则
 ```
 
-## Contributing
+## 贡献
 
-File issues for bugs and feature ideas, and open a pull request against `main`. Follow `.github/PULL_REQUEST_TEMPLATE.md`, keep changes scoped, and include tests when the change touches backend logic or chat pipeline behavior.
+通过 Issue 反馈 Bug 与想法，向 `main` 分支提交 PR。请遵循 `.github/PULL_REQUEST_TEMPLATE.md`，保持改动聚焦；当改动涉及后端逻辑或聊天流水线时请附上测试。
 
-## License
+## 许可
 
-MIT — see [LICENSE](LICENSE).
+MIT — 详见 [LICENSE](LICENSE)。
