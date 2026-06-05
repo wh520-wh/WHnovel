@@ -59,3 +59,12 @@ docs/superpowers/specs/
 # Runtime-generated image cache
 backend/app/static/images/*.png
 backend/app/static/images/chat_comfyui_*.png
+
+# Secrets — never in repo
+.env
+backend/.env
+
+# Coverage output
+frontend/coverage/
+backend/htmlcov/
+backend/.coverage

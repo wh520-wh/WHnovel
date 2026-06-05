@@ -1,5 +1,8 @@
 # WHnovel
 
+[![CI](https://github.com/wh520-wh/WHnovel/actions/workflows/ci.yml/badge.svg)](https://github.com/wh520-wh/WHnovel/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 An AI interactive fiction platform with streaming chat, structured story state, and configurable model providers.
 
 ## Features

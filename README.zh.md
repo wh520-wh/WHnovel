@@ -1,5 +1,8 @@
 # WHnovel
 
+[![CI](https://github.com/wh520-wh/WHnovel/actions/workflows/ci.yml/badge.svg)](https://github.com/wh520-wh/WHnovel/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 一个 AI 情景互动小说平台，提供流式聊天、结构化剧情状态与可配置的模型接入。
 
 ## 功能
