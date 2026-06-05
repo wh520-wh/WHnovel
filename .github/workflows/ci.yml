@@ -38,4 +38,4 @@ jobs:
       - run: cd backend && pip install -r requirements-dev.txt
       - run: cd backend && ruff check .
       - run: cd backend && ruff format --check .
-      - run: cd backend && pytest
+      - run: cd backend && python -m pytest
