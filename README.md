@@ -3,35 +3,25 @@
 [![CI](https://github.com/wh520-wh/WHnovel/actions/workflows/ci.yml/badge.svg)](https://github.com/wh520-wh/WHnovel/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-一个 AI 情景互动小说平台，提供流式聊天、结构化剧情状态与可配置的模型接入。
+AI 互动小说平台。选一个故事，跟 AI 聊着聊着就把剧情推进了。
 
 ## 功能
 
-- 基于 Server-Sent Events 的流式聊天，事件包括 `delta`、`text_end`、`tail`、`done`。
-- 两段式流式输出：先发送正文文本，再以独立请求回写结构化尾部（状态、标签、高亮词等）。
-- 存档管理：支持创建、导出、导入和行内重命名。
-- 剧情时间线导航：可点击的剧情标签，跳转到对应段落。
-- AI 图片生成：封面与聊天内插图共用一个可配置的图片模型。
-- 管理面板：配置聊天与图片模型、提示词和单存档选项。
-- 结构化输出治理：统一契约层（`ai_contracts.py`）定义 schema、校验模型 JSON、补默认值并返回统一错误码。
-- 移动端输入栏：虚拟键盘偏移由专用 composable 统一处理。
+- 流式聊天：SSE 实时输出，支持打字指示器和自动滚动。
+- 两段式输出：先推正文，再异步回写结构化尾部（状态、标签、高亮词）。
+- 存档管理：创建、导出 JSON、导入、行内重命名。
+- 剧情时间线：点击标签跳转到对应段落。
+- AI 图片生成：封面和聊天插图共用一个可配置的图片模型。
+- 管理面板：配模型、调提示词、管存档选项。
+- 移动端适配：虚拟键盘偏移、44px 最小触控区、刘海屏安全区。
 
 ## 技术栈
 
-- 前端：Vue 3、Vite、TypeScript、Pinia、Element Plus。
-- 后端：FastAPI、SQLAlchemy、SQLite、Pydantic。
-- AI：通过 OpenAI 兼容的 HTTP API 接入聊天与图片模型。
-- 流式：Server-Sent Events（SSE），配以单存档生成锁。
+前端 Vue 3 + Vite + TypeScript + Pinia + Element Plus，后端 FastAPI + SQLAlchemy + SQLite，通过 OpenAI 兼容 API 接入模型，SSE 流式传输。
 
 ## 快速开始
 
-前置条件：
-
-- Node.js 18+ 与 npm。
-- Python 3.10+。
-- Windows 上需要 Git Bash（`start.ps1` 启动器会用到）或 PowerShell。
-
-克隆并运行：
+需要 Node.js 18+、Python 3.10+。
 
 ```bash
 git clone https://github.com/wh520-wh/WHnovel.git
@@ -46,7 +36,7 @@ pip install -r requirements.txt
 python run.py
 ```
 
-前端（在另一个终端中）：
+前端（另开终端）：
 
 ```bash
 cd frontend
@@ -54,55 +44,61 @@ npm install
 npm run dev
 ```
 
-或者在 Windows 上从仓库根目录直接使用启动脚本：
+Windows 用户也可以直接跑 `start.ps1` 或 `start.bat`，`stop.bat` 停服务。
+
+默认地址：前端 `http://localhost:5173`，后端 `http://localhost:8000`。
+
+浏览器控制台输 `localStorage.admin_mode = '1'` 开管理员入口。
+
+## 开发
+
+后端用 Ruff 做 lint 和格式化，pytest 跑测试：
 
 ```bash
-./start.ps1
-# 或
-start.bat
+cd backend
+pip install -r requirements-dev.txt
+ruff check .          # lint
+ruff format .         # 格式化
+pytest                # 测试
 ```
 
-停止开发服务：
+前端用 ESLint + Prettier，vitest 跑测试：
 
 ```bash
-stop.bat
+cd frontend
+npm ci
+npm run lint          # ESLint
+npm run format        # Prettier
+npm run type-check    # TypeScript 类型检查
+npm run test          # 测试
 ```
 
-默认本地地址：
-
-- 前端：`http://localhost:5173`
-- 后端：`http://localhost:8000`
-
-在浏览器控制台执行 `localStorage.admin_mode = '1'` 即可开启管理员入口。
+推 PR 时 CI 会自动跑这些检查。
 
 ## 目录结构
 
 ```
 WHnovel/
-├── backend/                FastAPI 服务、SQLAlchemy 模型、聊天流水线
-│   ├── app/
-│   ├── tests/
-│   └── run.py
-├── frontend/               Vue 3 SPA（Vite + TS）
+├── backend/             FastAPI 服务
+│   ├── app/             路由、模型、聊天流水线、加密
+│   ├── tests/           pytest 测试
+│   └── run.py           启动入口
+├── frontend/            Vue 3 SPA
 │   ├── src/
-│   │   ├── stores/
-│   │   ├── composables/
-│   │   ├── views/
-│   │   └── api/
+│   │   ├── stores/      Pinia 状态管理
+│   │   ├── composables/ 可复用逻辑（流式聊天、滚动、图片等）
+│   │   ├── views/       页面
+│   │   └── api/         HTTP 和 SSE 封装
 │   └── package.json
-├── docs/                   设计笔记与 AI 输出治理文档
-├── scripts/                仓库维护脚本
-├── start.ps1, start.bat    本地开发启动器（后端 + 前端）
-├── stop.bat                停止开发服务
+├── .github/workflows/   CI 配置
+├── CONTRIBUTING.md      贡献指南
 ├── LICENSE
-├── README.md
-├── README.zh.md
-└── .github/                Issue / PR 模板与行为准则
+└── README.md
 ```
 
 ## 贡献
 
-通过 Issue 反馈 Bug 与想法，向 `main` 分支提交 PR。请遵循 `.github/PULL_REQUEST_TEMPLATE.md`，保持改动聚焦；当改动涉及后端逻辑或聊天流水线时请附上测试。
+看 [CONTRIBUTING.md](CONTRIBUTING.md)。简单说：Issue 反馈问题，PR 提到 `main`，改后端逻辑记得带测试。
 
 ## 许可
 
