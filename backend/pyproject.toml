@@ -1,0 +1,29 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["app", "tests", "scripts"]
+extend-exclude = ["__pycache__", ".pytest_runtime", ".pytest_tmp", ".pytest_cache"]
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: isort, UP: pyupgrade, B: flake8-bugbear
+select = ["E", "F", "I", "UP", "B"]
+# E501 行长交给 formatter；B008 是 FastAPI Depends() 默认参数惯用法
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# conftest 必须在导入 app.* 之前设置环境变量，故允许 import-not-at-top
+"tests/conftest.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "scripts/*"]
+
+[tool.coverage.report]
+show_missing = true
