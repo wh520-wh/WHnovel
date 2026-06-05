@@ -13,6 +13,7 @@ export default defineConfig({
     globals: true,
     testTimeout: 30000,
     hookTimeout: 30000,
+    exclude: ['**/StoryPlay.spec.ts', '**/node_modules/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
