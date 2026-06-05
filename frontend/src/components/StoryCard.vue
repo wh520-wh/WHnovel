@@ -1,7 +1,7 @@
 <template>
   <div
-    class="story-card"
     ref="cardRef"
+    class="story-card"
     role="button"
     tabindex="0"
     :aria-label="`进入故事：${displayTitle}`"
@@ -17,12 +17,27 @@
         :src="story.cover_image || defaultCover"
         :alt="displayTitle"
         loading="lazy"
-        @load="handleImageLoad"
         :class="{ loaded: imageLoaded }"
+        @load="handleImageLoad"
       />
       <span class="card-category">{{ story.category }}</span>
-      <button class="card-duplicate-btn" type="button" @click.stop="emit('duplicate', story.id)" title="复制故事">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <button
+        class="card-duplicate-btn"
+        type="button"
+        title="复制故事"
+        @click.stop="emit('duplicate', story.id)"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
       </button>
     </div>
     <div class="card-body">
@@ -76,14 +91,14 @@ onMounted(() => {
   if (!cardRef.value) return
   observer = new IntersectionObserver(
     (entries) => {
-      entries.forEach(entry => {
+      entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add('card-visible')
           observer?.unobserve(entry.target)
         }
       })
     },
-    { threshold: 0.1 }
+    { threshold: 0.1 },
   )
   observer.observe(cardRef.value)
 })
@@ -133,9 +148,11 @@ function handleMouseLeave() {
   cardRef.value.style.transform = ''
 }
 
-const defaultCover = 'data:image/svg+xml,' + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" fill="%231a1a2e"><rect width="400" height="240"/><text x="200" y="130" text-anchor="middle" fill="%23555" font-size="24">No Cover</text></svg>'
-)
+const defaultCover =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" fill="%231a1a2e"><rect width="400" height="240"/><text x="200" y="130" text-anchor="middle" fill="%23555" font-size="24">No Cover</text></svg>',
+  )
 </script>
 
 <style scoped>
@@ -176,15 +193,18 @@ const defaultCover = 'data:image/svg+xml,' + encodeURIComponent(
 }
 
 .story-card:hover {
-  box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--accent-color) 30%, transparent);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px color-mix(in srgb, var(--accent-color) 30%, transparent);
   border-color: color-mix(in srgb, var(--accent-color) 50%, transparent);
 }
 
 .story-card:hover:not(.tilting) {
   transform: translateY(-6px) scale(1.02);
-  transition: transform var(--duration-base) var(--ease-spring),
-              box-shadow var(--duration-base) var(--ease-smooth),
-              border-color var(--duration-base) var(--ease-smooth);
+  transition:
+    transform var(--duration-base) var(--ease-spring),
+    box-shadow var(--duration-base) var(--ease-smooth),
+    border-color var(--duration-base) var(--ease-smooth);
 }
 
 .cardcover {
@@ -214,7 +234,9 @@ const defaultCover = 'data:image/svg+xml,' + encodeURIComponent(
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 350ms var(--ease-smooth), opacity 300ms ease;
+  transition:
+    transform 350ms var(--ease-smooth),
+    opacity 300ms ease;
   opacity: 0;
   border-radius: inherit;
 }
@@ -231,7 +253,7 @@ const defaultCover = 'data:image/svg+xml,' + encodeURIComponent(
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.55) 100%);
+  background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
   pointer-events: none;
   border-radius: inherit;
 }
@@ -266,7 +288,9 @@ const defaultCover = 'data:image/svg+xml,' + encodeURIComponent(
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-spring);
+  transition:
+    opacity var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-spring);
 }
 
 .story-card:hover .card-duplicate-btn {
@@ -336,5 +360,3 @@ const defaultCover = 'data:image/svg+xml,' + encodeURIComponent(
   color: var(--accent-color);
 }
 </style>
-
-

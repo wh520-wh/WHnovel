@@ -32,7 +32,13 @@
       </div>
 
       <Transition v-else name="options-leave">
-        <div v-if="options.length > 0" key="options" class="options-list" role="listbox" aria-label="剧情选项">
+        <div
+          v-if="options.length > 0"
+          key="options"
+          class="options-list"
+          role="listbox"
+          aria-label="剧情选项"
+        >
           <button
             v-for="(opt, i) in options"
             :key="i"
@@ -47,7 +53,17 @@
             @keydown="handleKeydown(i, $event)"
           >
             <span class="option-text">{{ opt }}</span>
-            <svg class="option-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              class="option-arrow"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>
@@ -144,11 +160,15 @@ onBeforeUnmount(() => {
 }
 
 .restore-hint-enter-active {
-  transition: opacity 200ms ease-out, transform 200ms ease-out;
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
 }
 
 .restore-hint-leave-active {
-  transition: opacity 150ms ease-in, transform 150ms ease-in;
+  transition:
+    opacity 150ms ease-in,
+    transform 150ms ease-in;
 }
 
 .restore-hint-enter-from {
@@ -163,7 +183,9 @@ onBeforeUnmount(() => {
 
 /* ---- 选项切换过渡：out-in 模式 ---- */
 .options-switch-leave-active.options-loading-bubble {
-  transition: opacity 200ms ease-in, transform 200ms ease-in;
+  transition:
+    opacity 200ms ease-in,
+    transform 200ms ease-in;
 }
 .options-switch-leave-to.options-loading-bubble {
   opacity: 0;
@@ -200,9 +222,15 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.options-loading-bubble .dot:nth-child(1) { animation-delay: 0ms; }
-.options-loading-bubble .dot:nth-child(2) { animation-delay: 200ms; }
-.options-loading-bubble .dot:nth-child(3) { animation-delay: 400ms; }
+.options-loading-bubble .dot:nth-child(1) {
+  animation-delay: 0ms;
+}
+.options-loading-bubble .dot:nth-child(2) {
+  animation-delay: 200ms;
+}
+.options-loading-bubble .dot:nth-child(3) {
+  animation-delay: 400ms;
+}
 
 .loading-text {
   font-size: 13px;
@@ -246,14 +274,24 @@ onBeforeUnmount(() => {
 }
 
 @keyframes options-slide-in {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* 选项按钮 - 极轻淡入（去掉逐项错峰，列表整体入场） */
 @keyframes option-bounce-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ---- 选项列表 ---- */
@@ -301,7 +339,9 @@ onBeforeUnmount(() => {
 
 /* 选项列表整体离开动画 */
 .options-leave-leave-active {
-  transition: opacity 180ms ease-in, transform 180ms ease-in;
+  transition:
+    opacity 180ms ease-in,
+    transform 180ms ease-in;
 }
 .options-leave-leave-to {
   opacity: 0;
@@ -323,7 +363,9 @@ onBeforeUnmount(() => {
 .option-btn.active {
   background: color-mix(in srgb, var(--accent-color) 12%, transparent);
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 1px var(--accent-color), var(--shadow-glow);
+  box-shadow:
+    0 0 0 1px var(--accent-color),
+    var(--shadow-glow);
 }
 
 .option-btn:disabled {

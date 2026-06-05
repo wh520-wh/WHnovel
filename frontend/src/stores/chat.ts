@@ -64,7 +64,10 @@ export function normalizeIncomingMessage(message: Record<string, unknown>): Chat
   return {
     ...message,
     role,
-    content: role === 'assistant' ? stripTrailingOptionBlock(sanitizeAiDisplayText(rawContent)) : rawContent,
+    content:
+      role === 'assistant'
+        ? stripTrailingOptionBlock(sanitizeAiDisplayText(rawContent))
+        : rawContent,
     options: sanitizeAiStringList(message.options as string[] | undefined),
     plot_label: normalizePlotLabel(message.plot_label as string | null | undefined),
     imageUrl: (message.imageUrl ?? message.image_url) as string | undefined,
@@ -117,7 +120,9 @@ export const useChatStore = defineStore('chat', () => {
     const realMessageId = tail.message_id ?? messageId
     updateMessageById(messageId, (message) => {
       message.id = realMessageId
-      message.content = stripTrailingOptionBlock(sanitizeAiDisplayText(tail.reply_text || message.content))
+      message.content = stripTrailingOptionBlock(
+        sanitizeAiDisplayText(tail.reply_text || message.content),
+      )
       message.state_snapshot = tail.character_state || {}
       message.story_state = tail.story_state || {}
       message.options = []
@@ -129,7 +134,9 @@ export const useChatStore = defineStore('chat', () => {
     setHighlightedTermsDebounced(tail.highlight_terms || [])
     // 更新相邻 user 消息的 ID（user 消息在 assistant 消息之前，紧邻）
     if (tail.user_id) {
-      const assistantIdx = messages.value.findIndex((m) => m.id === realMessageId || m.id === messageId)
+      const assistantIdx = messages.value.findIndex(
+        (m) => m.id === realMessageId || m.id === messageId,
+      )
       if (assistantIdx > 0 && messages.value[assistantIdx - 1].role === 'user') {
         messages.value[assistantIdx - 1].id = tail.user_id
       }
@@ -177,7 +184,11 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function startNewArchive(storyId: number, name: string = '默认会话') {
-    try { streamModule.abortStream() } catch {}
+    try {
+      streamModule.abortStream()
+    } catch {
+      // stream may already be inactive
+    }
     imageModule.abortInFlightImageRequest()
     const { data } = await createArchive(storyId, name)
     archiveModule.currentArchive.value = data
@@ -203,7 +214,11 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function loadArchive(archiveId: number) {
-    try { streamModule.abortStream() } catch {}
+    try {
+      streamModule.abortStream()
+    } catch {
+      // stream may already be inactive
+    }
     const previousArchiveId = archiveModule.currentArchive.value?.id
     if (previousArchiveId !== undefined && previousArchiveId !== archiveId) {
       imageModule.abortInFlightImageRequest()
@@ -244,7 +259,11 @@ export const useChatStore = defineStore('chat', () => {
   // --- Manual generate options ---
   async function manualGenerateOptions(count: number = 3, guidance: string = '') {
     if (!archiveModule.currentArchive.value || uiModule.sending.value) return []
-    return optionsModule.manualGenerateOptions(archiveModule.currentArchive.value.id, count, guidance)
+    return optionsModule.manualGenerateOptions(
+      archiveModule.currentArchive.value.id,
+      count,
+      guidance,
+    )
   }
 
   async function autoGenerateOptionsAsync() {
@@ -254,7 +273,13 @@ export const useChatStore = defineStore('chat', () => {
 
   // --- State broadcast ---
   async function generateStateBroadcast() {
-    if (!archiveModule.currentArchive.value || uiModule.sending.value || uiModule.streaming.value || uiModule.generatingStateBroadcast.value) return
+    if (
+      !archiveModule.currentArchive.value ||
+      uiModule.sending.value ||
+      uiModule.streaming.value ||
+      uiModule.generatingStateBroadcast.value
+    )
+      return
     uiModule.generatingStateBroadcast.value = true
     try {
       const { data } = await apiGenerateStateBroadcast(archiveModule.currentArchive.value.id)
@@ -284,7 +309,11 @@ export const useChatStore = defineStore('chat', () => {
 
   // --- Clear chat ---
   function clearChat() {
-    try { streamModule.abortStream() } catch {}
+    try {
+      streamModule.abortStream()
+    } catch {
+      // stream may already be inactive
+    }
     imageModule.abortInFlightImageRequest()
     messages.value = []
     archiveModule.currentArchive.value = null
@@ -325,7 +354,9 @@ export const useChatStore = defineStore('chat', () => {
 
     // Mark as removing to trigger animation
     for (const id of numericIds) {
-      updateMessageById(id, (msg) => { msg.removing = true })
+      updateMessageById(id, (msg) => {
+        msg.removing = true
+      })
     }
     try {
       await apiDeleteMessages(archiveModule.currentArchive.value.id, numericIds)

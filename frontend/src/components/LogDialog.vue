@@ -24,9 +24,10 @@ import type { ChatMsg } from '../stores/chat'
 import { formatTimeSeconds } from '../utils/time'
 
 defineProps<{
-  visible: boolean
   messages: ChatMsg[]
 }>()
+
+const visible = defineModel<boolean>('visible', { required: true })
 </script>
 
 <style scoped>
@@ -123,7 +124,9 @@ defineProps<{
   background: var(--bg-card);
   border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
   border-radius: 20px;
-  box-shadow: 0 0 40px color-mix(in srgb, var(--accent-color) 20%, transparent), 0 0 80px color-mix(in srgb, var(--accent-color) 10%, transparent);
+  box-shadow:
+    0 0 40px color-mix(in srgb, var(--accent-color) 20%, transparent),
+    0 0 80px color-mix(in srgb, var(--accent-color) 10%, transparent);
 }
 :deep(.el-dialog__header) {
   border-bottom: 1px solid color-mix(in srgb, var(--accent-color) 20%, transparent);

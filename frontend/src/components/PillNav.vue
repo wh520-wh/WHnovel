@@ -1,9 +1,23 @@
 <template>
   <div class="pill-nav-container">
-    <nav class="pill-nav" :class="[className, { 'pill-nav--mobile-compact': isMobileCompactViewport }]" aria-label="Primary" :style="cssVars">
-      <div class="pill-nav-track" ref="navItemsRef">
-        <ul class="pill-list" :class="{ 'pill-list--mobile-compact': isMobileCompactViewport }" role="menubar">
-          <li v-for="(item, i) in items" :key="item.key || item.href || `item-${i}`" :class="{ 'pill-list-item--mobile-compact': isMobileCompactViewport }" role="none">
+    <nav
+      class="pill-nav"
+      :class="[className, { 'pill-nav--mobile-compact': isMobileCompactViewport }]"
+      aria-label="Primary"
+      :style="cssVars"
+    >
+      <div ref="navItemsRef" class="pill-nav-track">
+        <ul
+          class="pill-list"
+          :class="{ 'pill-list--mobile-compact': isMobileCompactViewport }"
+          role="menubar"
+        >
+          <li
+            v-for="(item, i) in items"
+            :key="item.key || item.href || `item-${i}`"
+            :class="{ 'pill-list-item--mobile-compact': isMobileCompactViewport }"
+            role="none"
+          >
             <RouterLink
               v-if="isRouterLink(item.href)"
               role="menuitem"
@@ -15,11 +29,7 @@
               @click="handleItemAction(item)"
               @touchstart="handleTouchAction(item, $event)"
             >
-              <span
-                class="hover-circle"
-                aria-hidden="true"
-                :ref="(el) => assignCircleRef(i, el)"
-              />
+              <span :ref="(el) => assignCircleRef(i, el)" class="hover-circle" aria-hidden="true" />
               <span class="label-stack">
                 <span class="pill-label">{{ item.label }}</span>
                 <span class="pill-label-hover" aria-hidden="true">{{ item.label }}</span>
@@ -35,11 +45,7 @@
               @mouseleave="handleLeave(i)"
               @click="handleItemAction(item)"
             >
-              <span
-                class="hover-circle"
-                aria-hidden="true"
-                :ref="(el) => assignCircleRef(i, el)"
-              />
+              <span :ref="(el) => assignCircleRef(i, el)" class="hover-circle" aria-hidden="true" />
               <span class="label-stack">
                 <span class="pill-label">{{ item.label }}</span>
                 <span class="pill-label-hover" aria-hidden="true">{{ item.label }}</span>
@@ -56,11 +62,7 @@
               @click="handleItemAction(item)"
               @touchstart="handleTouchAction(item, $event)"
             >
-              <span
-                class="hover-circle"
-                aria-hidden="true"
-                :ref="(el) => assignCircleRef(i, el)"
-              />
+              <span :ref="(el) => assignCircleRef(i, el)" class="hover-circle" aria-hidden="true" />
               <span class="label-stack">
                 <span class="pill-label">{{ item.label }}</span>
                 <span class="pill-label-hover" aria-hidden="true">{{ item.label }}</span>
@@ -69,13 +71,20 @@
           </li>
         </ul>
       </div>
-
     </nav>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type ComponentPublicInstance } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  type ComponentPublicInstance,
+} from 'vue'
 import { RouterLink } from 'vue-router'
 import { gsap } from 'gsap'
 
@@ -114,7 +123,9 @@ const props = withDefaults(
 )
 
 const resolvedPillTextColor = computed(() => props.pillTextColor ?? props.baseColor)
-const isMobileCompactViewport = ref(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+const isMobileCompactViewport = ref(
+  typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
+)
 const circleRefs = ref<Array<HTMLElement | null>>([])
 const tlRefs = ref<Array<gsap.core.Timeline | null>>([])
 const activeTweenRefs = ref<Array<gsap.core.Tween | null>>([])
@@ -174,7 +185,9 @@ function handleTouchAction(item: PillNavItem, e: TouchEvent) {
     recentTouchFlag = true
     e.preventDefault()
     item.onClick?.()
-    setTimeout(() => { recentTouchFlag = false }, 350)
+    setTimeout(() => {
+      recentTouchFlag = false
+    }, 350)
   }
 }
 
@@ -238,7 +251,11 @@ async function setupAnimations() {
 
       tlRefs.value[index]?.kill()
       const tl = gsap.timeline({ paused: true })
-      tl.to(circle, { scale: 1.2, xPercent: -50, duration: 2, ease: props.ease, overwrite: 'auto' }, 0)
+      tl.to(
+        circle,
+        { scale: 1.2, xPercent: -50, duration: 2, ease: props.ease, overwrite: 'auto' },
+        0,
+      )
 
       if (label) {
         tl.to(label, { y: -(h + 8), duration: 2, ease: props.ease, overwrite: 'auto' }, 0)

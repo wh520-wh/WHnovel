@@ -8,11 +8,28 @@
         </div>
 
         <div class="hall-actions">
-          <button class="hall-action-btn create-btn" @click="openCreateDialog" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <button class="hall-action-btn create-btn" type="button" @click="openCreateDialog">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
             创建故事
           </button>
-          <button v-if="isAdmin" class="hall-action-btn admin-entry" type="button" @click="router.push('/admin')">管理</button>
+          <button
+            v-if="isAdmin"
+            class="hall-action-btn admin-entry"
+            type="button"
+            @click="router.push('/admin')"
+          >
+            管理
+          </button>
         </div>
       </div>
     </div>
@@ -41,12 +58,18 @@
       >
         <svg
           class="search-icon"
-          width="18" height="18" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
           aria-hidden="true"
         >
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
       </button>
       <input
@@ -62,7 +85,9 @@
         v-if="searchExpanded && searchQuery"
         class="story-search-clear"
         @mousedown.prevent="clearSearch"
-      >×</button>
+      >
+        ×
+      </button>
     </div>
 
     <!-- 故事卡片网格 -->
@@ -70,8 +95,8 @@
       <!-- 骨架屏：加载中时显示 -->
       <template v-if="storyStore.loading">
         <div v-for="i in 6" :key="'skeleton-' + i" class="story-card-skeleton">
-          <SkeletonBlock height="160px" borderRadius="16px" />
-          <SkeletonText :lines="2" style="margin-top: 12px;" />
+          <SkeletonBlock height="160px" border-radius="16px" />
+          <SkeletonText :lines="2" style="margin-top: 12px" />
         </div>
       </template>
       <!-- 真实内容 -->
@@ -84,40 +109,91 @@
           @duplicate="openCreateDialogAsCopy(story.id)"
         />
         <div v-if="storyStore.fetchError" class="empty-tip">
-          <svg class="empty-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2"/>
-            <line x1="22" y1="22" x2="42" y2="42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <line x1="42" y1="22" x2="22" y2="42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <svg
+            class="empty-icon"
+            viewBox="0 0 64 64"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2" />
+            <line
+              x1="22"
+              y1="22"
+              x2="42"
+              y2="42"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="42"
+              y1="22"
+              x2="22"
+              y2="42"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
           </svg>
           <p class="empty-text">加载失败：{{ storyStore.fetchError }}</p>
-          <el-button type="primary" style="margin-top: 16px;" @click="storyStore.fetchStories()">重试</el-button>
+          <el-button type="primary" style="margin-top: 16px" @click="storyStore.fetchStories()"
+            >重试</el-button
+          >
         </div>
         <div v-else-if="filteredStories.length === 0" class="empty-tip">
-          <svg class="empty-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="8" y="12" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2"/>
-            <line x1="8" y1="24" x2="56" y2="24" stroke="currentColor" stroke-width="2"/>
-            <line x1="20" y1="12" x2="20" y2="24" stroke="currentColor" stroke-width="2"/>
-            <line x1="44" y1="12" x2="44" y2="24" stroke="currentColor" stroke-width="2"/>
-            <rect x="16" y="32" width="12" height="2" rx="1" fill="currentColor" opacity="0.4"/>
-            <rect x="16" y="38" width="24" height="2" rx="1" fill="currentColor" opacity="0.4"/>
-            <rect x="16" y="44" width="16" height="2" rx="1" fill="currentColor" opacity="0.4"/>
+          <svg
+            class="empty-icon"
+            viewBox="0 0 64 64"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="8"
+              y="12"
+              width="48"
+              height="40"
+              rx="4"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <line x1="8" y1="24" x2="56" y2="24" stroke="currentColor" stroke-width="2" />
+            <line x1="20" y1="12" x2="20" y2="24" stroke="currentColor" stroke-width="2" />
+            <line x1="44" y1="12" x2="44" y2="24" stroke="currentColor" stroke-width="2" />
+            <rect x="16" y="32" width="12" height="2" rx="1" fill="currentColor" opacity="0.4" />
+            <rect x="16" y="38" width="24" height="2" rx="1" fill="currentColor" opacity="0.4" />
+            <rect x="16" y="44" width="16" height="2" rx="1" fill="currentColor" opacity="0.4" />
           </svg>
           <p class="empty-text">暂无故事</p>
           <p class="empty-hint">快去创作第一个故事吧</p>
-          <button class="hall-action-btn create-btn" style="margin-top: 16px;" @click="openCreateDialog">创建第一个故事</button>
+          <button
+            class="hall-action-btn create-btn"
+            style="margin-top: 16px"
+            @click="openCreateDialog"
+          >
+            创建第一个故事
+          </button>
         </div>
       </template>
     </div>
 
     <!-- 创建/复制故事弹窗 -->
-    <el-dialog v-model="createDialogVisible" :title="createTab === 'new' ? '新建故事' : '基于已有故事创建'" width="600px">
+    <el-dialog
+      v-model="createDialogVisible"
+      :title="createTab === 'new' ? '新建故事' : '基于已有故事创建'"
+      width="600px"
+    >
       <el-tabs v-model="createTab" class="create-tabs">
         <el-tab-pane label="新建故事" name="new" />
         <el-tab-pane label="基于已有故事" name="copy" />
       </el-tabs>
 
       <!-- 新建表单 -->
-      <el-form v-if="createTab === 'new'" :model="createForm" label-width="80px" class="create-form">
+      <el-form
+        v-if="createTab === 'new'"
+        :model="createForm"
+        label-width="80px"
+        class="create-form"
+      >
         <el-form-item label="标题" required>
           <el-input v-model="createForm.title" placeholder="给你的故事起个名字" />
         </el-form-item>
@@ -130,30 +206,100 @@
           <el-input v-model="createTagsInput" placeholder="使用英文逗号分隔，如：恋爱,校园" />
         </el-form-item>
         <el-form-item label="封面图">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div v-if="createForm.cover_image" style="width:80px;height:50px;border-radius:4px;background-size:cover;background-position:center;" :style="{backgroundImage:`url(${createForm.cover_image})`}"></div>
-            <div v-else style="width:80px;height:50px;border-radius:4px;border:1px dashed var(--el-border-color);display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;">未设置</div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div
+              v-if="createForm.cover_image"
+              style="
+                width: 80px;
+                height: 50px;
+                border-radius: 4px;
+                background-size: cover;
+                background-position: center;
+              "
+              :style="{ backgroundImage: `url(${createForm.cover_image})` }"
+            ></div>
+            <div
+              v-else
+              style="
+                width: 80px;
+                height: 50px;
+                border-radius: 4px;
+                border: 1px dashed var(--el-border-color);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                color: #999;
+              "
+            >
+              未设置
+            </div>
             <el-button size="small" @click="handleUploadCover">上传</el-button>
           </div>
         </el-form-item>
         <el-form-item label="背景图">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div v-if="createForm.background_image" style="width:80px;height:50px;border-radius:4px;background-size:cover;background-position:center;" :style="{backgroundImage:`url(${createForm.background_image})`}"></div>
-            <div v-else style="width:80px;height:50px;border-radius:4px;border:1px dashed var(--el-border-color);display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;">未设置</div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div
+              v-if="createForm.background_image"
+              style="
+                width: 80px;
+                height: 50px;
+                border-radius: 4px;
+                background-size: cover;
+                background-position: center;
+              "
+              :style="{ backgroundImage: `url(${createForm.background_image})` }"
+            ></div>
+            <div
+              v-else
+              style="
+                width: 80px;
+                height: 50px;
+                border-radius: 4px;
+                border: 1px dashed var(--el-border-color);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                color: #999;
+              "
+            >
+              未设置
+            </div>
             <el-button size="small" @click="handleUploadBackground">上传</el-button>
           </div>
         </el-form-item>
         <el-form-item label="简介">
-          <el-input v-model="createForm.description" type="textarea" :rows="2" placeholder="简短介绍故事背景" />
+          <el-input
+            v-model="createForm.description"
+            type="textarea"
+            :rows="2"
+            placeholder="简短介绍故事背景"
+          />
         </el-form-item>
         <el-form-item label="世界观">
-          <el-input v-model="createForm.world_setting" type="textarea" :rows="isMobile ? 2 : 3" placeholder="描述故事的世界观、设定等" />
+          <el-input
+            v-model="createForm.world_setting"
+            type="textarea"
+            :rows="isMobile ? 2 : 3"
+            placeholder="描述故事的世界观、设定等"
+          />
         </el-form-item>
         <el-form-item label="默认开场提示词">
-          <el-input v-model="createForm.opening_requirement" type="textarea" :rows="isMobile ? 2 : 3" placeholder="故事开场时用户看到的引导文本，将作为开场消息发送给AI" />
+          <el-input
+            v-model="createForm.opening_requirement"
+            type="textarea"
+            :rows="isMobile ? 2 : 3"
+            placeholder="故事开场时用户看到的引导文本，将作为开场消息发送给AI"
+          />
         </el-form-item>
         <el-form-item label="图片风格">
-          <el-input v-model="createForm.image_style" type="textarea" :rows="2" placeholder="如：漫画分格，简洁有力的对话气泡风格。留空则 AI 自动生成" />
+          <el-input
+            v-model="createForm.image_style"
+            type="textarea"
+            :rows="2"
+            placeholder="如：漫画分格，简洁有力的对话气泡风格。留空则 AI 自动生成"
+          />
         </el-form-item>
       </el-form>
 
@@ -181,17 +327,29 @@
       </div>
 
       <template #footer>
-        <el-button @click="createDialogVisible = false" :disabled="creating">取消</el-button>
+        <el-button :disabled="creating" @click="createDialogVisible = false">取消</el-button>
         <el-button
-          @click="() => { if (!createForm.category) { ElMessage.warning('请先选择分类'); return; } handleOpenModelSelect(); }"
           :loading="generating"
           type="info"
+          @click="
+            () => {
+              if (!createForm.category) {
+                ElMessage.warning('请先选择分类')
+                return
+              }
+              handleOpenModelSelect()
+            }
+          "
         >
           一键AI生成
         </el-button>
-        <el-button v-if="editingStoryId" type="warning" @click="handleStandaloneGenerateCover">一键AI生成封面</el-button>
-        <el-button v-if="editingStoryId" type="warning" @click="handleStandaloneGenerateBackground">一键AI生成背景</el-button>
-        <el-button type="primary" @click="handleCreate" :loading="creating">
+        <el-button v-if="editingStoryId" type="warning" @click="handleStandaloneGenerateCover"
+          >一键AI生成封面</el-button
+        >
+        <el-button v-if="editingStoryId" type="warning" @click="handleStandaloneGenerateBackground"
+          >一键AI生成背景</el-button
+        >
+        <el-button type="primary" :loading="creating" @click="handleCreate">
           {{ createTab === 'new' ? '创建' : '复制并创建' }}
         </el-button>
       </template>
@@ -199,7 +357,7 @@
 
     <!-- 模型选择弹窗 -->
     <el-dialog v-model="modelSelectVisible" title="选择模型" width="400px" destroy-on-close>
-      <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 13px;">
+      <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 13px">
         请选择用于生成故事内容的模型
       </p>
       <div v-if="generating" class="generating-steps">
@@ -221,36 +379,83 @@
           <span :class="{ 'flow-text': generatingStep === idx }">{{ step }}</span>
         </div>
       </div>
-      <el-select v-model="selectedModelId" placeholder="选择模型" style="width: 100%;" :disabled="generating">
-        <el-option
-          v-for="m in availableModels"
-          :key="m.id"
-          :label="m.name"
-          :value="m.id"
-        />
+      <el-select
+        v-model="selectedModelId"
+        placeholder="选择模型"
+        style="width: 100%"
+        :disabled="generating"
+      >
+        <el-option v-for="m in availableModels" :key="m.id" :label="m.name" :value="m.id" />
       </el-select>
-      <div style="margin-top: 12px;">
-        <el-input v-model="createForm.preference" type="textarea" :rows="2" placeholder="写下你的偏好，如：我想成为一个世界首富" :disabled="generating" />
+      <div style="margin-top: 12px">
+        <el-input
+          v-model="createForm.preference"
+          type="textarea"
+          :rows="2"
+          placeholder="写下你的偏好，如：我想成为一个世界首富"
+          :disabled="generating"
+        />
       </div>
-      <div style="margin-top:16px;border-top:1px solid var(--el-border-color-lighter);padding-top:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div
+        style="
+          margin-top: 16px;
+          border-top: 1px solid var(--el-border-color-lighter);
+          padding-top: 16px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          "
+        >
           <span>生成封面图</span>
           <el-switch v-model="generateCover" :disabled="generating" />
         </div>
-        <ModelSelect v-if="generateCover" v-model="coverImageModelId" :options="imageModels" placeholder="选择图片模型" style="margin-bottom:12px;" :disabled="generating" />
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <ModelSelect
+          v-if="generateCover"
+          v-model="coverImageModelId"
+          :options="imageModels"
+          placeholder="选择图片模型"
+          style="margin-bottom: 12px"
+          :disabled="generating"
+        />
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          "
+        >
           <span>生成背景图</span>
           <el-switch v-model="generateBackground" :disabled="generating" />
         </div>
-        <ModelSelect v-if="generateBackground" v-model="backgroundImageModelId" :options="imageModels" placeholder="选择图片模型" :disabled="generating" />
+        <ModelSelect
+          v-if="generateBackground"
+          v-model="backgroundImageModelId"
+          :options="imageModels"
+          placeholder="选择图片模型"
+          :disabled="generating"
+        />
       </div>
       <template #footer>
         <el-button v-if="!generating" @click="modelSelectVisible = false">取消</el-button>
         <el-button
           v-if="!generating"
           type="primary"
-          @click="confirmGenerate({ category: createForm.category, title_hint: createForm.title, tags_hint: createTagsInput, image_style: createForm.image_style, preference: createForm.preference })"
           :disabled="!selectedModelId || generating"
+          @click="
+            confirmGenerate({
+              category: createForm.category,
+              title_hint: createForm.title,
+              tags_hint: createTagsInput,
+              image_style: createForm.image_style,
+              preference: createForm.preference,
+            })
+          "
         >
           开始生成
         </el-button>
@@ -258,7 +463,12 @@
     </el-dialog>
 
     <!-- 独立图片生成模型选择弹窗 -->
-    <el-dialog v-model="imageModelSelectVisible" :title="imageModelDialogTitle" width="400px" destroy-on-close>
+    <el-dialog
+      v-model="imageModelSelectVisible"
+      :title="imageModelDialogTitle"
+      width="400px"
+      destroy-on-close
+    >
       <div v-if="standaloneGenerating" class="generating-steps">
         <div
           v-for="(step, idx) in standaloneGeneratingSteps"
@@ -278,15 +488,34 @@
           <span :class="{ 'flow-text': standaloneGeneratingStep === idx }">{{ step }}</span>
         </div>
       </div>
-      <ModelSelect v-model="selectedImageModelId" :options="imageModels" placeholder="选择图片模型" :disabled="standaloneGenerating" />
+      <ModelSelect
+        v-model="selectedImageModelId"
+        :options="imageModels"
+        placeholder="选择图片模型"
+        :disabled="standaloneGenerating"
+      />
       <template #footer>
-        <el-button v-if="!standaloneGenerating" @click="imageModelSelectVisible = false">取消</el-button>
-        <el-button type="primary" :disabled="!selectedImageModelId || standaloneGenerating" :loading="standaloneGenerating" @click="confirmStandaloneImageGenerate">确认生成</el-button>
+        <el-button v-if="!standaloneGenerating" @click="imageModelSelectVisible = false"
+          >取消</el-button
+        >
+        <el-button
+          type="primary"
+          :disabled="!selectedImageModelId || standaloneGenerating"
+          :loading="standaloneGenerating"
+          @click="confirmStandaloneImageGenerate"
+          >确认生成</el-button
+        >
       </template>
     </el-dialog>
 
     <!-- 生成结果预览弹窗 -->
-    <el-dialog v-model="previewVisible" title="生成结果预览" width="640px" destroy-on-close :close-on-click-modal="false">
+    <el-dialog
+      v-model="previewVisible"
+      title="生成结果预览"
+      width="640px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
       <div v-if="previewData" class="preview-result">
         <div class="preview-field">
           <div class="preview-label">标题</div>
@@ -310,7 +539,9 @@
         </div>
         <div class="preview-field">
           <div class="preview-label">开场提示词</div>
-          <div class="preview-value world-setting-preview">{{ previewData.opening_requirement || '(AI自动生成)' }}</div>
+          <div class="preview-value world-setting-preview">
+            {{ previewData.opening_requirement || '(AI自动生成)' }}
+          </div>
         </div>
         <div v-if="previewData.cover_url" class="preview-field">
           <div class="preview-label">封面图</div>
@@ -319,7 +550,19 @@
       </div>
       <template #footer>
         <el-button @click="handleCancelPreview">取消</el-button>
-        <el-button @click="() => confirmGenerate({ category: createForm.category, title_hint: createForm.title, tags_hint: createTagsInput, image_style: createForm.image_style, preference: createForm.preference })" :loading="generating">
+        <el-button
+          :loading="generating"
+          @click="
+            () =>
+              confirmGenerate({
+                category: createForm.category,
+                title_hint: createForm.title,
+                tags_hint: createTagsInput,
+                image_style: createForm.image_style,
+                preference: createForm.preference,
+              })
+          "
+        >
           重新生成
         </el-button>
         <el-button type="primary" @click="applyPreview">确认填入</el-button>
@@ -333,7 +576,13 @@ import { ref, computed, onMounted, onBeforeUnmount, reactive, nextTick } from 'v
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useStoryStore } from '../stores/story'
-import { createStory, standaloneGenerateCover, standaloneGenerateBackground, uploadStoryImage, getModels } from '../api'
+import {
+  createStory,
+  standaloneGenerateCover,
+  standaloneGenerateBackground,
+  uploadStoryImage,
+  getModels,
+} from '../api'
 import { STORY_CATEGORIES } from '../constants/categories'
 import { MODEL_TYPE_IMAGE } from '../constants/modelTypes'
 import StoryCard from '../components/StoryCard.vue'
@@ -375,11 +624,13 @@ function handleCancelPreview() {
     confirmButtonText: '确定放弃',
     cancelButtonText: '继续编辑',
     type: 'warning',
-  }).then(() => {
-    cancelPreview()
-  }).catch(() => {
-    // 继续编辑，什么都不做
   })
+    .then(() => {
+      cancelPreview()
+    })
+    .catch(() => {
+      // 继续编辑，什么都不做
+    })
 }
 
 function readAdminMode() {
@@ -449,19 +700,20 @@ function handleSearchBlur() {
   }
 }
 
-const categories = computed(() => ['全部', ...new Set(storyStore.stories.map(s => s.category))])
+const categories = computed(() => ['全部', ...new Set(storyStore.stories.map((s) => s.category))])
 
 const filteredStories = computed(() => {
   let list = storyStore.stories
   if (selectedCategory.value !== '全部') {
-    list = list.filter(s => s.category === selectedCategory.value)
+    list = list.filter((s) => s.category === selectedCategory.value)
   }
   const q = searchQuery.value.trim().toLowerCase()
   if (q) {
-    list = list.filter(s =>
-      s.title.toLowerCase().includes(q) ||
-      s.description.toLowerCase().includes(q) ||
-      s.tags.some(t => t.toLowerCase().includes(q))
+    list = list.filter(
+      (s) =>
+        s.title.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q) ||
+        s.tags.some((t) => t.toLowerCase().includes(q)),
     )
   }
   return list
@@ -491,7 +743,7 @@ const createForm = reactive({
 })
 
 const selectedStoryForCopy = computed(() =>
-  storyStore.stories.find(s => s.id === selectedCopyId.value)
+  storyStore.stories.find((s) => s.id === selectedCopyId.value),
 )
 
 function openCreateDialog() {
@@ -517,7 +769,7 @@ function openCreateDialogAsCopy(storyId: number) {
   createTab.value = 'copy'
   selectedCopyId.value = storyId
   // 预填表单数据
-  const src = storyStore.stories.find(s => s.id === storyId)
+  const src = storyStore.stories.find((s) => s.id === storyId)
   if (src) {
     Object.assign(createForm, {
       title: src.title + '（副本）',
@@ -558,7 +810,10 @@ async function handleCreate() {
       world_setting: createForm.world_setting,
       opening_requirement: createForm.opening_requirement,
       image_style: createForm.image_style,
-      tags: createTagsInput.value.split(',').map(t => t.trim()).filter(Boolean),
+      tags: createTagsInput.value
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
     }
 
     if (createTab.value === 'copy') {
@@ -617,7 +872,7 @@ const standaloneGeneratingSteps = computed(() => [
 const editingStoryId = ref<number | null>(null)
 
 const imageModels = computed(() =>
-  allModels.value.filter((m: any) => m.model_type === MODEL_TYPE_IMAGE && !!m.enabled)
+  allModels.value.filter((m: any) => m.model_type === MODEL_TYPE_IMAGE && !!m.enabled),
 )
 
 async function loadAllModels() {
@@ -653,10 +908,16 @@ async function confirmStandaloneImageGenerate() {
   standaloneGeneratingStep.value = 0
   try {
     if (imageGeneratePurpose.value === 'cover') {
-      const { data } = await standaloneGenerateCover(editingStoryId.value, selectedImageModelId.value)
+      const { data } = await standaloneGenerateCover(
+        editingStoryId.value,
+        selectedImageModelId.value,
+      )
       createForm.cover_image = data.cover_image
     } else {
-      const { data } = await standaloneGenerateBackground(editingStoryId.value, selectedImageModelId.value)
+      const { data } = await standaloneGenerateBackground(
+        editingStoryId.value,
+        selectedImageModelId.value,
+      )
       createForm.background_image = data.background_image
     }
     imageModelSelectVisible.value = false
@@ -749,7 +1010,9 @@ onBeforeUnmount(() => {
     linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, transparent 60%);
   border-radius: 16px;
   border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md), inset 0 0 60px rgba(20, 184, 166, 0.05);
+  box-shadow:
+    var(--shadow-md),
+    inset 0 0 60px rgba(20, 184, 166, 0.05);
   animation: header-in 400ms var(--ease-out) both;
 }
 
@@ -819,7 +1082,12 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
   box-shadow: var(--shadow-sm);
   background: var(--user-bubble);
   color: #fff;
@@ -854,8 +1122,7 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
   font-size: 13px;
   cursor: pointer;
-  transition:
-    all var(--duration-fast) var(--ease-smooth);
+  transition: all var(--duration-fast) var(--ease-smooth);
 }
 
 .filter-pill:hover {
@@ -870,7 +1137,9 @@ onBeforeUnmount(() => {
   background: var(--user-bubble);
   color: #fff;
   border-color: transparent;
-  box-shadow: var(--shadow-md), 0 0 16px color-mix(in srgb, var(--accent-color) 30%, transparent);
+  box-shadow:
+    var(--shadow-md),
+    0 0 16px color-mix(in srgb, var(--accent-color) 30%, transparent);
 }
 
 .filter-pill.active:hover {
@@ -897,7 +1166,9 @@ onBeforeUnmount(() => {
 }
 
 @keyframes empty-fade-in {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 
 .empty-icon {
@@ -950,7 +1221,12 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border-color);
   background: var(--bg-card);
   cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
 }
 .copy-story-item:hover {
   border-color: var(--accent-color);
@@ -1018,7 +1294,7 @@ onBeforeUnmount(() => {
   max-height: 180px;
   border-radius: 8px;
   object-fit: cover;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   margin-top: 8px;
 }
 
@@ -1164,7 +1440,9 @@ onBeforeUnmount(() => {
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: color 180ms var(--ease-smooth), transform 180ms var(--ease-smooth);
+  transition:
+    color 180ms var(--ease-smooth),
+    transform 180ms var(--ease-smooth);
 }
 
 .story-search-trigger:hover,
@@ -1236,7 +1514,9 @@ onBeforeUnmount(() => {
   justify-content: center;
   font-size: 16px;
   line-height: 1;
-  transition: background 150ms, color 150ms;
+  transition:
+    background 150ms,
+    color 150ms;
 }
 
 .story-search-clear:hover {
@@ -1292,5 +1572,3 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 </style>
-
-

@@ -41,7 +41,9 @@ const router = createRouter({
       meta: { title: '设置' },
       beforeEnter: (to) => {
         const section = String(to.params.section || '')
-        if (!ALLOWED_SETTINGS_SECTIONS.includes(section as (typeof ALLOWED_SETTINGS_SECTIONS)[number])) {
+        if (
+          !ALLOWED_SETTINGS_SECTIONS.includes(section as (typeof ALLOWED_SETTINGS_SECTIONS)[number])
+        ) {
           return { path: '/settings-mobile', query: to.query }
         }
         return true

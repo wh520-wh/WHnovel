@@ -10,13 +10,16 @@
   </div>
 </template>
 <script setup lang="ts">
-withDefaults(defineProps<{
-  lines?: number
-  lastLineWidth?: string
-}>(), {
-  lines: 3,
-  lastLineWidth: '60%',
-})
+withDefaults(
+  defineProps<{
+    lines?: number
+    lastLineWidth?: string
+  }>(),
+  {
+    lines: 3,
+    lastLineWidth: '60%',
+  },
+)
 </script>
 <style scoped>
 .skeleton-text {

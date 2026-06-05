@@ -14,7 +14,7 @@
       <span v-else class="header-spacer" aria-hidden="true" />
     </header>
 
-    <main class="settings-mobile-body" v-if="!isSectionPage">
+    <main v-if="!isSectionPage" class="settings-mobile-body">
       <button
         v-for="section in sectionList"
         :key="section"
@@ -26,7 +26,11 @@
       </button>
     </main>
 
-    <main class="settings-mobile-body settings-mobile-detail settings-mobile-scroll" :style="{ '--settings-mobile-detail-bottom': detailBottomSpacing }" v-else>
+    <main
+      v-else
+      class="settings-mobile-body settings-mobile-detail settings-mobile-scroll"
+      :style="{ '--settings-mobile-detail-bottom': detailBottomSpacing }"
+    >
       <section v-if="currentSection === 'app'" class="detail-section">
         <label class="field-block mobile-surface">
           <span class="field-label">全局默认系统提示词</span>
@@ -82,29 +86,38 @@
 
         <label class="field-block mobile-surface">
           <span class="field-label">全局风格</span>
-          <el-input
-            v-model="form.default_image_style"
-            type="textarea"
-            autosize
-            resize="none"
-          />
+          <el-input v-model="form.default_image_style" type="textarea" autosize resize="none" />
         </label>
       </section>
 
       <section v-else-if="currentSection === 'model'" class="detail-section">
         <label class="field-block mobile-surface">
           <span class="field-label">主用模型</span>
-          <ModelSelect v-model="form.primary_model_id" :options="enabledModels" placeholder="请选择主用模型" />
+          <ModelSelect
+            v-model="form.primary_model_id"
+            :options="enabledModels"
+            placeholder="请选择主用模型"
+          />
         </label>
 
         <div class="field-block mobile-surface">
           <span class="field-label">备用模型</span>
-          <div class="backup-list" v-if="form.backup_model_ids.length > 0">
-            <div v-for="(id, idx) in form.backup_model_ids" :key="`${id}-${idx}`" class="backup-item">
+          <div v-if="form.backup_model_ids.length > 0" class="backup-list">
+            <div
+              v-for="(id, idx) in form.backup_model_ids"
+              :key="`${id}-${idx}`"
+              class="backup-item"
+            >
               <span class="backup-name">{{ modelNameById(id) }}</span>
               <div class="backup-actions">
-                <button type="button" @click="moveBackupUp(idx)" :disabled="idx === 0">上移</button>
-                <button type="button" @click="moveBackupDown(idx)" :disabled="idx === form.backup_model_ids.length - 1">下移</button>
+                <button type="button" :disabled="idx === 0" @click="moveBackupUp(idx)">上移</button>
+                <button
+                  type="button"
+                  :disabled="idx === form.backup_model_ids.length - 1"
+                  @click="moveBackupDown(idx)"
+                >
+                  下移
+                </button>
                 <button type="button" @click="removeBackup(idx)">删除</button>
               </div>
             </div>
@@ -112,8 +125,12 @@
           <div v-else class="backup-empty">暂无备用模型</div>
 
           <div class="backup-add-row">
-            <ModelSelect v-model="backupCandidateId" :options="backupCandidates" placeholder="选择备用模型" />
-            <button type="button" @click="addBackup" :disabled="!backupCandidateId">添加</button>
+            <ModelSelect
+              v-model="backupCandidateId"
+              :options="backupCandidates"
+              placeholder="选择备用模型"
+            />
+            <button type="button" :disabled="!backupCandidateId" @click="addBackup">添加</button>
           </div>
         </div>
       </section>
@@ -148,8 +165,20 @@
         <div class="field-block mobile-surface">
           <span class="field-label">复制图片格式</span>
           <div class="choice-row">
-            <button type="button" :class="{ active: form.copy_image_format === 'url' }" @click="form.copy_image_format = 'url'">URL</button>
-            <button type="button" :class="{ active: form.copy_image_format === 'binary' }" @click="form.copy_image_format = 'binary'">图片</button>
+            <button
+              type="button"
+              :class="{ active: form.copy_image_format === 'url' }"
+              @click="form.copy_image_format = 'url'"
+            >
+              URL
+            </button>
+            <button
+              type="button"
+              :class="{ active: form.copy_image_format === 'binary' }"
+              @click="form.copy_image_format = 'binary'"
+            >
+              图片
+            </button>
           </div>
         </div>
 
@@ -175,10 +204,34 @@
         <div class="field-block mobile-surface">
           <span class="field-label">主题</span>
           <div class="choice-row">
-            <button type="button" :class="{ active: themeStore.theme === 'dark' }" @click="themeStore.setTheme('dark')">暗色</button>
-            <button type="button" :class="{ active: themeStore.theme === 'light' }" @click="themeStore.setTheme('light')">亮色</button>
-            <button type="button" :class="{ active: themeStore.theme === 'enigma' }" @click="themeStore.setTheme('enigma')">Enigma</button>
-            <button type="button" :class="{ active: themeStore.theme === 'claude' }" @click="themeStore.setTheme('claude')">Claude</button>
+            <button
+              type="button"
+              :class="{ active: themeStore.theme === 'dark' }"
+              @click="themeStore.setTheme('dark')"
+            >
+              暗色
+            </button>
+            <button
+              type="button"
+              :class="{ active: themeStore.theme === 'light' }"
+              @click="themeStore.setTheme('light')"
+            >
+              亮色
+            </button>
+            <button
+              type="button"
+              :class="{ active: themeStore.theme === 'enigma' }"
+              @click="themeStore.setTheme('enigma')"
+            >
+              Enigma
+            </button>
+            <button
+              type="button"
+              :class="{ active: themeStore.theme === 'claude' }"
+              @click="themeStore.setTheme('claude')"
+            >
+              Claude
+            </button>
           </div>
         </div>
         <label class="field-row mobile-surface">
@@ -188,7 +241,7 @@
       </section>
     </main>
 
-    <footer ref="footerRef" class="settings-mobile-footer mobile-surface" v-if="isSectionPage">
+    <footer v-if="isSectionPage" ref="footerRef" class="settings-mobile-footer mobile-surface">
       <button type="button" class="save-btn" :disabled="saving" @click="handleSave">
         {{ saving ? '保存中...' : '保存设置' }}
       </button>

@@ -4,7 +4,7 @@
 
 /* ---- 暗色主题 ---- */
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* 背景色 */
   --bg-primary: #071012;
   --bg-secondary: #0b171a;
@@ -56,9 +56,9 @@
   --font-sans-claude: 'Source Han Sans SC', 'Inter', system-ui, sans-serif;
 
   /* 全局行高 token */
-  --line-height-prose: 1.60;
-  --line-height-heading: 1.20;
-  --line-height-ui: 1.40;
+  --line-height-prose: 1.6;
+  --line-height-heading: 1.2;
+  --line-height-ui: 1.4;
 
   /* Element Plus 暗色覆盖 */
   --el-bg-color: #0b171a;
@@ -88,7 +88,7 @@
 }
 
 /* ---- 亮色主题 ---- */
-[data-theme="light"] {
+[data-theme='light'] {
   /* 背景色 */
   --bg-primary: #f6fbfa;
   --bg-secondary: #ffffff;
@@ -162,8 +162,12 @@
   --el-color-primary: #0f766e;
 
   /* 管理后台 */
-  --admin-sidebar-bg: linear-gradient(180deg, rgba(20,184,166,0.08) 0%, var(--bg-secondary) 80px);
-  --admin-main-bg: rgba(246,251,250,0.85);
+  --admin-sidebar-bg: linear-gradient(
+    180deg,
+    rgba(20, 184, 166, 0.08) 0%,
+    var(--bg-secondary) 80px
+  );
+  --admin-main-bg: rgba(246, 251, 250, 0.85);
   --admin-card-bg: rgba(255, 255, 255, 0.75);
   --admin-input-bg: rgba(255, 255, 255, 0.6);
 }
@@ -197,11 +201,11 @@
   --text-4xl: 36px;
 
   /* ---- 设计系统：圆角比例尺 ---- */
-  --radius-chip: 999px;     /* 选项 pill / tag */
-  --radius-control: 10px;   /* 按钮 / 输入 */
-  --radius-card: 14px;      /* 卡片 / 面板 / 菜单 */
-  --radius-bubble: 16px;    /* 聊天气泡大圆角（贴边角单独压小） */
-  --radius-bubble-tail: 4px;/* 气泡贴边那一角 */
+  --radius-chip: 999px; /* 选项 pill / tag */
+  --radius-control: 10px; /* 按钮 / 输入 */
+  --radius-card: 14px; /* 卡片 / 面板 / 菜单 */
+  --radius-bubble: 16px; /* 聊天气泡大圆角（贴边角单独压小） */
+  --radius-bubble-tail: 4px; /* 气泡贴边那一角 */
 
   /* ---- 设计系统：动效曲线 (轻盈流畅) ---- */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -223,7 +227,11 @@
   --color-success: #10b981;
 
   /* ---- 聊天区域背景渐变 ---- */
-  --chat-area-gradient: radial-gradient(ellipse at 50% 0%, rgba(20, 184, 166, 0.08) 0%, transparent 60%);
+  --chat-area-gradient: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(20, 184, 166, 0.08) 0%,
+    transparent 60%
+  );
   --chat-bg-overlay: rgba(7, 16, 18, 0.55);
   --chat-bg-overlay-mobile: rgba(7, 16, 18, 0.68);
 
@@ -232,31 +240,39 @@
   --skeleton-radius: 8px;
 
   /* 管理后台 */
-  --admin-sidebar-bg: linear-gradient(180deg, rgba(20,184,166,0.12) 0%, var(--bg-secondary) 80px);
-  --admin-main-bg: rgba(7,16,18,0.6);
+  --admin-sidebar-bg: linear-gradient(
+    180deg,
+    rgba(20, 184, 166, 0.12) 0%,
+    var(--bg-secondary) 80px
+  );
+  --admin-main-bg: rgba(7, 16, 18, 0.6);
   --admin-card-bg: rgba(7, 16, 18, 0.82);
   --admin-input-bg: rgba(7, 16, 18, 0.82);
 }
 
 /* ---- 亮色主题聊天区渐变 ---- */
-[data-theme="light"] {
-  --chat-area-gradient: radial-gradient(ellipse at 50% 0%, rgba(15, 118, 110, 0.055) 0%, transparent 60%);
+[data-theme='light'] {
+  --chat-area-gradient: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(15, 118, 110, 0.055) 0%,
+    transparent 60%
+  );
   --chat-bg-overlay: rgba(246, 251, 250, 0.55);
   --chat-bg-overlay-mobile: rgba(246, 251, 250, 0.65);
 }
 
 /* ---- 亮色主题 AI 气泡：纯白 + 轻微浮起阴影 ---- */
-[data-theme="light"] .chat-message.assistant .msg-bubble {
+[data-theme='light'] .chat-message.assistant .msg-bubble {
   box-shadow: 0 1px 2px rgba(15, 118, 110, 0.05);
 }
 
 /* ---- Enigma 主题：状态播报数值用琥珀色描色（风味 delta） ---- */
-[data-theme="enigma"] .chat-message .state-broadcast-table .sb-val {
+[data-theme='enigma'] .chat-message .state-broadcast-table .sb-val {
   color: var(--warning-color);
 }
 
 /* ---- Enigma 风格主题 (第三主题) ---- */
-[data-theme="enigma"] {
+[data-theme='enigma'] {
   /* 背景色 - Claude 风格深暖黑，非纯黑 */
   --bg-primary: #0c0c0f;
   --bg-secondary: #111116;
@@ -330,7 +346,12 @@
   --el-color-primary: #0ea5a4;
 
   /* Claude 主题聊天区渐变 - 深海青蓝调 */
-  --chat-area-gradient: radial-gradient(ellipse at 50% 0%, rgba(14, 165, 164, 0.08) 0%, rgba(14, 165, 164, 0.03) 40%, transparent 70%);
+  --chat-area-gradient: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(14, 165, 164, 0.08) 0%,
+    rgba(14, 165, 164, 0.03) 40%,
+    transparent 70%
+  );
   --chat-bg-overlay: rgba(12, 12, 15, 0.55);
   --chat-bg-overlay-mobile: rgba(12, 12, 15, 0.65);
   --bubble-menu-solid-bg: #1a1a22;
@@ -340,73 +361,81 @@
   --bubble-menu-focus-ring: #5eead4;
 
   /* 管理后台 */
-  --admin-sidebar-bg: linear-gradient(180deg, rgba(20,184,166,0.12) 0%, var(--bg-secondary) 80px);
-  --admin-main-bg: rgba(8,8,15,0.6);
+  --admin-sidebar-bg: linear-gradient(
+    180deg,
+    rgba(20, 184, 166, 0.12) 0%,
+    var(--bg-secondary) 80px
+  );
+  --admin-main-bg: rgba(8, 8, 15, 0.6);
   --admin-card-bg: rgba(8, 8, 15, 0.8);
   --admin-input-bg: rgba(8, 8, 15, 0.8);
 }
 
 /* ---- Claude 主题聊天消息 ---- */
-[data-theme="enigma"] .chat-message.user .msg-bubble {
+[data-theme='enigma'] .chat-message.user .msg-bubble {
   background: linear-gradient(135deg, #0f766e, #0ea5a4);
   box-shadow: 0 2px 12px rgba(14, 165, 164, 0.32);
 }
 
-[data-theme="enigma"] .chat-message.assistant .msg-bubble {
+[data-theme='enigma'] .chat-message.assistant .msg-bubble {
   background: #1e1e28;
   border: 1px solid #2a2a35;
 }
 
 /* ---- Claude 主题按钮 ---- */
-[data-theme="enigma"] .send-btn {
+[data-theme='enigma'] .send-btn {
   background: linear-gradient(135deg, #0f766e, #0ea5a4);
   box-shadow: 0 4px 14px rgba(14, 165, 164, 0.36);
 }
 
-[data-theme="enigma"] .send-btn:hover:not(:disabled) {
+[data-theme='enigma'] .send-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #0ea5a4, #5eead4);
   box-shadow: 0 4px 20px rgba(14, 165, 164, 0.48);
 }
 
 /* ---- Claude 主题输入框 ---- */
-[data-theme="enigma"] .bottom-input {
+[data-theme='enigma'] .bottom-input {
   background: #111116;
   border-color: #2a2a35;
 }
 
-[data-theme="enigma"] .bottom-input:focus {
+[data-theme='enigma'] .bottom-input:focus {
   border-color: #0ea5a4;
-  box-shadow: 0 0 0 3px rgba(14, 165, 164, 0.2), var(--shadow-sm);
+  box-shadow:
+    0 0 0 3px rgba(14, 165, 164, 0.2),
+    var(--shadow-sm);
 }
 
 /* ---- Claude 主题标签 ---- */
-[data-theme="enigma"] .card-tags .el-tag {
+[data-theme='enigma'] .card-tags .el-tag {
   background: rgba(14, 165, 164, 0.15);
   border-color: rgba(14, 165, 164, 0.35);
   color: #5eead4;
 }
 
 /* ---- Claude 主题分类筛选 ---- */
-[data-theme="enigma"] .filter-pill.active {
+[data-theme='enigma'] .filter-pill.active {
   background: linear-gradient(135deg, #0f766e, #0ea5a4);
   box-shadow: 0 4px 14px rgba(14, 165, 164, 0.35);
 }
 
 /* ---- Claude 主题故事卡片悬停 ---- */
-[data-theme="enigma"] .story-card:hover {
-  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(14, 165, 164, 0.3);
+[data-theme='enigma'] .story-card:hover {
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(14, 165, 164, 0.3);
   border-color: rgba(14, 165, 164, 0.5);
 }
 
 /* ---- Claude 主题侧边栏 ---- */
-[data-theme="enigma"] .left-panel {
+[data-theme='enigma'] .left-panel {
   border-right-color: #2a2a35;
 }
 
 /* ---- 新 Claude 主题（Anthropic 官方美学） ---- */
 
 /* 默认 = Night（暖墨黑） */
-[data-theme="claude"] {
+[data-theme='claude'] {
   /* 背景色 */
   --bg-primary: #1a1a17;
   --bg-secondary: #262624;
@@ -426,7 +455,7 @@
   /* 强调色 - 珊瑚 */
   --accent-color: #d97757;
   --accent-hover: #e89478;
-  --accent-glow: rgba(217, 119, 87, 0.30);
+  --accent-glow: rgba(217, 119, 87, 0.3);
   --user-bubble: linear-gradient(135deg, #c96442, #d97757);
   --ai-bubble: #2a2a27;
 
@@ -440,13 +469,13 @@
   --scrollbar-thumb: #4a4a42;
 
   /* 阴影 */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.40);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.50);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.60);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
   --shadow-glow: 0 0 20px var(--accent-glow);
 
   /* 顶栏和输入区背景 */
-  --topbar-bg: rgba(26, 26, 23, 0.90);
+  --topbar-bg: rgba(26, 26, 23, 0.9);
   --input-area-bg: rgba(26, 26, 23, 0.92);
 
   /* 字体覆写 */
@@ -470,21 +499,26 @@
   --el-fill-color-light: #3a3a35;
   --el-fill-color-lighter: #1f1f1c;
   --el-fill-color-blank: #1f1f1c;
-  --el-mask-color: rgba(0, 0, 0, 0.70);
-  --el-mask-color-extra-light: rgba(0, 0, 0, 0.40);
-  --el-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.50);
-  --el-box-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.40);
+  --el-mask-color: rgba(0, 0, 0, 0.7);
+  --el-mask-color-extra-light: rgba(0, 0, 0, 0.4);
+  --el-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --el-box-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.4);
   --el-disabled-bg-color: #2a2a27;
   --el-disabled-text-color: #6a6a62;
   --el-disabled-border-color: #3a3a35;
   --el-color-primary: #d97757;
 
   /* 聊天区渐变 */
-  --chat-area-gradient: radial-gradient(ellipse at 50% 0%, rgba(217, 119, 87, 0.08) 0%, rgba(217, 119, 87, 0.03) 40%, transparent 70%);
+  --chat-area-gradient: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(217, 119, 87, 0.08) 0%,
+    rgba(217, 119, 87, 0.03) 40%,
+    transparent 70%
+  );
   --chat-bg-overlay: rgba(26, 26, 23, 0.55);
   --chat-bg-overlay-mobile: rgba(26, 26, 23, 0.65);
   --bubble-menu-solid-bg: #2a2a27;
-  --bubble-menu-glass-border: rgba(217, 119, 87, 0.30);
+  --bubble-menu-glass-border: rgba(217, 119, 87, 0.3);
   --bubble-menu-item-hover-bg: color-mix(in srgb, #d97757 16%, #2a2a27);
   --bubble-menu-item-active-bg: color-mix(in srgb, #d97757 22%, #1a1a17);
   --bubble-menu-focus-ring: #e89478;
@@ -493,15 +527,19 @@
   --skeleton-base: rgba(217, 119, 87, 0.08);
 
   /* 管理后台 */
-  --admin-sidebar-bg: linear-gradient(180deg, rgba(217, 119, 87, 0.12) 0%, var(--bg-secondary) 80px);
+  --admin-sidebar-bg: linear-gradient(
+    180deg,
+    rgba(217, 119, 87, 0.12) 0%,
+    var(--bg-secondary) 80px
+  );
   --admin-main-bg: rgba(15, 15, 13, 0.65);
-  --admin-card-bg: rgba(15, 15, 13, 0.80);
-  --admin-input-bg: rgba(15, 15, 13, 0.80);
+  --admin-card-bg: rgba(15, 15, 13, 0.8);
+  --admin-input-bg: rgba(15, 15, 13, 0.8);
 }
 
 /* 系统偏好亮色 → Claude·Day（羊皮纸） */
 @media (prefers-color-scheme: light) {
-  [data-theme="claude"] {
+  [data-theme='claude'] {
     /* 背景色 */
     --bg-primary: #f5f4ed;
     --bg-secondary: #faf9f5;
@@ -521,7 +559,7 @@
     /* 强调色 - 赤陶 */
     --accent-color: #c96442;
     --accent-hover: #d97757;
-    --accent-glow: rgba(201, 100, 66, 0.30);
+    --accent-glow: rgba(201, 100, 66, 0.3);
     --user-bubble: linear-gradient(135deg, #c96442, #d97757);
     --ai-bubble: #faf9f5;
 
@@ -536,7 +574,7 @@
 
     /* 阴影 */
     --shadow-sm: 0 1px 3px rgba(20, 20, 19, 0.06);
-    --shadow-md: 0 4px 16px rgba(20, 20, 19, 0.10);
+    --shadow-md: 0 4px 16px rgba(20, 20, 19, 0.1);
     --shadow-lg: 0 8px 32px rgba(20, 20, 19, 0.14);
 
     /* 顶栏和输入区背景 */
@@ -560,8 +598,8 @@
     --el-fill-color-light: #ede9d8;
     --el-fill-color-lighter: #f5f4ed;
     --el-fill-color-blank: #ffffff;
-    --el-mask-color: rgba(20, 20, 19, 0.50);
-    --el-mask-color-extra-light: rgba(20, 20, 19, 0.10);
+    --el-mask-color: rgba(20, 20, 19, 0.5);
+    --el-mask-color-extra-light: rgba(20, 20, 19, 0.1);
     --el-box-shadow: 0 4px 16px rgba(20, 20, 19, 0.12);
     --el-box-shadow-light: 0 2px 8px rgba(20, 20, 19, 0.08);
     --el-disabled-bg-color: #ede9d8;
@@ -570,7 +608,11 @@
     --el-color-primary: #c96442;
 
     /* 聊天区渐变 */
-    --chat-area-gradient: radial-gradient(ellipse at 50% 0%, rgba(201, 100, 66, 0.06) 0%, transparent 60%);
+    --chat-area-gradient: radial-gradient(
+      ellipse at 50% 0%,
+      rgba(201, 100, 66, 0.06) 0%,
+      transparent 60%
+    );
     --chat-bg-overlay: rgba(245, 244, 237, 0.55);
     --chat-bg-overlay-mobile: rgba(245, 244, 237, 0.65);
     --bubble-menu-solid-bg: #faf9f5;
@@ -583,73 +625,80 @@
     --skeleton-base: rgba(201, 100, 66, 0.06);
 
     /* 管理后台 */
-    --admin-sidebar-bg: linear-gradient(180deg, rgba(201, 100, 66, 0.10) 0%, var(--bg-secondary) 80px);
+    --admin-sidebar-bg: linear-gradient(
+      180deg,
+      rgba(201, 100, 66, 0.1) 0%,
+      var(--bg-secondary) 80px
+    );
     --admin-main-bg: rgba(245, 244, 237, 0.85);
     --admin-card-bg: rgba(255, 255, 255, 0.85);
-    --admin-input-bg: rgba(255, 255, 255, 0.70);
+    --admin-input-bg: rgba(255, 255, 255, 0.7);
   }
 }
 
 /* ---- 新 Claude 主题聊天消息 ---- */
-[data-theme="claude"] .chat-message.user .msg-bubble {
+[data-theme='claude'] .chat-message.user .msg-bubble {
   background: var(--user-bubble);
   box-shadow: 0 2px 12px color-mix(in srgb, var(--accent-color) 35%, transparent);
   line-height: var(--line-height-prose);
 }
 
-[data-theme="claude"] .chat-message.assistant .msg-bubble {
+[data-theme='claude'] .chat-message.assistant .msg-bubble {
   background: var(--ai-bubble);
   border: 1px solid var(--border-color);
   line-height: var(--line-height-prose);
 }
 
 /* ---- 新 Claude 主题发送按钮 ---- */
-[data-theme="claude"] .send-btn {
+[data-theme='claude'] .send-btn {
   background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
   box-shadow: var(--shadow-md);
 }
 
-[data-theme="claude"] .send-btn:hover:not(:disabled) {
+[data-theme='claude'] .send-btn:hover:not(:disabled) {
   box-shadow: 0 4px 20px var(--accent-glow);
 }
 
 /* ---- 新 Claude 主题输入框 ---- */
-[data-theme="claude"] .bottom-input {
+[data-theme='claude'] .bottom-input {
   background: var(--bg-input);
   border-color: var(--border-color);
 }
 
-[data-theme="claude"] .bottom-input:focus {
+[data-theme='claude'] .bottom-input:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px var(--accent-glow), var(--shadow-sm);
+  box-shadow:
+    0 0 0 3px var(--accent-glow),
+    var(--shadow-sm);
 }
 
 /* ---- 新 Claude 主题标签 ---- */
-[data-theme="claude"] .card-tags .el-tag {
+[data-theme='claude'] .card-tags .el-tag {
   background: color-mix(in srgb, var(--accent-color) 12%, transparent);
   border-color: color-mix(in srgb, var(--accent-color) 30%, transparent);
   color: var(--accent-color);
 }
 
 /* ---- 新 Claude 主题分类筛选 ---- */
-[data-theme="claude"] .filter-pill.active {
+[data-theme='claude'] .filter-pill.active {
   background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
   box-shadow: var(--shadow-md);
 }
 
 /* ---- 新 Claude 主题故事卡片悬停 ---- */
-[data-theme="claude"] .story-card:hover {
-  box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--accent-color) 30%, transparent);
+[data-theme='claude'] .story-card:hover {
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px color-mix(in srgb, var(--accent-color) 30%, transparent);
   border-color: color-mix(in srgb, var(--accent-color) 50%, transparent);
 }
 
 /* ---- 新 Claude 主题侧边栏 ---- */
-[data-theme="claude"] .left-panel {
+[data-theme='claude'] .left-panel {
   border-right-color: var(--border-color);
 }
 
 /* ---- 新 Claude 主题角色名衬线 ---- */
-[data-theme="claude"] .char-name {
+[data-theme='claude'] .char-name {
   font-family: var(--heading);
 }
-

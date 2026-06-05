@@ -15,7 +15,9 @@
             :show-text="false"
             :aria-label="`${field.label}: ${stateData[field.key] ?? field.default} / ${field.max ?? 100}`"
           />
-          <span class="status-value">{{ stateData[field.key] ?? field.default }} / {{ field.max ?? 100 }}</span>
+          <span class="status-value"
+            >{{ stateData[field.key] ?? field.default }} / {{ field.max ?? 100 }}</span
+          >
         </div>
       </template>
 

@@ -35,7 +35,7 @@ vi.mock('marked', () => ({
 import { marked } from 'marked'
 import ChatMessage from './ChatMessage.vue'
 
-const { __mockChatStore: chatStore } = await import('../stores/chat') as any
+const { __mockChatStore: chatStore } = (await import('../stores/chat')) as any
 
 describe('ChatMessage', () => {
   beforeEach(() => {
@@ -116,13 +116,17 @@ describe('ChatMessage', () => {
 
     const callsAfterMount = vi.mocked(marked.parse).mock.calls.length
     expect(callsAfterMount).toBeGreaterThan(0)
-    expect(wrapper.html()).toContain('<span class="hl-item">alpha</span> beta markdown-cache-target')
+    expect(wrapper.html()).toContain(
+      '<span class="hl-item">alpha</span> beta markdown-cache-target',
+    )
 
     chatStore.highlightedTerms = ['beta']
     await nextTick()
 
     expect(marked.parse).toHaveBeenCalledTimes(callsAfterMount)
-    expect(wrapper.html()).toContain('alpha <span class="hl-item">beta</span> markdown-cache-target')
+    expect(wrapper.html()).toContain(
+      'alpha <span class="hl-item">beta</span> markdown-cache-target',
+    )
   })
 
   it('skips bubble click animation when elasticity is disabled', async () => {

@@ -1,28 +1,42 @@
 <template>
-  <div class="input-area" ref="rootEl">
+  <div ref="rootEl" class="input-area">
     <div v-if="thinking || awaitingTail" class="ai-thinking-hint">{{ thinkingHint }}</div>
     <div v-if="generatingOptions" class="options-generating-hint">剧情选项生成中...</div>
-    <div v-if="generatingOptionsFailed" class="options-failed-hint" @click="$emit('retryOptions')">选项生成失败，点此重试</div>
+    <div v-if="generatingOptionsFailed" class="options-failed-hint" @click="$emit('retryOptions')">
+      选项生成失败，点此重试
+    </div>
     <div class="bottom-bar">
       <button
+        ref="plusButtonEl"
         class="plus-btn"
         :class="{ active: menuActive }"
         type="button"
         title="菜单"
-        ref="plusButtonEl"
         @click="$emit('toggle-menu')"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
       </button>
       <div class="input-shell">
         <textarea
-          class="bottom-input"
+          ref="textareaEl"
           v-model="inputValue"
+          class="bottom-input"
           placeholder="请输入..."
           enterkeyhint="send"
           :disabled="disabled"
           rows="1"
-          ref="textareaEl"
           @keydown.enter.exact.prevent="emitSend"
           @input="handleTextareaInput"
           @focus="handleFocus"
@@ -32,9 +46,28 @@
           {{ modelValue.length }}/2000
         </div>
       </div>
-      <button class="send-btn" :class="{ ready: canSend }" type="button" :disabled="!canSend" @click="emitSend">
+      <button
+        class="send-btn"
+        :class="{ ready: canSend }"
+        type="button"
+        :disabled="!canSend"
+        @click="emitSend"
+      >
         <span v-if="showSpinner" class="loading-spinner"></span>
-        <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <svg
+          v-else
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
       </button>
     </div>
   </div>
@@ -94,7 +127,9 @@ const inputValue = computed({
   set: (value: string) => emit('update:modelValue', value),
 })
 
-const canSend = computed(() => !props.disabled && !props.sendBusy && props.modelValue.trim().length > 0)
+const canSend = computed(
+  () => !props.disabled && !props.sendBusy && props.modelValue.trim().length > 0,
+)
 
 const thinkingHint = computed(() => {
   if (props.awaitingTail) return '正在整理状态和选项...'
@@ -186,7 +221,7 @@ defineExpose({
     transform var(--duration-slow) var(--ease-smooth);
 }
 
-[data-theme="light"] .input-area {
+[data-theme='light'] .input-area {
   background: var(--bg-card);
 }
 
@@ -242,7 +277,12 @@ defineExpose({
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
 }
 
 .plus-btn:hover {
@@ -276,7 +316,12 @@ defineExpose({
   outline: none;
   resize: none;
   overflow-y: auto;
-  transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-spring), background-color var(--duration-base) var(--ease-spring), border-color var(--duration-base) var(--ease-spring), color var(--duration-base) var(--ease-spring);
+  transition:
+    transform var(--duration-base) var(--ease-spring),
+    box-shadow var(--duration-base) var(--ease-spring),
+    background-color var(--duration-base) var(--ease-spring),
+    border-color var(--duration-base) var(--ease-spring),
+    color var(--duration-base) var(--ease-spring);
   min-width: 0;
   box-shadow: var(--shadow-sm);
   transform: scale(1);
@@ -292,7 +337,9 @@ defineExpose({
 
 .bottom-input:focus {
   border-color: var(--accent-color);
-  box-shadow: var(--shadow-sm), 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
 }
 
 .bottom-input:disabled {
@@ -326,12 +373,19 @@ defineExpose({
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
   box-shadow: var(--shadow-md);
 }
 
 .send-btn.ready:not(:disabled) {
-  box-shadow: var(--shadow-lg), 0 0 0 2px color-mix(in srgb, var(--accent-color) 18%, transparent);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 2px color-mix(in srgb, var(--accent-color) 18%, transparent);
 }
 
 .send-btn:hover:not(:disabled) {
@@ -354,7 +408,7 @@ defineExpose({
   display: inline-block;
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255,255,255,0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spinner-spin 600ms linear infinite;
@@ -370,7 +424,9 @@ defineExpose({
     padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
     z-index: 100;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
-    transition: transform 220ms var(--ease-smooth), opacity 220ms var(--ease-smooth);
+    transition:
+      transform 220ms var(--ease-smooth),
+      opacity 220ms var(--ease-smooth);
   }
 
   .ai-thinking-hint {

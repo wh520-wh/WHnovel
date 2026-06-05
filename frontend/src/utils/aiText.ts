@@ -17,7 +17,7 @@ export function collapseBlankLines(text: string): string {
 function looksLikeStructuredJson(text: string): boolean {
   const trimmed = text.trim()
   if (!trimmed) return false
-  if (!/^[\[{]/.test(trimmed) || !/[\]}]$/.test(trimmed)) return false
+  if (!/^[[{]/.test(trimmed) || !/[}\]]$/.test(trimmed)) return false
   if (STRUCTURED_FIELD_RE.test(trimmed)) return true
 
   try {
@@ -29,7 +29,9 @@ function looksLikeStructuredJson(text: string): boolean {
 }
 
 export function sanitizeAiDisplayText(input: string | null | undefined): string {
-  let text = String(input || '').replace(/\r\n?/g, '\n').trim()
+  let text = String(input || '')
+    .replace(/\r\n?/g, '\n')
+    .trim()
   if (!text) return ''
 
   text = text.replace(/```[\s\S]*?```/g, '').trim()
@@ -42,7 +44,7 @@ export function sanitizeAiDisplayText(input: string | null | undefined): string 
     .filter((line) => {
       const trimmed = line.trim()
       if (!trimmed) return true
-      if (/^[\[\]\{\},]+$/.test(trimmed)) return false
+      if (/^[[\]{},]+$/.test(trimmed)) return false
       if (STRUCTURED_LINE_RE.test(trimmed)) return false
       return !META_LINE_PATTERNS.some((pattern) => pattern.test(trimmed))
     })
@@ -58,7 +60,9 @@ export function sanitizeAiInlineText(input: string | null | undefined): string {
   return sanitizeAiDisplayText(input).replace(/\s+/g, ' ').trim()
 }
 
-export function sanitizeAiStringList(items: Array<string | null | undefined> | null | undefined): string[] {
+export function sanitizeAiStringList(
+  items: Array<string | null | undefined> | null | undefined,
+): string[] {
   const result: string[] = []
   const seen = new Set<string>()
 

@@ -49,12 +49,16 @@ function friendlyMessage(msg: string): string {
   // 精确匹配
   if (NETWORK_ERROR_MAP[msg]) return NETWORK_ERROR_MAP[msg]
   // 模糊匹配关键词
-  if (lower.includes('err_incomplete') || lower.includes('chunked')) return NETWORK_ERROR_MAP['net::ERR_INCOMPLETE_CHUNKED_ENCODING']
+  if (lower.includes('err_incomplete') || lower.includes('chunked'))
+    return NETWORK_ERROR_MAP['net::ERR_INCOMPLETE_CHUNKED_ENCODING']
   if (lower.includes('connection reset')) return NETWORK_ERROR_MAP['net::ERR_CONNECTION_RESET']
   if (lower.includes('connection refused')) return NETWORK_ERROR_MAP['net::ERR_CONNECTION_REFUSED']
-  if (lower.includes('name not resolved') || lower.includes('getaddrinfo')) return NETWORK_ERROR_MAP['net::ERR_NAME_NOT_RESOLVED']
-  if (lower.includes('timed out') || lower === 'timeout') return NETWORK_ERROR_MAP['net::ERR_TIMED_OUT']
-  if (lower === 'network error' || lower.includes('failed to fetch')) return NETWORK_ERROR_MAP['Failed to fetch']
+  if (lower.includes('name not resolved') || lower.includes('getaddrinfo'))
+    return NETWORK_ERROR_MAP['net::ERR_NAME_NOT_RESOLVED']
+  if (lower.includes('timed out') || lower === 'timeout')
+    return NETWORK_ERROR_MAP['net::ERR_TIMED_OUT']
+  if (lower === 'network error' || lower.includes('failed to fetch'))
+    return NETWORK_ERROR_MAP['Failed to fetch']
   return msg
 }
 
@@ -82,7 +86,12 @@ interface PostSSEPayload {
 
 const VALID_SSE_EVENTS = ['delta', 'text_end', 'tail', 'error', 'done'] as const
 
-export async function postSSE(path: string, payload: PostSSEPayload, onEvent: (evt: ChatStreamEvent) => void, externalSignal?: AbortSignal) {
+export async function postSSE(
+  path: string,
+  payload: PostSSEPayload,
+  onEvent: (evt: ChatStreamEvent) => void,
+  externalSignal?: AbortSignal,
+) {
   const MAX_RETRIES = 3
   const RETRY_DELAYS = [1000, 2000, 4000]
   let receivedAnyEvent = false
@@ -160,7 +169,7 @@ export async function postSSE(path: string, payload: PostSSEPayload, onEvent: (e
             // 跳过既无 event: 也无 data: 的块（纯注释块）
             if (!eventName && !dataStr) continue
 
-            if (!VALID_SSE_EVENTS.includes(eventName as typeof VALID_SSE_EVENTS[number])) {
+            if (!VALID_SSE_EVENTS.includes(eventName as (typeof VALID_SSE_EVENTS)[number])) {
               throw new Error(`SSE格式错误: 未知事件类型 "${eventName}"`)
             }
 
@@ -203,7 +212,8 @@ export async function postSSE(path: string, payload: PostSSEPayload, onEvent: (e
       console.debug('[SSE] catch:', e?.name, e?.message)
       // External abort (user-initiated) should not be retried or translated to timeout message
       if (e?.name === 'AbortError' && externalSignal?.aborted) throw e
-      if (e?.name === 'AbortError') throw new Error('请求超时（180s），请检查模型配置或网络')
+      if (e?.name === 'AbortError')
+        throw new Error('请求超时（180s），请检查模型配置或网络', { cause: e })
       // 已经收到过 SSE 事件（delta 等）后不再重试，避免内容重复追加
       if (receivedAnyEvent) throw e
       if (attempt < MAX_RETRIES - 1) {
@@ -268,10 +278,26 @@ export const getStory = (id: number) => api.get(`/stories/${id}`)
 export const createStory = (data: StoryCreateInput) => api.post('/stories', data)
 export const updateStory = (id: number, data: StoryUpdateInput) => api.put(`/stories/${id}`, data)
 export const deleteStory = (id: number) => api.delete(`/stories/${id}`)
-export const aiGenerateStory = (data: { category: string; title_hint: string; tags_hint: string; model_id?: number; image_model_id?: number; image_style?: string; preference?: string; skip_cover?: boolean; generate_cover?: boolean; cover_image_model_id?: number; generate_background?: boolean; background_image_model_id?: number }) =>
-  api.post('/stories/ai-generate', data)
-export const aiGenerateCover = (data: { world_setting: string; title: string; image_style: string; image_model_id?: number }) =>
-  api.post('/stories/ai-generate-cover', data)
+export const aiGenerateStory = (data: {
+  category: string
+  title_hint: string
+  tags_hint: string
+  model_id?: number
+  image_model_id?: number
+  image_style?: string
+  preference?: string
+  skip_cover?: boolean
+  generate_cover?: boolean
+  cover_image_model_id?: number
+  generate_background?: boolean
+  background_image_model_id?: number
+}) => api.post('/stories/ai-generate', data)
+export const aiGenerateCover = (data: {
+  world_setting: string
+  title: string
+  image_style: string
+  image_model_id?: number
+}) => api.post('/stories/ai-generate-cover', data)
 export const regenerateStoryCover = (storyId: number) =>
   api.post(`/stories/${storyId}/regenerate-cover`)
 export const standaloneGenerateCover = (storyId: number, imageModelId: number) =>
@@ -289,8 +315,10 @@ export const uploadStoryImage = (storyId: number, file: File, purpose: 'cover' |
 
 // ---- Characters ----
 export const getCharacters = (storyId: number) => api.get(`/stories/${storyId}/characters`)
-export const createCharacter = (storyId: number, data: CharacterCreateInput) => api.post(`/stories/${storyId}/characters`, data)
-export const updateCharacter = (id: number, data: CharacterUpdateInput) => api.put(`/stories/characters/${id}`, data)
+export const createCharacter = (storyId: number, data: CharacterCreateInput) =>
+  api.post(`/stories/${storyId}/characters`, data)
+export const updateCharacter = (id: number, data: CharacterUpdateInput) =>
+  api.put(`/stories/characters/${id}`, data)
 export const deleteCharacter = (id: number) => api.delete(`/stories/characters/${id}`)
 
 // ---- Chat ----
@@ -303,11 +331,16 @@ export const startChatStream = (
   onEvent: (evt: ChatStreamEvent) => void,
   signal?: AbortSignal,
 ) =>
-  postSSE('/chat/start-stream', {
-    story_id: storyId,
-    opening_requirement: openingRequirement,
-    archive_id: archiveId,
-  }, onEvent, signal)
+  postSSE(
+    '/chat/start-stream',
+    {
+      story_id: storyId,
+      opening_requirement: openingRequirement,
+      archive_id: archiveId,
+    },
+    onEvent,
+    signal,
+  )
 
 export const sendMessageStream = (
   archiveId: number,
@@ -315,10 +348,15 @@ export const sendMessageStream = (
   onEvent: (evt: ChatStreamEvent) => void,
   signal?: AbortSignal,
 ) =>
-  postSSE('/chat/send-stream', {
-    archive_id: archiveId,
-    message,
-  }, onEvent, signal)
+  postSSE(
+    '/chat/send-stream',
+    {
+      archive_id: archiveId,
+      message,
+    },
+    onEvent,
+    signal,
+  )
 
 export const generateStoryOptions = (archiveId: number, count: number = 3, guidance: string = '') =>
   api.post('/chat/options/generate', {
@@ -393,7 +431,11 @@ export const generatePresetOpenings = async (storyId: number): Promise<PresetOpe
     headers['If-None-Match'] = cached.etag
   }
 
-  const res = await api.post<{ openings: PresetOpening[] }>('/chat/preset-openings', { story_id: storyId }, { headers })
+  const res = await api.post<{ openings: PresetOpening[] }>(
+    '/chat/preset-openings',
+    { story_id: storyId },
+    { headers },
+  )
 
   if (res.status === 304 && cached) {
     return cached.openings
@@ -415,10 +457,13 @@ export const deleteLastAiMessage = async (archiveId: number): Promise<{ deleted:
   return res.data
 }
 
-export const deleteMessages = (archiveId: number, messageIds: number[]): Promise<{ deleted: number }> =>
+export const deleteMessages = (
+  archiveId: number,
+  messageIds: number[],
+): Promise<{ deleted: number }> =>
   api
     .delete(`/chat/messages/${archiveId}/bulk`, { data: { message_ids: messageIds } })
-    .then(res => res.data)
+    .then((res) => res.data)
 
 // ---- Archives ----
 export const getArchives = (storyId: number) => api.get(`/archives/by_story/${storyId}`)
@@ -450,10 +495,10 @@ export interface ExportedArchive {
 }
 
 export const exportArchive = (id: number): Promise<ExportedArchive> =>
-  api.get(`/archives/${id}/export`).then(res => res.data)
+  api.get(`/archives/${id}/export`).then((res) => res.data)
 
 export const importArchive = (data: ExportedArchive): Promise<{ id: number }> =>
-  api.post('/archives/import', data).then(res => res.data)
+  api.post('/archives/import', data).then((res) => res.data)
 
 // ---- Settings ----
 export const getSettings = () => api.get('/settings')
@@ -465,7 +510,9 @@ export const createModel = (data: any) => api.post('/admin/models', data)
 export const updateModel = (id: number, data: any) => api.put(`/admin/models/${id}`, data)
 export const deleteModel = (id: number) => api.delete(`/admin/models/${id}`)
 export const testModelConnection = (modelId: number) =>
-  api.post<{ success: boolean; duration_ms?: number; error?: string }>(`/admin/models/test`, null, { params: { model_id: modelId } })
+  api.post<{ success: boolean; duration_ms?: number; error?: string }>(`/admin/models/test`, null, {
+    params: { model_id: modelId },
+  })
 
 // ---- Admin: app settings ----
 export const getAppSettings = () => api.get('/admin/app-settings')
@@ -479,14 +526,16 @@ export interface SystemShutdownResponse {
   frontend_delay_ms: number
 }
 
-export const shutdownSystem = () =>
-  api.post<SystemShutdownResponse>('/admin/system/shutdown')
+export const shutdownSystem = () => api.post<SystemShutdownResponse>('/admin/system/shutdown')
 
 // ---- Admin: metrics ----
 export const getMetricsSummary = (params?: any) => api.get('/admin/metrics/summary', { params })
 export const getMetricsByModel = (params?: any) => api.get('/admin/metrics/by-model', { params })
-export const getMetricsTimeseries = (params?: any) => api.get('/admin/metrics/timeseries', { params })
-export const getMetricsStreamRequests = (params?: any) => api.get('/admin/metrics/stream-requests', { params })
-export const resetMetrics = (confirmText: string) => api.post('/admin/metrics/reset', { confirm_text: confirmText })
+export const getMetricsTimeseries = (params?: any) =>
+  api.get('/admin/metrics/timeseries', { params })
+export const getMetricsStreamRequests = (params?: any) =>
+  api.get('/admin/metrics/stream-requests', { params })
+export const resetMetrics = (confirmText: string) =>
+  api.post('/admin/metrics/reset', { confirm_text: confirmText })
 
 export default api

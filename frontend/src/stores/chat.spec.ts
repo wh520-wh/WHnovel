@@ -24,7 +24,7 @@ vi.mock('../api', () => {
 
 import { normalizeIncomingMessage, useChatStore } from './chat'
 
-const { __mocks: apiMocks } = await import('../api') as any
+const { __mocks: apiMocks } = (await import('../api')) as any
 
 describe('chat store', () => {
   beforeEach(() => {
@@ -109,23 +109,25 @@ describe('chat store', () => {
     store.currentArchive = { id: 1, story_id: 1 } as any
     store.currentOptions = ['观察四周', '直接追问']
 
-    apiMocks.sendMessageStream.mockImplementation(async (_archiveId: number, _text: string, onEvent: any) => {
-      expect(store.currentOptions).toEqual([])
-      expect(store.optionsLocked).toBe(false)
+    apiMocks.sendMessageStream.mockImplementation(
+      async (_archiveId: number, _text: string, onEvent: any) => {
+        expect(store.currentOptions).toEqual([])
+        expect(store.optionsLocked).toBe(false)
 
-      onEvent({
-        event: 'tail',
-        data: {
-          archive_id: 1,
-          reply_text: 'AI 回复',
-          character_state: {},
-          story_state: {},
-          memory_update: [],
-          plot_label: null,
-          highlight_terms: [],
-        },
-      })
-    })
+        onEvent({
+          event: 'tail',
+          data: {
+            archive_id: 1,
+            reply_text: 'AI 回复',
+            character_state: {},
+            story_state: {},
+            memory_update: [],
+            plot_label: null,
+            highlight_terms: [],
+          },
+        })
+      },
+    )
 
     apiMocks.generateStoryOptions.mockResolvedValue({ data: { options: ['后续动作'] } })
 
@@ -144,13 +146,15 @@ describe('chat store', () => {
     store.currentArchive = { id: 1, story_id: 1 } as any
     store.currentOptions = ['观察四周', '直接追问', '低声回应']
 
-    apiMocks.sendMessageStream.mockImplementation(async (_archiveId: number, _text: string, onEvent: any) => {
-      onEvent({ event: 'delta', data: { text: '你看到' } })
-      onEvent({ event: 'delta', data: { text: '一束光从门缝透出……' } })
-      onEvent({ event: 'text_end', data: { reply_text: '你看到一束光从门缝透出……' } })
-      // No tail / no error event — simulate upstream hang + 180s abort
-      throw new Error('请求超时（180s），请检查模型配置或网络')
-    })
+    apiMocks.sendMessageStream.mockImplementation(
+      async (_archiveId: number, _text: string, onEvent: any) => {
+        onEvent({ event: 'delta', data: { text: '你看到' } })
+        onEvent({ event: 'delta', data: { text: '一束光从门缝透出……' } })
+        onEvent({ event: 'text_end', data: { reply_text: '你看到一束光从门缝透出……' } })
+        // No tail / no error event — simulate upstream hang + 180s abort
+        throw new Error('请求超时（180s），请检查模型配置或网络')
+      },
+    )
 
     let caught: unknown = null
     try {
@@ -172,24 +176,26 @@ describe('chat store', () => {
     store.currentArchive = { id: 1, story_id: 1 } as any
     store.currentOptions = ['观察四周', '直接追问']
 
-    apiMocks.sendMessageStream.mockImplementation(async (_archiveId: number, _text: string, onEvent: any) => {
-      expect(store.optionsLocked).toBe(true)
-      expect(store.currentOptions).toEqual([])
-      expect(store.lastOptionsSnapshot).toEqual(['观察四周', '直接追问'])
+    apiMocks.sendMessageStream.mockImplementation(
+      async (_archiveId: number, _text: string, onEvent: any) => {
+        expect(store.optionsLocked).toBe(true)
+        expect(store.currentOptions).toEqual([])
+        expect(store.lastOptionsSnapshot).toEqual(['观察四周', '直接追问'])
 
-      onEvent({
-        event: 'tail',
-        data: {
-          archive_id: 1,
-          reply_text: 'AI 回复',
-          character_state: {},
-          story_state: {},
-          memory_update: [],
-          plot_label: null,
-          highlight_terms: [],
-        },
-      })
-    })
+        onEvent({
+          event: 'tail',
+          data: {
+            archive_id: 1,
+            reply_text: 'AI 回复',
+            character_state: {},
+            story_state: {},
+            memory_update: [],
+            plot_label: null,
+            highlight_terms: [],
+          },
+        })
+      },
+    )
 
     apiMocks.generateStoryOptions.mockResolvedValue({ data: { options: ['继续追问'] } })
 
@@ -205,14 +211,47 @@ describe('chat store', () => {
     apiMocks.deleteMessages.mockRejectedValue(new Error('network error'))
 
     store.messages = [
-      { id: 1, role: 'user', content: 'a', archive_id: 1, state_snapshot: {}, story_state: {}, options: [], memory_update: [], created_at: '', persisted: true, removing: false } as any,
-      { id: 2, role: 'assistant', content: 'b', archive_id: 1, state_snapshot: {}, story_state: {}, options: [], memory_update: [], created_at: '', persisted: true, removing: false } as any,
+      {
+        id: 1,
+        role: 'user',
+        content: 'a',
+        archive_id: 1,
+        state_snapshot: {},
+        story_state: {},
+        options: [],
+        memory_update: [],
+        created_at: '',
+        persisted: true,
+        removing: false,
+      } as any,
+      {
+        id: 2,
+        role: 'assistant',
+        content: 'b',
+        archive_id: 1,
+        state_snapshot: {},
+        story_state: {},
+        options: [],
+        memory_update: [],
+        created_at: '',
+        persisted: true,
+        removing: false,
+      } as any,
     ]
-    store.currentArchive = { id: 1, story_id: 1, name: '', state_data: {}, story_state: {}, memory_log: [], created_at: '', updated_at: '' } as any
+    store.currentArchive = {
+      id: 1,
+      story_id: 1,
+      name: '',
+      state_data: {},
+      story_state: {},
+      memory_log: [],
+      created_at: '',
+      updated_at: '',
+    } as any
 
     try {
       await store.deleteMessages([1, 2])
-    } catch (e) {
+    } catch {
       // Expected to throw after rollback
     }
 

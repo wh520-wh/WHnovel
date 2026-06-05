@@ -7,12 +7,7 @@
       @leave="onLeave"
     >
       <div v-if="visible" class="bubble-menu-overlay" @click="handleOverlayClick">
-        <div
-          ref="menuRef"
-          class="bubble-menu"
-          :style="menuStyle"
-          @click.stop
-        >
+        <div ref="menuRef" class="bubble-menu" :style="menuStyle" @click.stop>
           <div class="bubble-menu-content">
             <template v-for="(item, index) in items" :key="index">
               <div v-if="openSubmenuIndex === index && item.children" class="bubble-submenu">
@@ -22,7 +17,18 @@
                   @click="openSubmenuIndex = null"
                 >
                   <span class="bubble-menu-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
                   </span>
                   <span class="bubble-menu-text">返回</span>
                 </button>
@@ -46,7 +52,18 @@
                 <span class="bubble-menu-icon" v-html="item.icon"></span>
                 <span class="bubble-menu-text">{{ item.label }}</span>
                 <span v-if="item.children" class="submenu-arrow">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
                 </span>
               </button>
             </template>
@@ -168,7 +185,7 @@ function detachViewportListeners() {
 }
 
 const menuStyle = computed(() => {
-  viewportTick.value
+  void viewportTick.value // intentionally trigger reactive dependency
   // Access measuredWidth to make it a reactive dependency
   const actualWidth = measuredWidth.value
   if (!props.triggerElement) return {}
@@ -181,7 +198,7 @@ const menuStyle = computed(() => {
   const maxTop = Math.max(MENU_GAP, window.innerHeight - estimatedMenuHeight - MENU_GAP)
 
   const style: Record<string, string> = {
-    position: 'fixed'
+    position: 'fixed',
   }
 
   if (props.position === 'top-right') {
@@ -229,7 +246,7 @@ watch(
     measuredWidth.value = 0
     detachViewportListeners()
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 onBeforeUnmount(() => {
@@ -277,7 +294,8 @@ function handleChildClick(child: BubbleMenuChild) {
   max-width: 280px;
   padding: 12px;
   background: var(--bubble-menu-solid-bg, var(--bg-elevated));
-  border: 1px solid var(--bubble-menu-glass-border, color-mix(in srgb, var(--accent-color) 35%, transparent));
+  border: 1px solid
+    var(--bubble-menu-glass-border, color-mix(in srgb, var(--accent-color) 35%, transparent));
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-lg);
   z-index: 9999;
@@ -320,11 +338,17 @@ function handleChildClick(child: BubbleMenuChild) {
 }
 
 .bubble-menu-item:hover:not(:disabled) {
-  background: var(--bubble-menu-item-hover-bg, color-mix(in srgb, var(--accent-color) 10%, transparent));
+  background: var(
+    --bubble-menu-item-hover-bg,
+    color-mix(in srgb, var(--accent-color) 10%, transparent)
+  );
 }
 
 .bubble-menu-item:active:not(:disabled) {
-  background: var(--bubble-menu-item-active-bg, color-mix(in srgb, var(--accent-color) 18%, transparent));
+  background: var(
+    --bubble-menu-item-active-bg,
+    color-mix(in srgb, var(--accent-color) 18%, transparent)
+  );
 }
 
 .bubble-menu-item:focus-visible {
@@ -418,5 +442,3 @@ function handleChildClick(child: BubbleMenuChild) {
   }
 }
 </style>
-
-

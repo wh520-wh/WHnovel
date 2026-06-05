@@ -29,7 +29,8 @@
                   :key="sec"
                   size="small"
                   @click="insertSection(sec)"
-                >{{ sec }}</el-button>
+                  >{{ sec }}</el-button
+                >
               </div>
               <el-input
                 ref="worldSettingRef"
@@ -48,12 +49,12 @@
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
+              <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
             </el-form-item>
           </el-form>
         </el-card>
 
-        <el-card style="margin-top: 14px;">
+        <el-card style="margin-top: 14px">
           <template #header><span>提示词组合顺序（固定）</span></template>
           <ol class="order-list">
             <li>全局默认系统提示词</li>
@@ -79,7 +80,9 @@
 
           <div v-if="characters.length === 0" class="char-empty">
             暂无角色，
-            <el-link type="primary" :href="`/admin/stories/${storyId}/characters`" target="_blank">去添加</el-link>
+            <el-link type="primary" :href="`/admin/stories/${storyId}/characters`" target="_blank"
+              >去添加</el-link
+            >
           </div>
 
           <div v-for="char in characters" :key="char.id" class="char-item">
@@ -89,15 +92,15 @@
               <div v-if="char.background" class="char-trait">背景：{{ char.background }}</div>
             </div>
             <div class="char-actions">
-              <el-button size="small" @click="insertCharRef(char.id)" title="插入角色引用">
-                插入 {char:{{char.id}}}
+              <el-button size="small" title="插入角色引用" @click="insertCharRef(char.id)">
+                插入 {char:{{ char.id }}}
               </el-button>
             </div>
           </div>
 
           <div v-if="pendingCharRef" class="pending-ref-notice">
             <el-alert type="info" :closable="false" show-icon>
-              待插入：{char:{{pendingCharRef}}}（点击世界观输入框后生效）
+              待插入：{char:{{ pendingCharRef }}}（点击世界观输入框后生效）
             </el-alert>
           </div>
         </el-card>
@@ -113,7 +116,14 @@ import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { getStory, updateStory, getCharacters } from '../../api'
 
-const SECTION_TEMPLATES = ['【背景设定】', '【人物关系】', '【世界规则】', '【重要地点】', '【关键物品】', '【当前局势】']
+const SECTION_TEMPLATES = [
+  '【背景设定】',
+  '【人物关系】',
+  '【世界规则】',
+  '【重要地点】',
+  '【关键物品】',
+  '【当前局势】',
+]
 
 const route = useRoute()
 const storyId = Number(route.params.storyId)

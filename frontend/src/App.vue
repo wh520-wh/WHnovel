@@ -1,7 +1,7 @@
 <template>
   <el-config-provider :message="{ offset: 40 }">
     <div class="app-container">
-      <header class="app-header-shell" v-if="!isPlayRoute">
+      <header v-if="!isPlayRoute" class="app-header-shell">
         <PillNav
           class-name="app-pill-nav"
           :items="navItems"

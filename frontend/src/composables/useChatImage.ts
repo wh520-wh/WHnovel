@@ -45,18 +45,22 @@ export function useChatImage(params: {
     isGeneratingImage.value = true
 
     const isStale = () =>
-      imageRequestVersion.value !== requestVersion ||
-      currentArchive.value?.id !== archiveId
+      imageRequestVersion.value !== requestVersion || currentArchive.value?.id !== archiveId
 
     const updateLoadingMessage = (msgId: string, updater: (old: ChatMsg) => Partial<ChatMsg>) => {
       if (isStale()) return
-      const idx = messages.value.findIndex(m => m.id === msgId && (m as any).archive_id === archiveId)
+      const idx = messages.value.findIndex(
+        (m) => m.id === msgId && (m as any).archive_id === archiveId,
+      )
       if (idx === -1) return
       const old = messages.value[idx]
       messages.value[idx] = { ...old, ...updater(old) } as ChatMsg
     }
 
-    const applySuccess = (msgId: string, data: { message_id?: number; image_url: string; model_name?: string }) =>
+    const applySuccess = (
+      msgId: string,
+      data: { message_id?: number; image_url: string; model_name?: string },
+    ) =>
       updateLoadingMessage(msgId, () => ({
         id: data.message_id ?? msgId,
         imageLoading: false,
@@ -89,7 +93,13 @@ export function useChatImage(params: {
     } catch (err) {
       if (isAbortedRequest(err) || isStale()) return
       try {
-        const { data } = await generateChatImage(archiveId, size, watermark, controller.signal, msgId)
+        const { data } = await generateChatImage(
+          archiveId,
+          size,
+          watermark,
+          controller.signal,
+          msgId,
+        )
         applySuccess(msgId, data)
       } catch (retryErr) {
         if (isAbortedRequest(retryErr) || isStale()) return

@@ -149,7 +149,9 @@ describe('PillNav', () => {
     expect(wrapper.find('.mobile-menu-button').exists()).toBe(false)
     expect(wrapper.find('.pill-nav').classes()).toContain('pill-nav--mobile-compact')
     expect(wrapper.find('.pill-list').classes()).toContain('pill-list--mobile-compact')
-    expect(wrapper.findAll('.pill-list > li')[0].classes()).toContain('pill-list-item--mobile-compact')
+    expect(wrapper.findAll('.pill-list > li')[0].classes()).toContain(
+      'pill-list-item--mobile-compact',
+    )
     expect(wrapper.findAll('.pill')[0].classes()).toContain('pill--mobile-compact')
 
     wrapper.unmount()

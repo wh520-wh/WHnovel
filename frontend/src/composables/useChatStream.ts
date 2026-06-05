@@ -38,9 +38,20 @@ export function useChatStream(params: {
   onClearOptions: () => void
 }) {
   const {
-    messages, currentState, currentStoryState, currentMemoryLog, currentArchive,
-    sending, streaming, awaitingTail, optionsLocked, autoGenerateOptions,
-    onApplyTail, onAutoGenerateOptions, onFinishOptionLock, onClearOptions,
+    messages,
+    currentState,
+    currentStoryState,
+    currentMemoryLog,
+    currentArchive,
+    sending,
+    streaming,
+    awaitingTail,
+    optionsLocked,
+    autoGenerateOptions,
+    onApplyTail,
+    onAutoGenerateOptions,
+    onFinishOptionLock,
+    onClearOptions,
   } = params
 
   function abortStream() {
@@ -118,8 +129,13 @@ export function useChatStream(params: {
     fallbackMessage: string
   }) {
     const {
-      tempAssistantId, optimisticUserId,
-      tailRef, streamErrorRef, draftPersistedRef, textEndedRef, fallbackMessage,
+      tempAssistantId,
+      optimisticUserId,
+      tailRef,
+      streamErrorRef,
+      draftPersistedRef,
+      textEndedRef,
+      fallbackMessage,
     } = params
     return (evt: ChatStreamEvent) => {
       if (evt.event === 'delta') {
@@ -205,20 +221,56 @@ export function useChatStream(params: {
     let draftPersisted = false
     let textEnded = false
     try {
-      await startChatStream(storyId, openingRequirement, archiveId, _handleStreamEvents({
-        tempAssistantId,
-        optimisticUserId: optimisticUser.id,
-        tailRef: { get value() { return tail }, set value(v) { tail = v } },
-        streamErrorRef: { get value() { return streamError }, set value(v) { streamError = v } },
-        draftPersistedRef: { get value() { return draftPersisted }, set value(v) { draftPersisted = v } },
-        textEndedRef: { get value() { return textEnded }, set value(v) { textEnded = v } },
-        fallbackMessage: '开场生成失败',
-      }), signal)
+      await startChatStream(
+        storyId,
+        openingRequirement,
+        archiveId,
+        _handleStreamEvents({
+          tempAssistantId,
+          optimisticUserId: optimisticUser.id,
+          tailRef: {
+            get value() {
+              return tail
+            },
+            set value(v) {
+              tail = v
+            },
+          },
+          streamErrorRef: {
+            get value() {
+              return streamError
+            },
+            set value(v) {
+              streamError = v
+            },
+          },
+          draftPersistedRef: {
+            get value() {
+              return draftPersisted
+            },
+            set value(v) {
+              draftPersisted = v
+            },
+          },
+          textEndedRef: {
+            get value() {
+              return textEnded
+            },
+            set value(v) {
+              textEnded = v
+            },
+          },
+          fallbackMessage: '开场生成失败',
+        }),
+        signal,
+      )
 
       if (streamError) throw new Error(streamError)
       if (!tail) {
         if (draftPersisted) {
-          const partialErr = new Error('开场正文已保留，结构化数据生成失败，可继续输入或重试') as Error & { partial?: boolean }
+          const partialErr = new Error(
+            '开场正文已保留，结构化数据生成失败，可继续输入或重试',
+          ) as Error & { partial?: boolean }
           partialErr.partial = true
           throw partialErr
         }
@@ -272,20 +324,55 @@ export function useChatStream(params: {
     let textEnded = false
     let succeeded = false
     try {
-      await sendMessageStream(archiveId, text, _handleStreamEvents({
-        tempAssistantId,
-        optimisticUserId: optimisticUser.id,
-        tailRef: { get value() { return tail }, set value(v) { tail = v } },
-        streamErrorRef: { get value() { return streamError }, set value(v) { streamError = v } },
-        draftPersistedRef: { get value() { return draftPersisted }, set value(v) { draftPersisted = v } },
-        textEndedRef: { get value() { return textEnded }, set value(v) { textEnded = v } },
-        fallbackMessage: '消息生成失败',
-      }), signal)
+      await sendMessageStream(
+        archiveId,
+        text,
+        _handleStreamEvents({
+          tempAssistantId,
+          optimisticUserId: optimisticUser.id,
+          tailRef: {
+            get value() {
+              return tail
+            },
+            set value(v) {
+              tail = v
+            },
+          },
+          streamErrorRef: {
+            get value() {
+              return streamError
+            },
+            set value(v) {
+              streamError = v
+            },
+          },
+          draftPersistedRef: {
+            get value() {
+              return draftPersisted
+            },
+            set value(v) {
+              draftPersisted = v
+            },
+          },
+          textEndedRef: {
+            get value() {
+              return textEnded
+            },
+            set value(v) {
+              textEnded = v
+            },
+          },
+          fallbackMessage: '消息生成失败',
+        }),
+        signal,
+      )
 
       if (streamError) throw new Error(streamError)
       if (!tail) {
         if (draftPersisted) {
-          const partialErr = new Error('本轮正文已保留，结构化数据生成失败，可继续输入或手动生成选项') as Error & { partial?: boolean }
+          const partialErr = new Error(
+            '本轮正文已保留，结构化数据生成失败，可继续输入或手动生成选项',
+          ) as Error & { partial?: boolean }
           partialErr.partial = true
           throw partialErr
         }
@@ -319,9 +406,15 @@ export function useChatStream(params: {
     }
   }
 
-  async function generateStateBroadcast(apiGenerateStateBroadcast: (archiveId: number) => Promise<{ data: { content: string } }>) {
+  async function generateStateBroadcast(
+    apiGenerateStateBroadcast: (archiveId: number) => Promise<{ data: { content: string } }>,
+  ) {
     if (!currentArchive.value) return
-    const content = stripTrailingOptionBlock(sanitizeAiDisplayText((await apiGenerateStateBroadcast(currentArchive.value.id)).data.content))
+    const content = stripTrailingOptionBlock(
+      sanitizeAiDisplayText(
+        (await apiGenerateStateBroadcast(currentArchive.value.id)).data.content,
+      ),
+    )
     if (!content) {
       throw new Error('状态播报内容已被拦截，请重试')
     }

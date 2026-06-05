@@ -1,20 +1,28 @@
 <template>
-  <div class="model-select-wrap" :class="{ 'has-value': !!modelValue, 'is-open': isOpen, 'is-disabled': disabled }">
-
+  <div
+    class="model-select-wrap"
+    :class="{ 'has-value': !!modelValue, 'is-open': isOpen, 'is-disabled': disabled }"
+  >
     <!-- 触发器 -->
     <button
       type="button"
       class="model-select-trigger"
       :class="{ 'has-value': !!modelValue, 'is-open': isOpen, 'is-disabled': disabled }"
-      @click="toggleDropdown"
       :title="selectedModel ? formatLabel(selectedModel) : placeholder"
       :aria-expanded="isOpen"
       aria-haspopup="listbox"
+      @click="toggleDropdown"
     >
       <!-- 左侧选中指示条 -->
       <div class="select-indicator" :class="{ active: !!modelValue }">
         <svg v-if="!!modelValue" width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M2 5l2.5 2.5L8 2.5"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </div>
 
@@ -28,26 +36,43 @@
       <!-- 右侧箭头 -->
       <div class="select-arrow">
         <svg v-if="loading" width="14" height="14" viewBox="0 0 24 24" fill="none" class="spin">
-          <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path
+            d="M21 12a9 9 0 1 1-6.219-8.56"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
         </svg>
-        <svg v-else width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <polyline points="6 9 12 15 18 9"/>
+        <svg
+          v-else
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
+          <polyline points="6 9 12 15 18 9" />
         </svg>
       </div>
     </button>
 
     <!-- 下拉面板 -->
     <Transition name="dropdown">
-      <div v-if="isOpen" class="model-select-dropdown" ref="dropdownRef">
+      <div v-if="isOpen" ref="dropdownRef" class="model-select-dropdown">
         <div v-if="loading" class="dropdown-loading">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="spin">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path
+              d="M21 12a9 9 0 1 1-6.219-8.56"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
           </svg>
           加载中...
         </div>
-        <div v-else-if="options.length === 0" class="dropdown-empty">
-          暂无可用模型
-        </div>
+        <div v-else-if="options.length === 0" class="dropdown-empty">暂无可用模型</div>
         <div v-else class="dropdown-list">
           <div
             v-for="option in options"
@@ -61,9 +86,20 @@
               <div class="item-id">{{ option.model_id }}</div>
             </div>
             <div class="item-right">
-
-              <svg v-if="option.id === modelValue" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                v-if="option.id === modelValue"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M20 6L9 17l-5-5"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
           </div>
@@ -84,17 +120,20 @@ export interface ModelOption {
   enabled?: boolean
 }
 
-const props = withDefaults(defineProps<{
-  modelValue: number | null
-  options: ModelOption[]
-  placeholder?: string
-  disabled?: boolean
-  loading?: boolean
-}>(), {
-  placeholder: '请选择模型',
-  disabled: false,
-  loading: false,
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue: number | null
+    options: ModelOption[]
+    placeholder?: string
+    disabled?: boolean
+    loading?: boolean
+  }>(),
+  {
+    placeholder: '请选择模型',
+    disabled: false,
+    loading: false,
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [id: number | null]
@@ -103,9 +142,7 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
-const selectedModel = computed(() =>
-  props.options.find(m => m.id === props.modelValue) || null
-)
+const selectedModel = computed(() => props.options.find((m) => m.id === props.modelValue) || null)
 
 function formatLabel(m: ModelOption): string {
   return `${m.name} (${m.model_id})`
@@ -172,7 +209,9 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick, true
 
 .model-select-trigger.has-value:hover:not(.is-disabled) {
   border-color: rgba(34, 211, 238, 0.7);
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.18) inset, 0 0 12px rgba(34, 211, 238, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.18) inset,
+    0 0 12px rgba(34, 211, 238, 0.08);
 }
 
 .model-select-trigger.is-open.has-value {
@@ -250,7 +289,9 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick, true
   width: 32px;
   flex-shrink: 0;
   color: var(--accent-color, #14b8a6);
-  transition: transform 200ms var(--ease-smooth), color 200ms;
+  transition:
+    transform 200ms var(--ease-smooth),
+    color 200ms;
 }
 
 .is-open .select-arrow {
@@ -370,17 +411,25 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick, true
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===== Dropdown animation ===== */
 .dropdown-enter-active {
-  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+  transition:
+    opacity 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
 }
 
 .dropdown-leave-active {
-  transition: opacity 100ms var(--ease-in), transform 100ms var(--ease-in);
+  transition:
+    opacity 100ms var(--ease-in),
+    transform 100ms var(--ease-in);
 }
 
 .dropdown-enter-from,

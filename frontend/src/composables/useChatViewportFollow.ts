@@ -42,8 +42,10 @@ export function useChatViewportFollow(options: UseChatViewportFollowOptions) {
 
   let _prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const prefersReducedMotion = () => _prefersReducedMotion
-  let _reducedMotionMql = window.matchMedia('(prefers-reduced-motion: reduce)')
-  _reducedMotionMql.addEventListener('change', (e) => { _prefersReducedMotion = e.matches })
+  const _reducedMotionMql = window.matchMedia('(prefers-reduced-motion: reduce)')
+  _reducedMotionMql.addEventListener('change', (e) => {
+    _prefersReducedMotion = e.matches
+  })
 
   /**
    * 解析实际滚动容器：
@@ -340,26 +342,23 @@ export function useChatViewportFollow(options: UseChatViewportFollowOptions) {
     }
   }
 
-  watch(
-    options.assistantMessageCount,
-    async (newCount) => {
-      await nextTick()
-      const added = newCount - lastAIMessageCount.value
-      if (added <= 0) {
-        lastAIMessageCount.value = newCount
-        return
-      }
+  watch(options.assistantMessageCount, async (newCount) => {
+    await nextTick()
+    const added = newCount - lastAIMessageCount.value
+    if (added <= 0) {
       lastAIMessageCount.value = newCount
+      return
+    }
+    lastAIMessageCount.value = newCount
 
-      if (autoFollow.value) {
-        if (options.streamingFollow.value || !options.streaming.value) {
-          scrollToBottom()
-        }
-      } else {
-        pendingMessageCount.value += added
+    if (autoFollow.value) {
+      if (options.streamingFollow.value || !options.streaming.value) {
+        scrollToBottom()
       }
-    },
-  )
+    } else {
+      pendingMessageCount.value += added
+    }
+  })
 
   watch(
     () => options.streaming.value,
@@ -384,20 +383,17 @@ export function useChatViewportFollow(options: UseChatViewportFollowOptions) {
     },
   )
 
-  watch(
-    pendingMessageCount,
-    (newVal, oldVal) => {
-      if (!newVal || !oldVal) return
-      if (newVal <= 0 || oldVal <= 0) return
-      if (newVal === oldVal) return
-      badgeBouncing.value = true
+  watch(pendingMessageCount, (newVal, oldVal) => {
+    if (!newVal || !oldVal) return
+    if (newVal <= 0 || oldVal <= 0) return
+    if (newVal === oldVal) return
+    badgeBouncing.value = true
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          badgeBouncing.value = false
-        })
+        badgeBouncing.value = false
       })
-    },
-  )
+    })
+  })
 
   onMounted(() => {
     attachChatScrollListener()

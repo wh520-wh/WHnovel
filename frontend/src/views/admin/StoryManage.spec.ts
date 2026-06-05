@@ -93,7 +93,8 @@ describe('StoryManage responsive UI contract', () => {
           title: 'Mobile story',
           category: 'Adventure',
           tags: ['hot', 'growth'],
-          description: 'A long description verifies the mobile card list shows a summary instead of relying on a wide table.',
+          description:
+            'A long description verifies the mobile card list shows a summary instead of relying on a wide table.',
           cover_image: '',
           background_image: '',
           world_setting: '',

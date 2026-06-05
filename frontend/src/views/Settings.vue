@@ -1,7 +1,7 @@
 <template>
   <div class="settings-layout">
     <!-- 移动端顶部导航（替代侧边栏） -->
-    <div class="mobile-nav" v-if="sidebarMode === 'hidden'">
+    <div v-if="sidebarMode === 'hidden'" class="mobile-nav">
       <button
         v-for="item in navItems"
         :key="item.key"
@@ -14,23 +14,47 @@
     </div>
 
     <!-- 侧边导航 -->
-    <aside class="settings-sidebar" :class="{ collapsed: sidebarMode === 'collapsed' }" v-if="sidebarMode !== 'hidden'">
+    <aside
+      v-if="sidebarMode !== 'hidden'"
+      class="settings-sidebar"
+      :class="{ collapsed: sidebarMode === 'collapsed' }"
+    >
       <!-- Logo 区域 -->
       <div class="sidebar-logo">
         <div class="logo-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <defs>
               <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#5eead4"/>
-                <stop offset="100%" stop-color="#0f766e"/>
+                <stop offset="0%" stop-color="#5eead4" />
+                <stop offset="100%" stop-color="#0f766e" />
               </linearGradient>
             </defs>
-            <path d="M12 2L2 7l10 5 10-5-10-5z" fill="url(#logoGrad)" opacity="0.9"/>
-            <path d="M2 17l10 5 10-5" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <path d="M2 12l10 5 10-5" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M12 2L2 7l10 5 10-5-10-5z" fill="url(#logoGrad)" opacity="0.9" />
+            <path
+              d="M2 17l10 5 10-5"
+              stroke="url(#logoGrad)"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+            <path
+              d="M2 12l10 5 10-5"
+              stroke="url(#logoGrad)"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
           </svg>
         </div>
-        <span class="logo-text" v-show="sidebarMode === 'expanded'">AI 故事</span>
+        <span v-show="sidebarMode === 'expanded'" class="logo-text">AI 故事</span>
       </div>
 
       <!-- 导航列表 -->
@@ -40,30 +64,61 @@
           :key="item.key"
           class="nav-item"
           :class="{ active: currentSection === item.key }"
-          @click="currentSection = item.key"
           :title="sidebarMode !== 'expanded' ? item.label : undefined"
+          @click="currentSection = item.key"
         >
           <span class="nav-icon" v-html="item.icon"></span>
-          <span class="nav-label" v-show="sidebarMode === 'expanded'">{{ item.label }}</span>
-          <span class="nav-indicator" v-if="currentSection === item.key"></span>
+          <span v-show="sidebarMode === 'expanded'" class="nav-label">{{ item.label }}</span>
+          <span v-if="currentSection === item.key" class="nav-indicator"></span>
         </button>
       </nav>
 
       <!-- 底部帮助入口 -->
       <div class="sidebar-footer">
-        <button class="help-btn" :class="{ collapsed: sidebarMode === 'collapsed' }" @click="openHelp" :title="sidebarMode !== 'expanded' ? '帮助与反馈' : undefined">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        <button
+          class="help-btn"
+          :class="{ collapsed: sidebarMode === 'collapsed' }"
+          :title="sidebarMode !== 'expanded' ? '帮助与反馈' : undefined"
+          @click="openHelp"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
           <span v-show="sidebarMode === 'expanded'">帮助与反馈</span>
         </button>
 
         <!-- 响应式折叠按钮 -->
-        <button class="collapse-btn" @click="sidebarMode = sidebarMode === 'expanded' ? 'collapsed' : 'expanded'" :title="sidebarMode === 'expanded' ? '收起侧边栏' : '展开侧边栏'">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ transform: sidebarMode === 'collapsed' ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }">
-            <polyline points="15 18 9 12 15 6"/>
+        <button
+          class="collapse-btn"
+          :title="sidebarMode === 'expanded' ? '收起侧边栏' : '展开侧边栏'"
+          @click="sidebarMode = sidebarMode === 'expanded' ? 'collapsed' : 'expanded'"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            :style="{
+              transform: sidebarMode === 'collapsed' ? 'rotate(180deg)' : 'none',
+              transition: 'transform 0.3s ease',
+            }"
+          >
+            <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
       </div>
@@ -78,20 +133,38 @@
             v-if="returnStoryId"
             class="back-play-btn"
             type="button"
-            @click="goBackToPlay"
             :title="`返回故事 #${returnStoryId}${route.query.archiveId ? ` / 会话 #${route.query.archiveId}` : ''}`"
+            @click="goBackToPlay"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
             </svg>
             返回进行中的故事
           </button>
           <h1 class="main-title">{{ sectionTitle }}</h1>
         </div>
-        <button class="reset-btn" @click="handleReset" :disabled="saving">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="1 4 1 10 7 10"/>
-            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        <button class="reset-btn" :disabled="saving" @click="handleReset">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
           </svg>
           恢复默认
         </button>
@@ -100,17 +173,39 @@
       <!-- 内容区（5个设置分组） -->
       <div class="main-content">
         <Transition name="fade-slide" mode="out-in">
-
           <!-- ===== 模型配置 ===== -->
-          <section v-if="currentSection === 'model'" class="settings-content" key="model">
+          <section v-if="currentSection === 'model'" key="model" class="settings-content">
             <div class="settings-group">
               <div class="group-header">
                 <div class="group-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                  </svg>
                 </div>
                 <div class="group-title">模型选择</div>
-                <button class="group-manage-btn" @click="router.push('/admin/models')" title="管理模型配置">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <button
+                  class="group-manage-btn"
+                  title="管理模型配置"
+                  @click="router.push('/admin/models')"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
                   管理模型
                 </button>
               </div>
@@ -120,7 +215,7 @@
                     <div class="setting-label">主用模型</div>
                     <div class="setting-hint">优先调用的模型</div>
                   </div>
-                  <div class="setting-control" style="width: 100%; max-width: 340px;">
+                  <div class="setting-control" style="width: 100%; max-width: 340px">
                     <ModelSelect
                       v-model="form.primary_model_id"
                       :options="enabledModels"
@@ -135,35 +230,113 @@
                     <div class="setting-hint">主模型失败时自动切换</div>
                   </div>
                   <div class="backup-list-wrap">
-                    <TransitionGroup v-if="form.backup_model_ids.length > 0" name="backup-item" tag="div" class="backup-list">
-                      <div class="backup-item" v-for="(id, idx) in form.backup_model_ids" :key="id"
+                    <TransitionGroup
+                      v-if="form.backup_model_ids.length > 0"
+                      name="backup-item"
+                      tag="div"
+                      class="backup-list"
+                    >
+                      <div
+                        v-for="(id, idx) in form.backup_model_ids"
+                        :key="id"
+                        class="backup-item"
                         draggable="true"
+                        :class="{
+                          'is-dragging': dragIdx === idx,
+                          'is-drag-over': dragOverIdx === idx,
+                        }"
                         @dragstart="onBackupDragStart(idx, $event)"
                         @dragover.prevent="onBackupDragOver(idx)"
                         @drop.prevent="onBackupDrop(idx)"
                         @dragend="onBackupDragEnd"
-                        :class="{ 'is-dragging': dragIdx === idx, 'is-drag-over': dragOverIdx === idx }"
                       >
                         <span class="backup-drag-handle" title="拖拽排序">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <circle cx="9" cy="6" r="1.2" />
+                            <circle cx="15" cy="6" r="1.2" />
+                            <circle cx="9" cy="12" r="1.2" />
+                            <circle cx="15" cy="12" r="1.2" />
+                            <circle cx="9" cy="18" r="1.2" />
+                            <circle cx="15" cy="18" r="1.2" />
+                          </svg>
                         </span>
                         <span class="backup-rank">{{ idx + 1 }}</span>
                         <span class="backup-name">{{ modelNameById(id) }}</span>
                         <div class="backup-ops">
-                          <button class="icon-btn" @click="moveBackupUp(idx)" :disabled="idx === 0" title="上移">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                          <button
+                            class="icon-btn"
+                            :disabled="idx === 0"
+                            title="上移"
+                            @click="moveBackupUp(idx)"
+                          >
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.5"
+                            >
+                              <polyline points="18 15 12 9 6 15" />
+                            </svg>
                           </button>
-                          <button class="icon-btn" @click="moveBackupDown(idx)" :disabled="idx === form.backup_model_ids.length - 1" title="下移">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                          <button
+                            class="icon-btn"
+                            :disabled="idx === form.backup_model_ids.length - 1"
+                            title="下移"
+                            @click="moveBackupDown(idx)"
+                          >
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.5"
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
                           </button>
-                          <button class="icon-btn icon-btn--danger" @click="removeBackup(idx)" title="删除">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          <button
+                            class="icon-btn icon-btn--danger"
+                            title="删除"
+                            @click="removeBackup(idx)"
+                          >
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.5"
+                            >
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
                           </button>
                         </div>
                       </div>
                     </TransitionGroup>
                     <div v-else class="backup-empty">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
                       暂无备用模型
                     </div>
                     <div class="backup-add-row">
@@ -172,10 +345,20 @@
                         :options="backupCandidates"
                         placeholder="选择模型"
                         :disabled="backupCandidates.length === 0"
-                        style="flex:1"
+                        style="flex: 1"
                       />
-                      <button class="btn-add" @click="addBackup" :disabled="!backupCandidateId">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      <button class="btn-add" :disabled="!backupCandidateId" @click="addBackup">
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.5"
+                        >
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
                         添加
                       </button>
                     </div>
@@ -186,16 +369,40 @@
           </section>
 
           <!-- ===== 互动与图片设置 ===== -->
-          <section v-else-if="currentSection === 'interaction'" class="settings-content" key="interaction">
+          <section
+            v-else-if="currentSection === 'interaction'"
+            key="interaction"
+            class="settings-content"
+          >
             <div class="settings-group">
               <div class="group-header">
                 <div class="group-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
                 </div>
                 <div class="group-title">互动设置</div>
               </div>
               <div class="settings-notice">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
                 <span>保存后对新一轮对话生效；正在输出中的回复不受影响</span>
               </div>
               <div class="settings-card">
@@ -205,7 +412,13 @@
                     <div class="setting-hint">{{ form.context_length }} 轮对话记忆</div>
                   </div>
                   <div class="setting-control slider-wrap">
-                    <el-slider v-model="form.context_length" :min="2" :max="30" :step="1" :show-tooltip="false" />
+                    <el-slider
+                      v-model="form.context_length"
+                      :min="2"
+                      :max="30"
+                      :step="1"
+                      :show-tooltip="false"
+                    />
                   </div>
                 </div>
 
@@ -214,7 +427,15 @@
                     <div class="setting-label">回复长度</div>
                   </div>
                   <div class="setting-control style-pills">
-                    <button v-for="style in replyStyles" :key="style.value" class="style-pill" :class="{ active: form.reply_style === style.value }" @click="form.reply_style = style.value">{{ style.label }}</button>
+                    <button
+                      v-for="style in replyStyles"
+                      :key="style.value"
+                      class="style-pill"
+                      :class="{ active: form.reply_style === style.value }"
+                      @click="form.reply_style = style.value"
+                    >
+                      {{ style.label }}
+                    </button>
                   </div>
                 </div>
 
@@ -234,8 +455,20 @@
                     <div class="setting-hint">URL 为链接文本，图片为二进制</div>
                   </div>
                   <div class="setting-control style-pills">
-                    <button class="style-pill" :class="{ active: form.copy_image_format === 'url' }" @click="form.copy_image_format = 'url'">URL</button>
-                    <button class="style-pill" :class="{ active: form.copy_image_format === 'binary' }" @click="form.copy_image_format = 'binary'">图片</button>
+                    <button
+                      class="style-pill"
+                      :class="{ active: form.copy_image_format === 'url' }"
+                      @click="form.copy_image_format = 'url'"
+                    >
+                      URL
+                    </button>
+                    <button
+                      class="style-pill"
+                      :class="{ active: form.copy_image_format === 'binary' }"
+                      @click="form.copy_image_format = 'binary'"
+                    >
+                      图片
+                    </button>
                   </div>
                 </div>
 
@@ -263,11 +496,22 @@
           </section>
 
           <!-- ===== 图片设置 ===== -->
-          <section v-else-if="currentSection === 'image'" class="settings-content" key="image">
+          <section v-else-if="currentSection === 'image'" key="image" class="settings-content">
             <div class="settings-group">
               <div class="group-header">
                 <div class="group-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
                 </div>
                 <div class="group-title">图片设置</div>
               </div>
@@ -277,7 +521,7 @@
                     <div class="setting-label">使用模型</div>
                     <div class="setting-hint">聊天中生成图片所使用的模型</div>
                   </div>
-                  <div class="setting-control" style="width: 100%; max-width: 340px;">
+                  <div class="setting-control" style="width: 100%; max-width: 340px">
                     <ModelSelect
                       v-model="form.default_image_model_id"
                       :options="imageModels"
@@ -291,9 +535,27 @@
                     <div class="setting-label">图片尺寸</div>
                   </div>
                   <div class="setting-control radio-group">
-                    <button class="radio" :class="{ active: form.image_size === '1K' }" @click="form.image_size = '1K'">1K</button>
-                    <button class="radio" :class="{ active: form.image_size === '2K' }" @click="form.image_size = '2K'">2K</button>
-                    <button class="radio" :class="{ active: form.image_size === '3K' }" @click="form.image_size = '3K'">3K</button>
+                    <button
+                      class="radio"
+                      :class="{ active: form.image_size === '1K' }"
+                      @click="form.image_size = '1K'"
+                    >
+                      1K
+                    </button>
+                    <button
+                      class="radio"
+                      :class="{ active: form.image_size === '2K' }"
+                      @click="form.image_size = '2K'"
+                    >
+                      2K
+                    </button>
+                    <button
+                      class="radio"
+                      :class="{ active: form.image_size === '3K' }"
+                      @click="form.image_size = '3K'"
+                    >
+                      3K
+                    </button>
                   </div>
                 </div>
 
@@ -313,8 +575,8 @@
                   </div>
                   <div class="textarea-wrap">
                     <el-input
-                      type="textarea"
                       v-model="form.default_image_style"
+                      type="textarea"
                       :rows="2"
                       placeholder="如：漫画分格，简洁有力的对话气泡风格"
                       resize="none"
@@ -326,11 +588,22 @@
           </section>
 
           <!-- ===== 应用设置 ===== -->
-          <section v-else-if="currentSection === 'app'" class="settings-content" key="app">
+          <section v-else-if="currentSection === 'app'" key="app" class="settings-content">
             <div class="settings-group">
               <div class="group-header">
                 <div class="group-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
                 </div>
                 <div class="group-title">应用设置</div>
               </div>
@@ -343,8 +616,8 @@
                   </div>
                   <div class="textarea-wrap">
                     <el-input
-                      type="textarea"
                       v-model="form.default_system_prompt"
+                      type="textarea"
                       :rows="4"
                       placeholder="请输入全局默认系统提示词..."
                       resize="none"
@@ -359,8 +632,8 @@
                   </div>
                   <div class="textarea-wrap">
                     <el-input
-                      type="textarea"
                       v-model="form.state_broadcast_prompt"
+                      type="textarea"
                       :rows="3"
                       placeholder="请输入状态播报提示词..."
                       resize="none"
@@ -372,11 +645,22 @@
           </section>
 
           <!-- ===== 剧情选项 ===== -->
-          <section v-else-if="currentSection === 'plot'" class="settings-content" key="plot">
+          <section v-else-if="currentSection === 'plot'" key="plot" class="settings-content">
             <div class="settings-group">
               <div class="group-header">
                 <div class="group-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polygon
+                      points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                    />
+                  </svg>
                 </div>
                 <div class="group-title">剧情选项</div>
               </div>
@@ -387,7 +671,13 @@
                     <div class="setting-hint">控制 AI 生成选项的格式，不填使用默认</div>
                   </div>
                   <div class="textarea-wrap">
-                    <el-input type="textarea" v-model="form.options_prompt" :rows="4" placeholder="请仅根据当前剧情生成 N 个后续可选行动。要求：1.第二人称描述主角行动，禁止第一人称；2.单一确定性动作，禁止或/等不确定词；3.选项间有明显差异；4.简洁明确。不填则使用系统默认。" resize="none" />
+                    <el-input
+                      v-model="form.options_prompt"
+                      type="textarea"
+                      :rows="4"
+                      placeholder="请仅根据当前剧情生成 N 个后续可选行动。要求：1.第二人称描述主角行动，禁止第一人称；2.单一确定性动作，禁止或/等不确定词；3.选项间有明显差异；4.简洁明确。不填则使用系统默认。"
+                      resize="none"
+                    />
                   </div>
                 </div>
               </div>
@@ -395,11 +685,25 @@
           </section>
 
           <!-- ===== 外观 ===== -->
-          <section v-else-if="currentSection === 'appearance'" class="settings-content" key="appearance">
+          <section
+            v-else-if="currentSection === 'appearance'"
+            key="appearance"
+            class="settings-content"
+          >
             <div class="settings-group">
               <div class="group-header">
                 <div class="group-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                  </svg>
                 </div>
                 <div class="group-title">外观</div>
               </div>
@@ -409,20 +713,76 @@
                     <div class="setting-label">主题</div>
                   </div>
                   <div class="setting-control theme-pills">
-                    <button class="theme-pill" :class="{ active: themeStore.theme === 'dark' }" @click="themeStore.setTheme('dark')">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <button
+                      class="theme-pill"
+                      :class="{ active: themeStore.theme === 'dark' }"
+                      @click="themeStore.setTheme('dark')"
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                      </svg>
                       暗色
                     </button>
-                    <button class="theme-pill" :class="{ active: themeStore.theme === 'light' }" @click="themeStore.setTheme('light')">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/></svg>
+                    <button
+                      class="theme-pill"
+                      :class="{ active: themeStore.theme === 'light' }"
+                      @click="themeStore.setTheme('light')"
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="12" cy="12" r="5" />
+                        <line x1="12" y1="1" x2="12" y2="3" />
+                      </svg>
                       亮色
                     </button>
-                    <button class="theme-pill" :class="{ active: themeStore.theme === 'enigma' }" @click="themeStore.setTheme('enigma')">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <button
+                      class="theme-pill"
+                      :class="{ active: themeStore.theme === 'enigma' }"
+                      @click="themeStore.setTheme('enigma')"
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polygon
+                          points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                        />
+                      </svg>
                       Enigma
                     </button>
-                    <button class="theme-pill" :class="{ active: themeStore.theme === 'claude' }" @click="themeStore.setTheme('claude')">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                    <button
+                      class="theme-pill"
+                      :class="{ active: themeStore.theme === 'claude' }"
+                      @click="themeStore.setTheme('claude')"
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="4" />
+                      </svg>
                       Claude
                     </button>
                   </div>
@@ -439,19 +799,28 @@
               </div>
             </div>
           </section>
-
         </Transition>
       </div>
 
       <!-- 底部保存按钮 -->
       <div class="main-footer">
-        <button class="save-btn" @click="handleSave" :disabled="saving">
-          <svg v-if="!saving" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-            <polyline points="17 21 17 13 7 13 7 21"/>
-            <polyline points="7 3 7 8 15 8"/>
+        <button class="save-btn" :disabled="saving" @click="handleSave">
+          <svg
+            v-if="!saving"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
           </svg>
-          <span class="save-spinner" v-if="saving"></span>
+          <span v-if="saving" class="save-spinner"></span>
           {{ saving ? '保存中...' : '保存设置' }}
         </button>
       </div>
@@ -472,7 +841,7 @@ import {
 } from '../composables/useSettingsForm'
 
 // ============== 导航状态 ==============
-type SectionKey = typeof ALLOWED_SETTINGS_SECTIONS[number]
+type SectionKey = (typeof ALLOWED_SETTINGS_SECTIONS)[number]
 
 const currentSection = ref<SectionKey>('model')
 const sidebarMode = ref<'expanded' | 'collapsed' | 'hidden'>('expanded')
@@ -569,7 +938,6 @@ function onBackupDragOver(idx: number) {
   dragOverIdx.value = idx
 }
 
-
 function onBackupDrop(targetIdx: number) {
   if (dragIdx.value === null || dragIdx.value === targetIdx) return
   const arr = form.backup_model_ids
@@ -658,7 +1026,11 @@ async function handleReset() {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Outfit',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
 }
 
 /* ============== 侧边栏 ============== */
@@ -670,7 +1042,9 @@ async function handleReset() {
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  transition: width var(--duration-slow) var(--ease-smooth), min-width var(--duration-slow) var(--ease-smooth);
+  transition:
+    width var(--duration-slow) var(--ease-smooth),
+    min-width var(--duration-slow) var(--ease-smooth);
   overflow: hidden;
   position: relative;
   z-index: 10;
@@ -735,7 +1109,12 @@ async function handleReset() {
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    border-color 0.15s var(--ease-smooth),
+    color 0.15s var(--ease-smooth);
   position: relative;
   white-space: nowrap;
   text-align: left;
@@ -806,7 +1185,12 @@ async function handleReset() {
   font-weight: 500;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    border-color 0.15s var(--ease-smooth),
+    color 0.15s var(--ease-smooth);
   white-space: nowrap;
   text-align: left;
   font-family: inherit;
@@ -832,7 +1216,12 @@ async function handleReset() {
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   cursor: pointer;
-  transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    border-color 0.15s var(--ease-smooth),
+    color 0.15s var(--ease-smooth);
   font-family: inherit;
 }
 
@@ -884,7 +1273,12 @@ async function handleReset() {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    border-color 0.15s var(--ease-smooth),
+    color 0.15s var(--ease-smooth);
   font-family: inherit;
 }
 
@@ -949,14 +1343,23 @@ async function handleReset() {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth), background-color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth);
+  transition:
+    transform 0.2s var(--ease-smooth),
+    box-shadow 0.2s var(--ease-smooth),
+    background-color 0.2s var(--ease-smooth),
+    border-color 0.2s var(--ease-smooth),
+    color 0.2s var(--ease-smooth);
   font-family: inherit;
-  box-shadow: 0 0 20px rgba(20, 184, 166, 0.35), 0 4px 16px var(--accent-glow);
+  box-shadow:
+    0 0 20px rgba(20, 184, 166, 0.35),
+    0 4px 16px var(--accent-glow);
 }
 
 .save-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 0 30px rgba(20, 184, 166, 0.5), 0 6px 24px var(--accent-glow);
+  box-shadow:
+    0 0 30px rgba(20, 184, 166, 0.5),
+    0 6px 24px var(--accent-glow);
 }
 
 .save-btn:active:not(:disabled) {
@@ -980,7 +1383,9 @@ async function handleReset() {
 /* ============== 过渡动画 ============== */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: opacity var(--duration-fast, 120ms) ease-out, transform var(--duration-fast, 120ms) ease-out;
+  transition:
+    opacity var(--duration-fast, 120ms) ease-out,
+    transform var(--duration-fast, 120ms) ease-out;
 }
 
 .fade-slide-enter-from {
@@ -1013,7 +1418,12 @@ async function handleReset() {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    border-color 0.15s var(--ease-smooth),
+    color 0.15s var(--ease-smooth);
   font-family: inherit;
   white-space: nowrap;
 }
@@ -1189,7 +1599,12 @@ async function handleReset() {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    border-color 0.15s var(--ease-smooth),
+    color 0.15s var(--ease-smooth);
   font-family: inherit;
 }
 
@@ -1223,7 +1638,12 @@ async function handleReset() {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    border-color 0.15s var(--ease-smooth),
+    color 0.15s var(--ease-smooth);
   font-family: inherit;
 }
 
@@ -1254,7 +1674,12 @@ async function handleReset() {
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   font-family: inherit;
 }
 
@@ -1293,7 +1718,12 @@ async function handleReset() {
   border: 1px solid var(--border-color);
   border-radius: 7px;
   border-left: 3px solid var(--accent-color);
-  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .backup-item:hover {
@@ -1319,7 +1749,9 @@ async function handleReset() {
   align-items: center;
   padding: 2px;
   border-radius: 3px;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   flex-shrink: 0;
 }
 
@@ -1390,7 +1822,12 @@ async function handleReset() {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   font-family: inherit;
   white-space: nowrap;
 }
@@ -1417,7 +1854,12 @@ async function handleReset() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   flex-shrink: 0;
 }
 
@@ -1473,13 +1915,25 @@ async function handleReset() {
 }
 
 @keyframes item-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes item-out {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-4px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 .group-manage-btn {
@@ -1495,7 +1949,12 @@ async function handleReset() {
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    border-color 0.15s var(--ease-smooth),
+    color 0.15s var(--ease-smooth);
   font-family: inherit;
   white-space: nowrap;
 }
@@ -1588,7 +2047,12 @@ async function handleReset() {
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
-    transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+    transition:
+      transform 0.15s,
+      box-shadow 0.15s,
+      background-color 0.15s,
+      border-color 0.15s,
+      color 0.15s;
     font-family: inherit;
   }
   .mobile-nav-item.active {
@@ -1605,7 +2069,7 @@ async function handleReset() {
 :root {
   --settings-accent-subtle: color-mix(in srgb, var(--accent-color) 8%, transparent);
 }
-[data-theme="light"] {
+[data-theme='light'] {
   --settings-accent-subtle: color-mix(in srgb, var(--accent-color) 6%, transparent);
 }
 </style>

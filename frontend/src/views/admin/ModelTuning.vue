@@ -1,5 +1,5 @@
 <template>
-  <div class="model-tuning-page" v-loading="loading">
+  <div v-loading="loading" class="model-tuning-page">
     <div class="page-header">
       <h2>文笔风格</h2>
     </div>
@@ -39,11 +39,7 @@
         </div>
       </template>
 
-      <el-button
-        type="primary"
-        :loading="savingSkill"
-        @click="saveSkill"
-      >
+      <el-button type="primary" :loading="savingSkill" @click="saveSkill">
         保存文笔 Skill
       </el-button>
     </div>
@@ -88,7 +84,7 @@ onMounted(async () => {
   loading.value = true
   try {
     const { data: appSettings } = await getAppSettings()
-    skillEnabled.value = !!(appSettings.style_skill_enabled)
+    skillEnabled.value = !!appSettings.style_skill_enabled
     skillContent.value = appSettings.style_skill_content || DEFAULT_SKILL_TEMPLATE
   } catch (e: unknown) {
     ElMessage.error(getErrorMessage(e, '加载配置失败'))

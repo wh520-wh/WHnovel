@@ -29,9 +29,9 @@
     </div>
     <div class="msg-body">
       <div
+        ref="bubbleRef"
         class="msg-bubble"
         :class="{ 'state-broadcast': msg.isStateBroadcast }"
-        ref="bubbleRef"
         @click="handleBubbleClick"
         @animationend="handleBubbleAnimationEnd"
       >
@@ -45,35 +45,89 @@
         <!-- 图片完成 -->
         <div v-else-if="msg.imageUrl" class="image-done">
           <div class="image-wrap" @click="openImagePreview(msg.imageUrl)">
-            <img :src="msg.imageUrl" :alt="msg.imageUrl" class="image-thumb" loading="lazy">
+            <img :src="msg.imageUrl" :alt="msg.imageUrl" class="image-thumb" loading="lazy" />
             <div class="image-overlay">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="15 3 21 3 21 9" />
+                <polyline points="9 21 3 21 3 15" />
+                <line x1="21" y1="3" x2="14" y2="10" />
+                <line x1="3" y1="21" x2="10" y2="14" />
+              </svg>
             </div>
           </div>
           <div class="image-op-bar">
-            <button class="image-op-btn" @click.stop="handleImageRegenerate" title="重新生成">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <button class="image-op-btn" title="重新生成" @click.stop="handleImageRegenerate">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
               重新生成
             </button>
-            <button class="image-op-btn" @click.stop="handleImageSave(msg.imageUrl)" title="保存">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <button class="image-op-btn" title="保存" @click.stop="handleImageSave(msg.imageUrl)">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
               保存
             </button>
-            <button class="image-op-btn" @click.stop="handleImageCopy(msg.imageUrl)" title="复制">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <button class="image-op-btn" title="复制" @click.stop="handleImageCopy(msg.imageUrl)">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
               复制
             </button>
           </div>
         </div>
         <!-- 图片错误 -->
         <div v-else-if="msg.imageError" class="image-error">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
           <span>{{ msg.imageError }}</span>
           <button class="image-retry-btn" @click.stop="handleImageRetry">重试</button>
         </div>
         <!-- 正常文本消息 -->
         <template v-else-if="msg.role === 'assistant'">
-          <div class="msg-content md-content" ref="contentRef" v-html="renderedContent"></div>
+          <div ref="contentRef" class="msg-content md-content" v-html="renderedContent"></div>
           <!-- 打字指示器：波浪三点 -->
           <!-- dotsVisible 控制 DOM 显示，dotsDying 触发 CSS opacity 过渡实现淡出 -->
           <div v-show="dotsVisible" class="typing-indicator" :class="{ dying: dotsDying }">
@@ -85,7 +139,9 @@
         <div v-else class="msg-content">{{ msg.content }}</div>
       </div>
       <div class="msg-time">
-        <div v-if="msg.role === 'assistant' && msg.model_name" class="model-label">{{ msg.model_name }}</div>
+        <div v-if="msg.role === 'assistant' && msg.model_name" class="model-label">
+          {{ msg.model_name }}
+        </div>
         {{ formatTime(msg.created_at) }}
       </div>
     </div>
@@ -94,21 +150,66 @@
   <!-- 全屏图片预览 -->
   <Teleport to="body">
     <div v-if="previewUrl" class="image-preview-overlay" @click.self="closeImagePreview">
-      <button class="preview-close" @click="closeImagePreview" aria-label="关闭">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="preview-close" aria-label="关闭" @click="closeImagePreview">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
       </button>
-      <img :src="previewUrl" :alt="previewUrl" class="preview-img">
+      <img :src="previewUrl" :alt="previewUrl" class="preview-img" />
       <div class="preview-op-bar">
-        <button class="preview-op-btn" @click="handleImageRegenerate(); closeImagePreview()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <!-- prettier-ignore -->
+        <button
+          class="preview-op-btn"
+          @click="handleImageRegenerate(); closeImagePreview()"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="23 4 23 10 17 10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
           重新生成
         </button>
         <button class="preview-op-btn" @click="handleImageSave(previewUrl || '')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
           保存
         </button>
         <button class="preview-op-btn" @click="handleImageCopy(previewUrl || '')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
           复制链接
         </button>
         <button class="preview-op-btn" @click="closeImagePreview">关闭</button>
@@ -139,9 +240,9 @@ function escapeHtml(str: string): string {
 }
 
 function renderStateBroadcastTable(content: string): string {
-  const lines = content.split('\n').filter(l => l.trim())
+  const lines = content.split('\n').filter((l) => l.trim())
   const rows = lines
-    .map(line => {
+    .map((line) => {
       const idx = line.indexOf('|')
       if (idx === -1) return null
       const key = line.slice(0, idx).trim()
@@ -222,7 +323,7 @@ watch(
       }
       imageLoadingElapsed.value = 0
     }
-  }
+  },
 )
 
 const chatStore = useChatStore()
@@ -255,7 +356,9 @@ function applyHighlights(content: string): string {
 // ESC 关闭全屏预览
 watch(previewUrl, (url) => {
   if (url) {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeImagePreview() }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeImagePreview()
+    }
     document.addEventListener('keydown', handler)
     // 清理函数在 watch 回到 null 时执行
     return () => document.removeEventListener('keydown', handler)
@@ -299,9 +402,7 @@ function handleImageCopy(url: string) {
     const timeout = setTimeout(() => controller.abort(), 5000)
     fetch(url, { signal: controller.signal })
       .then((res) => res.blob())
-      .then((blob) =>
-        navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]),
-      )
+      .then((blob) => navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]))
       .then(() => showToast('图片已复制到剪贴板'))
       .catch(() => {
         navigator.clipboard.writeText(url).then(() => showToast('图片链接已复制'))
@@ -343,7 +444,10 @@ function onPointerMove(e: PointerEvent) {
 }
 
 function onPointerUp() {
-  if (pressTimer) { clearTimeout(pressTimer); pressTimer = null }
+  if (pressTimer) {
+    clearTimeout(pressTimer)
+    pressTimer = null
+  }
   bubbleRef.value?.classList.remove('pressing')
 }
 
@@ -382,7 +486,7 @@ const highlightedContentCache = new Map<string, string>()
 function trimCache(cache: Map<string, string>) {
   if (cache.size > MAX_CONTENT_CACHE) {
     const keysToDelete = Array.from(cache.keys()).slice(0, Math.floor(MAX_CONTENT_CACHE / 2))
-    keysToDelete.forEach(k => cache.delete(k))
+    keysToDelete.forEach((k) => cache.delete(k))
   }
 }
 
@@ -440,7 +544,7 @@ watch(
       renderImmediate()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // Watch streaming end: ensure final content renders without rAF delay
@@ -450,7 +554,7 @@ watch(
     if (!isStreaming) {
       renderImmediate()
     }
-  }
+  },
 )
 
 // Watch highlight changes: always render immediately
@@ -459,7 +563,7 @@ watch(
   () => {
     renderImmediate()
   },
-  { deep: true }
+  { deep: true },
 )
 
 onBeforeUnmount(() => {
@@ -479,7 +583,6 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   if (!['bubble-breaking', 'bubble-breaking-reduced'].includes(event.animationName)) return
   emit('recall-animation-end', props.msg.id)
 }
-
 </script>
 
 <style scoped>
@@ -544,31 +647,55 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
 .msg-bubble.bubble-pop {
   animation: bubble-ripple 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
-.assistant .msg-bubble.bubble-pop { transform-origin: left center; }
-.user .msg-bubble.bubble-pop { transform-origin: right center; }
+.assistant .msg-bubble.bubble-pop {
+  transform-origin: left center;
+}
+.user .msg-bubble.bubble-pop {
+  transform-origin: right center;
+}
 
 @keyframes bubble-ripple {
-  0%   { transform: scale(1); }
-  20%  { transform: scale(1.06); }
-  45%  { transform: scale(0.97); }
-  70%  { transform: scale(1.025); }
-  85%  { transform: scale(0.99); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  20% {
+    transform: scale(1.06);
+  }
+  45% {
+    transform: scale(0.97);
+  }
+  70% {
+    transform: scale(1.025);
+  }
+  85% {
+    transform: scale(0.99);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .msg-bubble.bubble-pop { animation: none !important; }
+  .msg-bubble.bubble-pop {
+    animation: none !important;
+  }
 }
 
 /* ---- 长按视觉反馈 ---- */
 .msg-bubble.pressing {
   transform: scale(0.97) !important;
   box-shadow: 0 0 12px color-mix(in srgb, var(--accent-color) 30%, transparent) !important;
-  transition: transform 80ms ease-out, box-shadow 80ms ease-out, filter 80ms ease-out;
+  transition:
+    transform 80ms ease-out,
+    box-shadow 80ms ease-out,
+    filter 80ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .msg-bubble.pressing { transform: none !important; box-shadow: none !important; }
+  .msg-bubble.pressing {
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }
 
 /* ---- 用户气泡按压反馈 ---- */
@@ -576,7 +703,10 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   transform: scale(0.96) translateY(0) !important;
   box-shadow: var(--shadow-sm) !important;
   filter: brightness(0.92);
-  transition: transform 80ms ease-out, box-shadow 80ms ease-out, filter 80ms ease-out;
+  transition:
+    transform 80ms ease-out,
+    box-shadow 80ms ease-out,
+    filter 80ms ease-out;
 }
 
 .msg-body {
@@ -629,9 +759,15 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
     height: 44px;
   }
 }
-.user { justify-content: flex-end; }
-.user .msg-body { align-items: flex-end; }
-.assistant .msg-body { align-items: flex-start; }
+.user {
+  justify-content: flex-end;
+}
+.user .msg-body {
+  align-items: flex-end;
+}
+.assistant .msg-body {
+  align-items: flex-start;
+}
 
 /* ---- 气泡主体：统一圆润 ---- */
 .msg-bubble {
@@ -651,7 +787,8 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   color: #ffffff;
   font-size: 14px;
   line-height: 1.75;
-  border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-tail) var(--radius-bubble);
+  border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-tail)
+    var(--radius-bubble);
   box-shadow: var(--shadow-md);
 }
 
@@ -666,7 +803,8 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.75;
-  border-radius: var(--radius-bubble-tail) var(--radius-bubble) var(--radius-bubble) var(--radius-bubble);
+  border-radius: var(--radius-bubble-tail) var(--radius-bubble) var(--radius-bubble)
+    var(--radius-bubble);
   border: 1px solid var(--border-color);
   box-shadow: none;
 }
@@ -676,12 +814,13 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   border-color: var(--accent-color);
 }
 
-
-
 .assistant:not(.elastic-disabled) .msg-bubble:active {
   transform: scale(0.96) translateY(0) !important;
   filter: brightness(0.92);
-  transition: transform 80ms ease-out, box-shadow 80ms ease-out, filter 80ms ease-out;
+  transition:
+    transform 80ms ease-out,
+    box-shadow 80ms ease-out,
+    filter 80ms ease-out;
 }
 
 /* ---- 状态播报消息降权 ---- */
@@ -726,9 +865,15 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   border-radius: 50%;
   animation: typing-wave 600ms ease-in-out infinite;
 }
-.typing-dot:nth-child(1) { animation-delay: 0ms; }
-.typing-dot:nth-child(2) { animation-delay: 200ms; }
-.typing-dot:nth-child(3) { animation-delay: 400ms; }
+.typing-dot:nth-child(1) {
+  animation-delay: 0ms;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 200ms;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 400ms;
+}
 /* typing-wave 已提取到全局 style.css */
 
 /* ---- 时间戳 ---- */
@@ -741,7 +886,9 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   margin-top: 3px;
   text-align: center;
 }
-.chat-message:hover .msg-time { opacity: 0.6; }
+.chat-message:hover .msg-time {
+  opacity: 0.6;
+}
 
 .model-label {
   font-size: 10px;
@@ -765,13 +912,34 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   font-family: var(--heading);
   letter-spacing: 0.01em;
 }
-.md-content :deep(p) { margin: 0 0 8px; }
-.md-content :deep(p:last-child) { margin-bottom: 0; }
-.md-content :deep(strong) { color: var(--accent-color); font-weight: 600; }
-.md-content :deep(em) { opacity: 0.85; font-style: italic; }
-.md-content :deep(hr) { border: none; border-top: 1px solid var(--border-color); margin: 10px 0; }
-.md-content :deep(ul), .md-content :deep(ol) { padding-left: 16px; margin: 6px 0; }
-.md-content :deep(li) { margin-bottom: 3px; line-height: var(--line-height-prose); }
+.md-content :deep(p) {
+  margin: 0 0 8px;
+}
+.md-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+.md-content :deep(strong) {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+.md-content :deep(em) {
+  opacity: 0.85;
+  font-style: italic;
+}
+.md-content :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 10px 0;
+}
+.md-content :deep(ul),
+.md-content :deep(ol) {
+  padding-left: 16px;
+  margin: 6px 0;
+}
+.md-content :deep(li) {
+  margin-bottom: 3px;
+  line-height: var(--line-height-prose);
+}
 .md-content :deep(code) {
   background: color-mix(in srgb, var(--accent-color) 12%, transparent);
   border-radius: 4px;
@@ -787,9 +955,19 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   overflow-x: auto;
   margin: 8px 0;
 }
-.md-content :deep(pre code) { background: transparent; padding: 0; font-size: 12px; }
-.md-content :deep(a) { color: var(--accent-color); text-decoration: underline; text-underline-offset: 2px; }
-.md-content :deep(a:hover) { color: var(--accent-hover); }
+.md-content :deep(pre code) {
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+}
+.md-content :deep(a) {
+  color: var(--accent-color);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.md-content :deep(a:hover) {
+  color: var(--accent-hover);
+}
 
 /* ---- 流式输出光标 ---- */
 .streaming-cursor {
@@ -809,13 +987,17 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
 .image-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(20,184,166,0.3);
+  border: 2px solid rgba(20, 184, 166, 0.3);
   border-top-color: var(--accent-color);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .image-loading-text {
   font-size: 13px;
   color: var(--text-muted);
@@ -841,27 +1023,31 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   display: block;
   transition: filter 0.2s;
 }
-.image-wrap:hover .image-thumb { filter: brightness(0.85); }
+.image-wrap:hover .image-thumb {
+  filter: brightness(0.85);
+}
 .image-overlay {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   opacity: 0;
   transition: opacity 0.2s;
   border-radius: 10px;
   color: #fff;
 }
-.image-wrap:hover .image-overlay { opacity: 1; }
+.image-wrap:hover .image-overlay {
+  opacity: 1;
+}
 
 /* 操作栏 */
 .image-op-bar {
   display: flex;
   gap: 4px;
   padding: 6px 2px 2px;
-  border-top: 1px solid rgba(20,184,166,0.1);
+  border-top: 1px solid rgba(20, 184, 166, 0.1);
   margin-top: 4px;
 }
 .image-op-btn {
@@ -870,21 +1056,28 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   gap: 4px;
   padding: 4px 10px;
   border-radius: 7px;
-  border: 1px solid rgba(20,184,166,0.2);
-  background: rgba(20,184,166,0.08);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  background: rgba(20, 184, 166, 0.08);
   color: var(--accent-color);
   font-size: 11px;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   font-family: inherit;
   white-space: nowrap;
 }
 .image-op-btn:hover {
-  background: rgba(20,184,166,0.2);
-  border-color: rgba(20,184,166,0.45);
+  background: rgba(20, 184, 166, 0.2);
+  border-color: rgba(20, 184, 166, 0.45);
   transform: translateY(-1px);
 }
-.image-op-btn:active { transform: translateY(0) scale(0.97); }
+.image-op-btn:active {
+  transform: translateY(0) scale(0.97);
+}
 
 /* ---- 图片错误 ---- */
 .image-error {
@@ -899,21 +1092,28 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   margin-left: auto;
   padding: 3px 10px;
   border-radius: 6px;
-  border: 1px solid rgba(248,113,113,0.3);
-  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.1);
   color: #f87171;
   font-size: 11px;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   font-family: inherit;
 }
-.image-retry-btn:hover { background: rgba(248,113,113,0.2); }
+.image-retry-btn:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
 
 /* ---- 全屏预览 ---- */
 .image-preview-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.93);
+  background: rgba(0, 0, 0, 0.93);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -922,7 +1122,14 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   gap: 16px;
   animation: preview-fade-in 0.2s ease-out;
 }
-@keyframes preview-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes preview-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .preview-close {
   position: absolute;
   top: 20px;
@@ -930,23 +1137,31 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
-.preview-close:hover { background: rgba(248,113,113,0.7); border-color: rgba(248,113,113,0.5); }
+.preview-close:hover {
+  background: rgba(248, 113, 113, 0.7);
+  border-color: rgba(248, 113, 113, 0.5);
+}
 .preview-img {
   max-width: 90vw;
   max-height: 80vh;
   max-height: 80dvh;
   border-radius: 12px;
   object-fit: contain;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
 }
 .preview-op-bar {
   display: flex;
@@ -958,19 +1173,31 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   gap: 6px;
   padding: 8px 16px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
   font-size: 13px;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   font-family: inherit;
 }
-.preview-op-btn:hover { background: rgba(20,184,166,0.7); border-color: rgba(20,184,166,0.5); }
+.preview-op-btn:hover {
+  background: rgba(20, 184, 166, 0.7);
+  border-color: rgba(20, 184, 166, 0.5);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .image-spinner { animation: none !important; }
-  .image-preview-overlay { animation: none !important; }
+  .image-spinner {
+    animation: none !important;
+  }
+  .image-preview-overlay {
+    animation: none !important;
+  }
 }
 
 /* ---- 状态播报表格 ---- */
@@ -1003,5 +1230,3 @@ function handleBubbleAnimationEnd(event: AnimationEvent) {
   vertical-align: top;
 }
 </style>
-
-

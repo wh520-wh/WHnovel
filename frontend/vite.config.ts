@@ -39,8 +39,8 @@ export default defineConfig({
               return 'vendor-axios'
             }
           }
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 })

@@ -4,8 +4,15 @@ import { getAppSettings, getModels, updateAppSettings } from '../api'
 import { MODEL_TYPE_CHAT, MODEL_TYPE_IMAGE } from '../constants/modelTypes'
 import { useSettingsStore } from '../stores/settings'
 
-export const ALLOWED_SETTINGS_SECTIONS = ['model', 'interaction', 'image', 'app', 'plot', 'appearance'] as const
-export type SettingsSection = typeof ALLOWED_SETTINGS_SECTIONS[number]
+export const ALLOWED_SETTINGS_SECTIONS = [
+  'model',
+  'interaction',
+  'image',
+  'app',
+  'plot',
+  'appearance',
+] as const
+export type SettingsSection = (typeof ALLOWED_SETTINGS_SECTIONS)[number]
 
 export const SETTINGS_SECTION_TITLES: Record<SettingsSection, string> = {
   model: '模型配置',
@@ -53,7 +60,9 @@ export function useSettingsForm() {
 
   const form = reactive({ ...DEFAULT_SETTINGS_FORM })
 
-  const enabledModels = computed(() => models.value.filter((m) => !!m.enabled && m.model_type === MODEL_TYPE_CHAT))
+  const enabledModels = computed(() =>
+    models.value.filter((m) => !!m.enabled && m.model_type === MODEL_TYPE_CHAT),
+  )
   const backupCandidates = computed(() =>
     enabledModels.value.filter(
       (m) => m.id !== form.primary_model_id && !form.backup_model_ids.includes(m.id),
@@ -69,7 +78,7 @@ export function useSettingsForm() {
       const fetchSettings = settingsStore.initialized
         ? Promise.resolve()
         : settingsStore.fetchSettings()
-      const [{ data: modelData }, _, appRes] = await Promise.all([
+      const [{ data: modelData }, , appRes] = await Promise.all([
         getModels(),
         fetchSettings,
         getAppSettings(),

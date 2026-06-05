@@ -3,7 +3,7 @@
     <div class="timeline-header">
       <span class="timeline-title">剧情导航</span>
     </div>
-    <div class="timeline-nodes" v-if="nodes.length > 0">
+    <div v-if="nodes.length > 0" class="timeline-nodes">
       <div
         v-for="(node, idx) in nodes"
         :key="node.id"
@@ -15,8 +15,8 @@
         <div class="node-line">
           <div class="node-dot"></div>
           <div
-            class="node-connector"
             v-if="idx < nodes.length - 1"
+            class="node-connector"
             :style="{ animationDelay: `${idx * 60}ms` }"
           ></div>
         </div>
@@ -26,11 +26,23 @@
         </div>
       </div>
     </div>
-    <div class="timeline-empty" v-else>
+    <div v-else class="timeline-empty">
       <div class="empty-state-card">
-        <svg class="empty-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-label="暂无剧情节点" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
+        <svg
+          class="empty-icon"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          role="img"
+          aria-label="暂无剧情节点"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
         </svg>
         <span class="empty-title">暂无剧情节点</span>
         <span class="empty-hint">与AI互动后会自动生成</span>
@@ -55,11 +67,11 @@ const emit = defineEmits<{
 // 从 messages 中提取有 plot_label 的消息作为节点
 const nodes = computed(() => {
   return props.messages
-    .filter(msg => msg.role === 'assistant' && msg.plot_label)
-    .map(msg => ({
+    .filter((msg) => msg.role === 'assistant' && msg.plot_label)
+    .map((msg) => ({
       id: msg.id,
       plot_label: msg.plot_label as string,
-      created_at: msg.created_at
+      created_at: msg.created_at,
     }))
 })
 
@@ -69,7 +81,6 @@ function handleNodeClick(node: { id: string | number }) {
   activeId.value = node.id
   emit('jump', node.id)
 }
-
 </script>
 
 <style scoped>
@@ -126,7 +137,9 @@ function handleNodeClick(node: { id: string | number }) {
 .timeline-node:hover {
   background: rgba(20, 184, 166, 0.14);
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 0 30px rgba(20, 184, 166, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 0 30px rgba(20, 184, 166, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.2);
   border-color: rgba(20, 184, 166, 0.4);
 }
 
@@ -134,7 +147,9 @@ function handleNodeClick(node: { id: string | number }) {
 .timeline-node.active {
   background: rgba(20, 184, 166, 0.15);
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 1px var(--accent-color), 0 0 16px rgba(20, 184, 166, 0.3);
+  box-shadow:
+    0 0 0 1px var(--accent-color),
+    0 0 16px rgba(20, 184, 166, 0.3);
 }
 
 .timeline-node.active::before {
@@ -152,8 +167,14 @@ function handleNodeClick(node: { id: string | number }) {
 
 /* Staggered entry animation for nodes */
 @keyframes timeline-fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes node-enter {
@@ -176,17 +197,23 @@ function handleNodeClick(node: { id: string | number }) {
   border-radius: 50%;
   background: var(--accent-color);
   border: 2px solid var(--bg-secondary);
-  box-shadow: 0 0 0 2px var(--accent-color), 0 0 12px rgba(20, 184, 166, 0.5);
+  box-shadow:
+    0 0 0 2px var(--accent-color),
+    0 0 12px rgba(20, 184, 166, 0.5);
   flex-shrink: 0;
   transition: box-shadow 0.25s ease;
 }
 
 .timeline-node:hover .node-dot {
-  box-shadow: 0 0 0 2px var(--accent-color), 0 0 18px rgba(20, 184, 166, 0.7);
+  box-shadow:
+    0 0 0 2px var(--accent-color),
+    0 0 18px rgba(20, 184, 166, 0.7);
 }
 
 .timeline-node.active .node-dot {
-  box-shadow: 0 0 0 2px var(--accent-color), 0 0 16px rgba(20, 184, 166, 0.6);
+  box-shadow:
+    0 0 0 2px var(--accent-color),
+    0 0 16px rgba(20, 184, 166, 0.6);
 }
 
 /* Connector line with gradient glow + sequential reveal */
@@ -308,5 +335,4 @@ function handleNodeClick(node: { id: string | number }) {
   font-size: 12px;
   color: var(--text-muted);
 }
-
 </style>

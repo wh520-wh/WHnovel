@@ -18,26 +18,35 @@ describe('useChatViewportFollow', () => {
 
     vi.spyOn(performance, 'now').mockImplementation(() => now)
 
-    vi.stubGlobal('requestAnimationFrame', vi.fn((cb: RafCallback) => {
-      rafId += 1
-      rafQueue.set(rafId, cb)
-      return rafId
-    }))
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((cb: RafCallback) => {
+        rafId += 1
+        rafQueue.set(rafId, cb)
+        return rafId
+      }),
+    )
 
-    vi.stubGlobal('cancelAnimationFrame', vi.fn((id: number) => {
-      rafQueue.delete(id)
-    }))
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      vi.fn((id: number) => {
+        rafQueue.delete(id)
+      }),
+    )
 
-    vi.stubGlobal('matchMedia', vi.fn((query: string) => ({
-      matches: query.includes('(max-width: 767px)'),
-      media: query,
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })))
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query.includes('(max-width: 767px)'),
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    )
   })
 
   afterEach(() => {
@@ -58,10 +67,14 @@ describe('useChatViewportFollow', () => {
     Object.defineProperty(chatArea, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (v: number) => { scrollTop = v },
+      set: (v: number) => {
+        scrollTop = v
+      },
     })
     Object.defineProperty(chatArea, 'clientHeight', { configurable: true, value: 400 })
-    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => { scrollTop = top })
+    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => {
+      scrollTop = top
+    })
 
     Object.defineProperty(window, 'visualViewport', {
       configurable: true,
@@ -145,10 +158,14 @@ describe('useChatViewportFollow', () => {
     Object.defineProperty(chatArea, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (v: number) => { scrollTop = v },
+      set: (v: number) => {
+        scrollTop = v
+      },
     })
     Object.defineProperty(chatArea, 'clientHeight', { configurable: true, value: 400 })
-    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => { scrollTop = top })
+    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => {
+      scrollTop = top
+    })
 
     Object.defineProperty(window, 'visualViewport', {
       configurable: true,
@@ -221,16 +238,19 @@ describe('useChatViewportFollow', () => {
 
   it('snaps instantly when prefers-reduced-motion is set', async () => {
     // Override matchMedia to simulate reduced motion preference
-    vi.stubGlobal('matchMedia', vi.fn((query: string) => ({
-      matches: query === '(prefers-reduced-motion: reduce)',
-      media: query,
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })))
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    )
 
     const storyPlay = document.createElement('section')
     const chatArea = document.createElement('div')
@@ -244,10 +264,14 @@ describe('useChatViewportFollow', () => {
     Object.defineProperty(chatArea, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (v: number) => { scrollTop = v },
+      set: (v: number) => {
+        scrollTop = v
+      },
     })
     Object.defineProperty(chatArea, 'clientHeight', { configurable: true, value: 400 })
-    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => { scrollTop = top })
+    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => {
+      scrollTop = top
+    })
 
     Object.defineProperty(window, 'visualViewport', {
       configurable: true,
@@ -316,11 +340,15 @@ describe('useChatViewportFollow', () => {
     Object.defineProperty(chatArea, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (v: number) => { scrollTop = v },
+      set: (v: number) => {
+        scrollTop = v
+      },
     })
     Object.defineProperty(chatArea, 'scrollHeight', { configurable: true, value: 1000 })
     Object.defineProperty(chatArea, 'clientHeight', { configurable: true, value: 500 })
-    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => { scrollTop = top })
+    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => {
+      scrollTop = top
+    })
 
     const storyPlayRef = ref<HTMLElement | null>(storyPlay)
     const chatAreaRef = ref<HTMLElement | null>(chatArea)
@@ -382,10 +410,14 @@ describe('useChatViewportFollow', () => {
     Object.defineProperty(chatArea, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (v: number) => { scrollTop = v },
+      set: (v: number) => {
+        scrollTop = v
+      },
     })
     Object.defineProperty(chatArea, 'clientHeight', { configurable: true, value: 400 })
-    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => { scrollTop = top })
+    ;(chatArea as any).scrollTo = vi.fn(({ top }: { top: number }) => {
+      scrollTop = top
+    })
 
     const storyPlayRef = ref<HTMLElement | null>(storyPlay)
     const chatAreaRef = ref<HTMLElement | null>(chatArea)

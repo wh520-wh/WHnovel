@@ -18,7 +18,9 @@ export function useChatArchive() {
     return data
   }
 
-  async function ensureActiveArchive(storyId: number): Promise<{ archiveId: number; isNew: boolean }> {
+  async function ensureActiveArchive(
+    storyId: number,
+  ): Promise<{ archiveId: number; isNew: boolean }> {
     await fetchArchives(storyId)
     if (archives.value.length === 0) {
       const archive = await startNewArchive(storyId)

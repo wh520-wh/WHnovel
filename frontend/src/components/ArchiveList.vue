@@ -29,7 +29,8 @@
         :model-value="sortedArchives.length > 0 && selection.length === sortedArchives.length"
         :indeterminate="selection.length > 0 && selection.length < sortedArchives.length"
         @change="handleSelectAll"
-      >全选</el-checkbox>
+        >全选</el-checkbox
+      >
       <span class="bulk-count">已选 {{ selection.length }} 项</span>
       <el-button
         size="small"
@@ -42,8 +43,20 @@
     </div>
 
     <div v-if="sortedArchives.length === 0" class="empty-state-card">
-      <svg class="empty-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-label="暂无会话" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      <svg
+        class="empty-icon"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        role="img"
+        aria-label="暂无会话"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       </svg>
       <span class="empty-title">暂无会话</span>
       <span class="empty-hint">开始一段新的故事旅程</span>
@@ -54,7 +67,11 @@
       v-for="(arc, index) in sortedArchives"
       :key="arc.id"
       class="archive-item"
-      :class="{ active: currentId === arc.id, selected: selection.includes(arc.id), bulk: bulkMode }"
+      :class="{
+        active: currentId === arc.id,
+        selected: selection.includes(arc.id),
+        bulk: bulkMode,
+      }"
       :style="{ animationDelay: `${index * 40}ms` }"
       @click="handleItemClick(arc.id)"
     >
@@ -66,12 +83,17 @@
       />
 
       <div class="arc-main">
-        <div class="arc-name" v-if="editingId !== arc.id" @dblclick="startEdit(arc)" :title="'双击重命名'">
+        <div
+          v-if="editingId !== arc.id"
+          class="arc-name"
+          :title="'双击重命名'"
+          @dblclick="startEdit(arc)"
+        >
           {{ arc.name }}
         </div>
         <el-input
           v-else
-          :ref="(el: any) => editInputRefs[arc.id] = el"
+          :ref="(el: any) => (editInputRefs[arc.id] = el)"
           v-model="editName"
           size="small"
           class="name-edit-input"
@@ -86,9 +108,18 @@
       </div>
 
       <div v-if="!bulkMode" class="arc-actions">
-        <el-button size="small" text @click.stop="startEdit(arc)" title="重命名">重命名</el-button>
-        <el-button size="small" text @click.stop="$emit('export', arc.id)" title="导出">导出</el-button>
-        <el-button size="small" text type="danger" @click.stop="$emit('delete', arc.id)" title="删除">删除</el-button>
+        <el-button size="small" text title="重命名" @click.stop="startEdit(arc)">重命名</el-button>
+        <el-button size="small" text title="导出" @click.stop="$emit('export', arc.id)"
+          >导出</el-button
+        >
+        <el-button
+          size="small"
+          text
+          type="danger"
+          title="删除"
+          @click.stop="$emit('delete', arc.id)"
+          >删除</el-button
+        >
       </div>
     </div>
   </div>
@@ -107,7 +138,17 @@ const props = defineProps<{
   deleting?: boolean
 }>()
 
-const emit = defineEmits(['create', 'load', 'delete', 'toggle-bulk-mode', 'selection-change', 'bulk-delete', 'rename', 'export', 'import'])
+const emit = defineEmits([
+  'create',
+  'load',
+  'delete',
+  'toggle-bulk-mode',
+  'selection-change',
+  'bulk-delete',
+  'rename',
+  'export',
+  'import',
+])
 
 const sortOrder = ref<'newest' | 'oldest'>('newest')
 const editingId = ref<number | null>(null)
@@ -142,9 +183,10 @@ const filteredArchives = computed(() => {
   const q = searchQuery.value.trim()
   if (q) {
     const low = q.toLowerCase()
-    list = list.filter(a =>
-      a.name.toLowerCase().includes(low) ||
-      (a.first_message && a.first_message.toLowerCase().includes(low))
+    list = list.filter(
+      (a) =>
+        a.name.toLowerCase().includes(low) ||
+        (a.first_message && a.first_message.toLowerCase().includes(low)),
     )
   }
   return list
@@ -152,7 +194,7 @@ const filteredArchives = computed(() => {
 
 const sortedArchives = computed(() => {
   const list = [...filteredArchives.value]
-  return list.sort((a, b) => sortOrder.value === 'newest' ? b.id - a.id : a.id - b.id)
+  return list.sort((a, b) => (sortOrder.value === 'newest' ? b.id - a.id : a.id - b.id))
 })
 
 function formatDate(iso: string) {
@@ -247,7 +289,11 @@ function handleSelectAll(checked: string | number | boolean) {
   gap: 10px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  transition: background 0.2s ease-out, border-color 0.2s ease-out, transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  transition:
+    background 0.2s ease-out,
+    border-color 0.2s ease-out,
+    transform 0.2s ease-out,
+    box-shadow 0.2s ease-out;
   animation: fadeSlideIn 0.3s ease-out backwards;
 }
 
@@ -265,7 +311,9 @@ function handleSelectAll(checked: string | number | boolean) {
 .archive-item.active {
   border: 1px solid var(--accent-color);
   background: rgba(20, 184, 166, 0.08);
-  box-shadow: 0 0 0 1px var(--accent-color) inset, 0 4px 12px rgba(20, 184, 166, 0.15);
+  box-shadow:
+    0 0 0 1px var(--accent-color) inset,
+    0 4px 12px rgba(20, 184, 166, 0.15);
 }
 
 .archive-item.active::before {
@@ -328,7 +376,9 @@ function handleSelectAll(checked: string | number | boolean) {
   position: relative;
   overflow: hidden;
   border-radius: 6px;
-  transition: color 0.2s ease-out, background-color 0.2s ease-out;
+  transition:
+    color 0.2s ease-out,
+    background-color 0.2s ease-out;
 }
 
 .arc-actions :deep(.el-button)::before {
@@ -341,7 +391,9 @@ function handleSelectAll(checked: string | number | boolean) {
   background: rgba(20, 184, 166, 0.15);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  transition: width 0.3s ease-out, height 0.3s ease-out;
+  transition:
+    width 0.3s ease-out,
+    height 0.3s ease-out;
 }
 
 .arc-actions :deep(.el-button:hover::before) {

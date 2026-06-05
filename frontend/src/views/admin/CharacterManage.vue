@@ -8,7 +8,7 @@
       <el-button type="primary" @click="openDialog()">添加角色</el-button>
     </div>
 
-    <el-table :data="characters" stripe v-loading="loading">
+    <el-table v-loading="loading" :data="characters" stripe>
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="名称" width="120" />
       <el-table-column prop="personality" label="性格" show-overflow-tooltip />
@@ -39,7 +39,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -49,7 +49,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCharacters, createCharacter, updateCharacter, deleteCharacter, getErrorMessage } from '../../api'
+import {
+  getCharacters,
+  createCharacter,
+  updateCharacter,
+  deleteCharacter,
+  getErrorMessage,
+} from '../../api'
 
 const route = useRoute()
 const storyId = Number(route.params.storyId)
@@ -170,7 +176,9 @@ onMounted(fetchList)
   background: var(--admin-card-bg);
   border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
   border-radius: 20px;
-  box-shadow: 0 0 40px color-mix(in srgb, var(--accent-color) 20%, transparent), 0 0 80px color-mix(in srgb, var(--accent-color) 10%, transparent);
+  box-shadow:
+    0 0 40px color-mix(in srgb, var(--accent-color) 20%, transparent),
+    0 0 80px color-mix(in srgb, var(--accent-color) 10%, transparent);
 }
 
 :deep(.el-dialog__header) {

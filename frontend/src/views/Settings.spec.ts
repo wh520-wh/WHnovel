@@ -165,7 +165,10 @@ describe('Settings desktop shared form wiring', () => {
     await wrapper.findAll('.nav-item')[1].trigger('click')
     await flushPromises()
 
-    const stylePills = wrapper.findAll('.style-pill').slice(0, 3).map((node) => node.text())
+    const stylePills = wrapper
+      .findAll('.style-pill')
+      .slice(0, 3)
+      .map((node) => node.text())
     expect(stylePills).toEqual(['简短', '标准', '丰富'])
   })
 })

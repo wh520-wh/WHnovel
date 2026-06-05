@@ -6,7 +6,7 @@ vi.mock('../api', () => ({
 
 import { useChatOptions } from './useChatOptions'
 
-const { generateStoryOptions } = await import('../api') as any
+const { generateStoryOptions } = (await import('../api')) as any
 
 describe('useChatOptions - history stack', () => {
   let module: ReturnType<typeof useChatOptions>

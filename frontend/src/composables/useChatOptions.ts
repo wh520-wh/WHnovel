@@ -75,7 +75,11 @@ export function useChatOptions() {
     return dedup
   }
 
-  async function manualGenerateOptions(archiveId: number, count: number = 3, guidance: string = '') {
+  async function manualGenerateOptions(
+    archiveId: number,
+    count: number = 3,
+    guidance: string = '',
+  ) {
     if (generatingOptions.value || optionsLocked.value) return []
     const autoGuidance = _buildDedupGuidance(currentOptions.value, optionsHistory.value, guidance)
     if (currentOptions.value.length > 0) {

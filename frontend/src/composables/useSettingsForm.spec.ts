@@ -76,7 +76,14 @@ describe('useSettingsForm', () => {
   it('exports canonical sections and titles', async () => {
     const mod = await import('./useSettingsForm')
 
-    expect(mod.ALLOWED_SETTINGS_SECTIONS).toEqual(['model', 'interaction', 'image', 'app', 'plot', 'appearance'])
+    expect(mod.ALLOWED_SETTINGS_SECTIONS).toEqual([
+      'model',
+      'interaction',
+      'image',
+      'app',
+      'plot',
+      'appearance',
+    ])
     expect(mod.SETTINGS_SECTION_TITLES.model).toBe('模型配置')
     expect(mod.SETTINGS_SECTION_TITLES.interaction).toBe('互动设置')
     expect(mod.SETTINGS_SECTION_TITLES.image).toBe('图片设置')

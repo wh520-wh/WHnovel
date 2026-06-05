@@ -85,7 +85,8 @@ export function useMobileInputBar(options: UseMobileInputBarOptions) {
   }
 
   // 外部注册：用于处理键盘弹出/收起时的滚动回调
-  let bottomFollowFn: ((config: { behavior?: ScrollBehavior; frames?: number }) => void) | null = null
+  let bottomFollowFn: ((config: { behavior?: ScrollBehavior; frames?: number }) => void) | null =
+    null
 
   function handleComposerFocus() {
     if (!isMobileViewport()) return
@@ -186,6 +187,8 @@ export function useMobileInputBar(options: UseMobileInputBarOptions) {
     detachMobileLayoutObserver,
     startViewportTracking,
     stopViewportTracking,
-    setBottomFollowFn: (fn: typeof bottomFollowFn) => { bottomFollowFn = fn },
+    setBottomFollowFn: (fn: typeof bottomFollowFn) => {
+      bottomFollowFn = fn
+    },
   }
 }

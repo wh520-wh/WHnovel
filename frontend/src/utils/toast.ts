@@ -53,8 +53,12 @@ export function showToast(message: string): void {
   setTimeout(() => {
     el.style.opacity = '0'
     el.style.transform = 'translateY(-8px)'
-    el.addEventListener('transitionend', () => {
-      el.remove()
-    }, { once: true })
+    el.addEventListener(
+      'transitionend',
+      () => {
+        el.remove()
+      },
+      { once: true },
+    )
   }, 2000)
 }

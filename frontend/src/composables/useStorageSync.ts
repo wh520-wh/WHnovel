@@ -28,7 +28,7 @@ function watch(channel: string, fn: () => void): () => void {
     listeners.set(channel, new Set())
     const handler = (e: StorageEvent) => {
       if (e.key === PREFIX + channel) {
-        listeners.get(channel)?.forEach(cb => cb())
+        listeners.get(channel)?.forEach((cb) => cb())
       }
     }
     handlers.set(channel, handler)

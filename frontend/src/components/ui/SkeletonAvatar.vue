@@ -7,13 +7,16 @@
   />
 </template>
 <script setup lang="ts">
-withDefaults(defineProps<{
-  size?: string
-  shape?: 'circle' | 'square'
-}>(), {
-  size: '40px',
-  shape: 'circle',
-})
+withDefaults(
+  defineProps<{
+    size?: string
+    shape?: 'circle' | 'square'
+  }>(),
+  {
+    size: '40px',
+    shape: 'circle',
+  },
+)
 </script>
 <style scoped>
 .skeleton-avatar {

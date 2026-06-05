@@ -38,7 +38,10 @@ describe('开场草稿', () => {
   it('7 天后过期返回 null', () => {
     const draft = setupStoryDraft()
     const oldTime = Date.now() - (7 * 24 * 60 * 60 * 1000 + 1)
-    localStorage.setItem(`draft:story:${STORY_ID}`, JSON.stringify({ text: '旧草稿', updatedAt: oldTime }))
+    localStorage.setItem(
+      `draft:story:${STORY_ID}`,
+      JSON.stringify({ text: '旧草稿', updatedAt: oldTime }),
+    )
     expect(draft.loadDraft()).toBeNull()
   })
 

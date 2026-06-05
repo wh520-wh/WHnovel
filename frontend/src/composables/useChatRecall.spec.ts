@@ -6,14 +6,16 @@ vi.mock('../api', () => ({
   deleteLastAiMessage: vi.fn(async () => {}),
 }))
 
-function makeMsg(overrides: Partial<{
-  id: number | string
-  role: 'user' | 'assistant'
-  state_snapshot: Record<string, any>
-  story_state: Record<string, any>
-  memory_update: string[]
-  persisted: boolean
-}> = {}) {
+function makeMsg(
+  overrides: Partial<{
+    id: number | string
+    role: 'user' | 'assistant'
+    state_snapshot: Record<string, any>
+    story_state: Record<string, any>
+    memory_update: string[]
+    persisted: boolean
+  }> = {},
+) {
   return {
     id: overrides.id ?? 1,
     archive_id: 1,
@@ -33,13 +35,17 @@ describe('useChatRecall', () => {
     const messages = ref([
       makeMsg({ id: 1, role: 'user', persisted: true }),
       makeMsg({
-        id: 'a1', role: 'assistant', persisted: true,
+        id: 'a1',
+        role: 'assistant',
+        persisted: true,
         state_snapshot: { emotion: 'happy' },
         story_state: { chapter: '第一章' },
       }),
       makeMsg({ id: 3, role: 'user', persisted: true }),
       makeMsg({
-        id: 'a2', role: 'assistant', persisted: true,
+        id: 'a2',
+        role: 'assistant',
+        persisted: true,
         state_snapshot: { emotion: 'sad' },
         story_state: { chapter: '第二章' },
       }),

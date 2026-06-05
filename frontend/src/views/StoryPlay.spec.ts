@@ -180,12 +180,14 @@ vi.mock('element-plus', () => ({
 
 import StoryPlay from './StoryPlay.vue'
 
-const { __mockRoute: route, __mockRouter: router } = await import('vue-router') as any
-const { __mockChatStore: chatStore } = await import('../stores/chat') as any
-const { __mockStoryStore: storyStore } = await import('../stores/story') as any
-const { __mockSettingsStore: settingsStore } = await import('../stores/settings') as any
-const { __mockViewportState: viewportState } = await import('../composables/useChatViewportFollow') as any
-const { __mockMobileInputState: mobileInputState } = await import('../composables/useMobileInputBar') as any
+const { __mockRoute: route, __mockRouter: router } = (await import('vue-router')) as any
+const { __mockChatStore: chatStore } = (await import('../stores/chat')) as any
+const { __mockStoryStore: storyStore } = (await import('../stores/story')) as any
+const { __mockSettingsStore: settingsStore } = (await import('../stores/settings')) as any
+const { __mockViewportState: viewportState } =
+  (await import('../composables/useChatViewportFollow')) as any
+const { __mockMobileInputState: mobileInputState } =
+  (await import('../composables/useMobileInputBar')) as any
 
 function mountStoryPlay() {
   return shallowMount(StoryPlay, {
@@ -207,14 +209,31 @@ function mountStoryPlay() {
         }),
         ChatComposer: defineComponent({
           name: 'ChatComposer',
-          props: ['modelValue', 'disabled', 'thinking', 'awaitingTail', 'menuActive', 'showSpinner'],
+          props: [
+            'modelValue',
+            'disabled',
+            'thinking',
+            'awaitingTail',
+            'menuActive',
+            'showSpinner',
+          ],
           emits: ['send', 'toggle-menu', 'focus', 'blur', 'resized', 'update:modelValue'],
           template: '<div class="chat-composer-stub" />',
         }),
-        'el-dialog': defineComponent({ props: ['modelValue'], template: '<div><slot /><slot name="footer" /></div>' }),
-        'el-drawer': defineComponent({ props: ['modelValue'], template: '<div><slot /><slot name="title" /></div>' }),
+        'el-dialog': defineComponent({
+          props: ['modelValue'],
+          template: '<div><slot /><slot name="footer" /></div>',
+        }),
+        'el-drawer': defineComponent({
+          props: ['modelValue'],
+          template: '<div><slot /><slot name="title" /></div>',
+        }),
         'el-card': defineComponent({ template: '<div><slot /><slot name="header" /></div>' }),
-        'el-input': defineComponent({ props: ['modelValue'], emits: ['update:modelValue'], template: '<input />' }),
+        'el-input': defineComponent({
+          props: ['modelValue'],
+          emits: ['update:modelValue'],
+          template: '<input />',
+        }),
         'el-button': defineComponent({ template: '<button><slot /></button>' }),
       },
     },
@@ -286,7 +305,6 @@ describe('StoryPlay state reset', () => {
   it('clears transient local state on story change', async () => {
     const wrapper = mountStoryPlay()
     await flushPromises()
-
     ;(wrapper.vm as any).archiveBulkMode = true
     ;(wrapper.vm as any).archiveSelection = [101, 102]
     ;(wrapper.vm as any).openingRequirement = '旧开场'
@@ -308,7 +326,6 @@ describe('StoryPlay state reset', () => {
   it('clears transient local state when loading another archive', async () => {
     const wrapper = mountStoryPlay()
     await flushPromises()
-
     ;(wrapper.vm as any).archiveBulkMode = true
     ;(wrapper.vm as any).archiveSelection = [201]
     ;(wrapper.vm as any).openingRequirement = '待发送开场'
@@ -343,7 +360,6 @@ describe('StoryPlay state reset', () => {
   it('clears transient local state when route query archiveId changes within the same story', async () => {
     const wrapper = mountStoryPlay()
     await flushPromises()
-
     ;(wrapper.vm as any).archiveBulkMode = true
     ;(wrapper.vm as any).archiveSelection = [401]
     ;(wrapper.vm as any).openingRequirement = '同故事切档开场'
@@ -381,7 +397,6 @@ describe('StoryPlay state reset', () => {
   it('clears transient local state when fallback archive is loaded after deleting current archive', async () => {
     const wrapper = mountStoryPlay()
     await flushPromises()
-
     ;(wrapper.vm as any).archiveBulkMode = true
     ;(wrapper.vm as any).archiveSelection = [301]
     ;(wrapper.vm as any).openingRequirement = '删除前开场'
@@ -406,7 +421,6 @@ describe('StoryPlay state reset', () => {
   it('clears transient local state when current archive is removed by bulk delete fallback', async () => {
     const wrapper = mountStoryPlay()
     await flushPromises()
-
     ;(wrapper.vm as any).archiveBulkMode = true
     ;(wrapper.vm as any).archiveSelection = [11, 302]
     ;(wrapper.vm as any).openingRequirement = '批量删除前开场'
@@ -582,7 +596,6 @@ describe('StoryPlay state reset', () => {
 
     const wrapper = mountStoryPlay()
     await flushPromises()
-
     ;(wrapper.vm as any).inputText = '旧输入'
 
     await (wrapper.vm as any).handleSend('  我自己决定行动  ', 'input')

@@ -54,44 +54,44 @@
           :show-close="false"
           :with-header="false"
         >
-        <div class="admin-sidebar-mobile">
-          <h2 class="admin-title">管理后台</h2>
-          <el-menu :default-active="activeMenu" router @select="drawerVisible = false">
-            <el-menu-item index="/admin/stories">
-              <el-icon><House /></el-icon>
-              <span>故事管理</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/global-prompt">
-              <el-icon><ChatDotRound /></el-icon>
-              <span>全局提示词</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/models">
-              <el-icon><Cpu /></el-icon>
-              <span>模型配置</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/model-tuning">
-              <el-icon><Setting /></el-icon>
-              <span>文笔风格</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/metrics">
-              <el-icon><DataAnalysis /></el-icon>
-              <span>调用统计</span>
-            </el-menu-item>
-          </el-menu>
-          <div class="admin-sidebar-footer mobile">
-            <button
-              type="button"
-              class="shutdown-panel"
-              :disabled="shutdownBusy"
-              @click="handleEmergencyShutdown"
-            >
-              <span class="shutdown-panel__badge">Emergency</span>
-              <strong class="shutdown-panel__title">彻底关闭前后端</strong>
-              <span class="shutdown-panel__desc">点击后会先清后端，再清前端。</span>
-            </button>
+          <div class="admin-sidebar-mobile">
+            <h2 class="admin-title">管理后台</h2>
+            <el-menu :default-active="activeMenu" router @select="drawerVisible = false">
+              <el-menu-item index="/admin/stories">
+                <el-icon><House /></el-icon>
+                <span>故事管理</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/global-prompt">
+                <el-icon><ChatDotRound /></el-icon>
+                <span>全局提示词</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/models">
+                <el-icon><Cpu /></el-icon>
+                <span>模型配置</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/model-tuning">
+                <el-icon><Setting /></el-icon>
+                <span>文笔风格</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/metrics">
+                <el-icon><DataAnalysis /></el-icon>
+                <span>调用统计</span>
+              </el-menu-item>
+            </el-menu>
+            <div class="admin-sidebar-footer mobile">
+              <button
+                type="button"
+                class="shutdown-panel"
+                :disabled="shutdownBusy"
+                @click="handleEmergencyShutdown"
+              >
+                <span class="shutdown-panel__badge">Emergency</span>
+                <strong class="shutdown-panel__title">彻底关闭前后端</strong>
+                <span class="shutdown-panel__desc">点击后会先清后端，再清前端。</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </el-drawer>
+        </el-drawer>
       </div>
 
       <transition name="shutdown-fade">
@@ -106,14 +106,18 @@
                 <span class="shutdown-step__index">01</span>
                 <div>
                   <div class="shutdown-step__label">关停指令已发出</div>
-                  <div class="shutdown-step__hint">独立关停进程已经接管，不依赖当前页面继续存活。</div>
+                  <div class="shutdown-step__hint">
+                    独立关停进程已经接管，不依赖当前页面继续存活。
+                  </div>
                 </div>
               </div>
               <div class="shutdown-step" :class="getStepClass('backend_down')">
                 <span class="shutdown-step__index">02</span>
                 <div>
                   <div class="shutdown-step__label">确认后端关闭</div>
-                  <div class="shutdown-step__hint">轮询 `8000`，只要端口还活着就继续等待，不会误判。</div>
+                  <div class="shutdown-step__hint">
+                    轮询 `8000`，只要端口还活着就继续等待，不会误判。
+                  </div>
                 </div>
               </div>
               <div class="shutdown-step" :class="getStepClass('frontend_down')">
@@ -131,7 +135,11 @@
             </div>
 
             <button
-              v-if="shutdownPhase === 'frontend_down' || shutdownPhase === 'timeout' || shutdownPhase === 'failed'"
+              v-if="
+                shutdownPhase === 'frontend_down' ||
+                shutdownPhase === 'timeout' ||
+                shutdownPhase === 'failed'
+              "
               type="button"
               class="shutdown-dialog__close"
               @click="shutdownOverlayVisible = false"
@@ -155,7 +163,9 @@ const route = useRoute()
 const drawerVisible = ref(false)
 const shutdownBusy = ref(false)
 const shutdownOverlayVisible = ref(false)
-const shutdownPhase = ref<'idle' | 'scheduled' | 'backend_down' | 'frontend_down' | 'timeout' | 'failed'>('idle')
+const shutdownPhase = ref<
+  'idle' | 'scheduled' | 'backend_down' | 'frontend_down' | 'timeout' | 'failed'
+>('idle')
 const shutdownMessage = ref('正在准备紧急停机...')
 const backendDelayMs = ref(900)
 const frontendDelayMs = ref(2600)
@@ -230,12 +240,15 @@ function startShutdownProbeLoop() {
     startFrontendProbe()
   }, 450)
 
-  shutdownTimeoutTimer = window.setTimeout(() => {
-    clearShutdownTimers()
-    shutdownBusy.value = false
-    shutdownPhase.value = 'timeout'
-    shutdownMessage.value = '关停确认超时，请手动检查 8000 与 5173 是否仍在监听。'
-  }, Math.max(frontendDelayMs.value + 12000, 16000))
+  shutdownTimeoutTimer = window.setTimeout(
+    () => {
+      clearShutdownTimers()
+      shutdownBusy.value = false
+      shutdownPhase.value = 'timeout'
+      shutdownMessage.value = '关停确认超时，请手动检查 8000 与 5173 是否仍在监听。'
+    },
+    Math.max(frontendDelayMs.value + 12000, 16000),
+  )
 }
 
 function getStepClass(target: 'scheduled' | 'backend_down' | 'frontend_down') {
@@ -334,8 +347,9 @@ onBeforeUnmount(() => {
 
 .admin-sidebar :deep(.el-menu-item) {
   color: var(--text-secondary);
-  transition: color var(--duration-fast) var(--ease-smooth),
-              background var(--duration-fast) var(--ease-smooth);
+  transition:
+    color var(--duration-fast) var(--ease-smooth),
+    background var(--duration-fast) var(--ease-smooth);
 }
 
 .admin-sidebar :deep(.el-menu-item:hover) {
@@ -389,7 +403,11 @@ onBeforeUnmount(() => {
     0 18px 34px rgba(80, 7, 16, 0.34),
     inset 0 1px 0 rgba(255, 230, 230, 0.18);
   cursor: pointer;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, filter 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    filter 180ms ease;
 }
 
 .shutdown-panel:hover:not(:disabled) {
@@ -519,8 +537,7 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at top, rgba(255, 126, 126, 0.18), transparent 35%),
-    rgba(7, 8, 12, 0.76);
+    radial-gradient(circle at top, rgba(255, 126, 126, 0.18), transparent 35%), rgba(7, 8, 12, 0.76);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -652,7 +669,9 @@ onBeforeUnmount(() => {
   color: #fff4f4;
   padding: 10px 16px;
   cursor: pointer;
-  transition: background 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .shutdown-dialog__close:hover {
@@ -692,5 +711,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-
-

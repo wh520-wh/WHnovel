@@ -97,7 +97,7 @@ export const useStoryStore = defineStore('story', () => {
   // fetchStories already uses requestVersion to handle race conditions
   async function refreshStories() {
     await fetchStories()
-    subscribers.forEach(fn => fn())
+    subscribers.forEach((fn) => fn())
   }
 
   // Subscribe to story list changes — returns proper unsubscribe function

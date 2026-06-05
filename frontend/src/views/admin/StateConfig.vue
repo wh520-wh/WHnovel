@@ -9,9 +9,7 @@
     </div>
 
     <el-card v-loading="loading">
-      <div v-if="fields.length === 0" class="empty">
-        暂无状态字段，点击"添加字段"开始配置
-      </div>
+      <div v-if="fields.length === 0" class="empty">暂无状态字段，点击"添加字段"开始配置</div>
 
       <div v-for="(field, idx) in fields" :key="idx" class="field-row">
         <el-input v-model="field.key" placeholder="字段key" class="field-key" />
@@ -21,9 +19,24 @@
           <el-option label="文本" value="text" />
         </el-select>
         <template v-if="field.type === 'number'">
-          <el-input-number v-model="field.default" placeholder="默认值" :controls="false" class="field-default-num" />
-          <el-input-number v-model="field.min" placeholder="最小" :controls="false" class="field-min" />
-          <el-input-number v-model="field.max" placeholder="最大" :controls="false" class="field-max" />
+          <el-input-number
+            v-model="field.default"
+            placeholder="默认值"
+            :controls="false"
+            class="field-default-num"
+          />
+          <el-input-number
+            v-model="field.min"
+            placeholder="最小"
+            :controls="false"
+            class="field-min"
+          />
+          <el-input-number
+            v-model="field.max"
+            placeholder="最大"
+            :controls="false"
+            class="field-max"
+          />
         </template>
         <template v-else>
           <el-input v-model="field.default" placeholder="默认值" class="field-default-text" />
@@ -31,8 +44,8 @@
         <el-button type="danger" text @click="fields.splice(idx, 1)">删除</el-button>
       </div>
 
-      <div class="save-bar" v-if="fields.length > 0">
-        <el-button type="primary" @click="handleSave" :loading="saving">保存配置</el-button>
+      <div v-if="fields.length > 0" class="save-bar">
+        <el-button type="primary" :loading="saving" @click="handleSave">保存配置</el-button>
       </div>
     </el-card>
   </div>

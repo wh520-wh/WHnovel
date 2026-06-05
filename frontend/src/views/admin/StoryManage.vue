@@ -16,7 +16,13 @@
       </div>
     </div>
 
-    <el-table class="story-table" :data="stories" stripe v-loading="loading" @selection-change="handleSelectionChange">
+    <el-table
+      v-loading="loading"
+      class="story-table"
+      :data="stories"
+      stripe
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="48" />
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column label="封面" width="96">
@@ -32,7 +38,9 @@
       <el-table-column prop="category" label="分类" width="100" />
       <el-table-column prop="tags" label="标签" width="220">
         <template #default="{ row }">
-          <el-tag v-for="tag in row.tags" :key="tag" size="small" class="tag-item">{{ tag }}</el-tag>
+          <el-tag v-for="tag in row.tags" :key="tag" size="small" class="tag-item">{{
+            tag
+          }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="description" label="简介" min-width="260">
@@ -46,22 +54,79 @@
             <el-button size="small" @click="openDialog(row)">编辑</el-button>
             <el-button size="small" type="primary" @click.stop="toggleMore(row.id, $event)">
               更多
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </el-button>
             <Teleport to="body">
               <Transition name="dropdown-fade">
-                <div v-if="activeMoreId === row.id" class="more-menu-overlay" @click="activeMoreId = null">
+                <div
+                  v-if="activeMoreId === row.id"
+                  class="more-menu-overlay"
+                  @click="activeMoreId = null"
+                >
                   <div class="more-menu-card" :style="getMenuStyle()" @click.stop>
-                    <button type="button" class="more-menu-btn" @click="handleMoreCommand('characters', row)">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <button
+                      type="button"
+                      class="more-menu-btn"
+                      @click="handleMoreCommand('characters', row)"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
                       角色管理
                     </button>
-                    <button type="button" class="more-menu-btn" @click="handleMoreCommand('prompt', row)">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <button
+                      type="button"
+                      class="more-menu-btn"
+                      @click="handleMoreCommand('prompt', row)"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
                       提示词
                     </button>
-                    <button type="button" class="more-menu-btn" @click="handleMoreCommand('state-config', row)">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m0-6l-4.2-4.2"/></svg>
+                    <button
+                      type="button"
+                      class="more-menu-btn"
+                      @click="handleMoreCommand('state-config', row)"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                          d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m0-6l-4.2-4.2"
+                        />
+                      </svg>
                       状态配置
                     </button>
                   </div>
@@ -89,14 +154,16 @@
           <h3>{{ story.title || '未命名故事' }}</h3>
           <p>{{ story.description || '暂无简介' }}</p>
           <div class="mobile-story-tags">
-            <span v-for="tag in (story.tags || [])" :key="tag">{{ tag }}</span>
+            <span v-for="tag in story.tags || []" :key="tag">{{ tag }}</span>
             <span v-if="!story.tags || story.tags.length === 0" class="muted">暂无标签</span>
           </div>
           <div class="mobile-story-actions">
             <button type="button" @click="openDialog(story)">编辑</button>
             <button type="button" @click="handleMoreCommand('characters', story)">角色</button>
             <button type="button" @click="handleMoreCommand('prompt', story)">提示词</button>
-            <button type="button" @click="handleMoreCommand('state-config', story)">状态配置</button>
+            <button type="button" @click="handleMoreCommand('state-config', story)">
+              状态配置
+            </button>
             <button type="button" class="danger" @click="handleDelete(story.id)">删除</button>
           </div>
         </div>
@@ -116,23 +183,78 @@
         </el-form-item>
         <el-form-item label="分类">
           <el-select v-model="form.category" placeholder="选择分类">
-            <el-option v-for="category in STORY_CATEGORIES" :key="category" :label="category" :value="category" />
+            <el-option
+              v-for="category in STORY_CATEGORIES"
+              :key="category"
+              :label="category"
+              :value="category"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="标签">
           <el-input v-model="tagsInput" placeholder="使用英文逗号分隔，如：恋爱,校园" />
         </el-form-item>
         <el-form-item label="封面图">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div v-if="form.cover_image" style="width:80px;height:50px;border-radius:4px;background-size:cover;background-position:center;" :style="{backgroundImage:`url(${form.cover_image})`}"></div>
-            <div v-else style="width:80px;height:50px;border-radius:4px;border:1px dashed var(--el-border-color);display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;">未设置</div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div
+              v-if="form.cover_image"
+              style="
+                width: 80px;
+                height: 50px;
+                border-radius: 4px;
+                background-size: cover;
+                background-position: center;
+              "
+              :style="{ backgroundImage: `url(${form.cover_image})` }"
+            ></div>
+            <div
+              v-else
+              style="
+                width: 80px;
+                height: 50px;
+                border-radius: 4px;
+                border: 1px dashed var(--el-border-color);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                color: #999;
+              "
+            >
+              未设置
+            </div>
             <el-button size="small" @click="handleUploadCover">上传</el-button>
           </div>
         </el-form-item>
         <el-form-item label="背景图">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div v-if="form.background_image" style="width:80px;height:50px;border-radius:4px;background-size:cover;background-position:center;" :style="{backgroundImage:`url(${form.background_image})`}"></div>
-            <div v-else style="width:80px;height:50px;border-radius:4px;border:1px dashed var(--el-border-color);display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;">未设置</div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div
+              v-if="form.background_image"
+              style="
+                width: 80px;
+                height: 50px;
+                border-radius: 4px;
+                background-size: cover;
+                background-position: center;
+              "
+              :style="{ backgroundImage: `url(${form.background_image})` }"
+            ></div>
+            <div
+              v-else
+              style="
+                width: 80px;
+                height: 50px;
+                border-radius: 4px;
+                border: 1px dashed var(--el-border-color);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                color: #999;
+              "
+            >
+              未设置
+            </div>
             <el-button size="small" @click="handleUploadBackground">上传</el-button>
           </div>
         </el-form-item>
@@ -140,13 +262,23 @@
           <el-input v-model="form.description" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item label="默认开场提示词">
-          <el-input v-model="form.opening_requirement" type="textarea" :rows="3" placeholder="故事开场时用户看到的引导文本，将作为开场消息发送给AI" />
+          <el-input
+            v-model="form.opening_requirement"
+            type="textarea"
+            :rows="3"
+            placeholder="故事开场时用户看到的引导文本，将作为开场消息发送给AI"
+          />
         </el-form-item>
         <el-form-item label="世界观">
           <el-input v-model="form.world_setting" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item label="图片风格">
-          <el-input v-model="form.image_style" type="textarea" :rows="2" placeholder="如：漫画分格，简洁有力的对话气泡风格。留空则 AI 自动生成" />
+          <el-input
+            v-model="form.image_style"
+            type="textarea"
+            :rows="2"
+            placeholder="如：漫画分格，简洁有力的对话气泡风格。留空则 AI 自动生成"
+          />
         </el-form-item>
       </el-form>
       <div class="story-preview">
@@ -173,45 +305,91 @@
       <template #footer>
         <div class="story-dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="info" @click="handleOpenModelSelect" :loading="generating">一键AI生成</el-button>
-          <el-button type="warning" @click="handleStandaloneGenerateCover">一键AI生成封面</el-button>
-          <el-button type="warning" @click="handleStandaloneGenerateBackground">一键AI生成背景</el-button>
-          <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
+          <el-button type="info" :loading="generating" @click="handleOpenModelSelect"
+            >一键AI生成</el-button
+          >
+          <el-button type="warning" @click="handleStandaloneGenerateCover"
+            >一键AI生成封面</el-button
+          >
+          <el-button type="warning" @click="handleStandaloneGenerateBackground"
+            >一键AI生成背景</el-button
+          >
+          <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- 模型选择弹窗 -->
     <el-dialog v-model="modelSelectVisible" title="选择模型" width="400px" destroy-on-close>
-      <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 13px;">
+      <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 13px">
         请选择用于生成故事内容的模型
       </p>
-      <ModelSelect
-        v-model="selectedModelId"
-        :options="availableModels"
-        placeholder="选择模型"
-      />
-      <div style="margin-top: 12px;">
-        <el-input v-model="form.preference" type="textarea" :rows="2" placeholder="写下你的偏好，如：我想成为一个世界首富" />
+      <ModelSelect v-model="selectedModelId" :options="availableModels" placeholder="选择模型" />
+      <div style="margin-top: 12px">
+        <el-input
+          v-model="form.preference"
+          type="textarea"
+          :rows="2"
+          placeholder="写下你的偏好，如：我想成为一个世界首富"
+        />
       </div>
-      <div style="margin-top:16px;border-top:1px solid var(--el-border-color-lighter);padding-top:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div
+        style="
+          margin-top: 16px;
+          border-top: 1px solid var(--el-border-color-lighter);
+          padding-top: 16px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          "
+        >
           <span>生成封面图</span>
           <el-switch v-model="generateCover" />
         </div>
-        <ModelSelect v-if="generateCover" v-model="coverImageModelId" :options="imageModels" placeholder="选择图片模型" style="margin-bottom:12px;" />
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <ModelSelect
+          v-if="generateCover"
+          v-model="coverImageModelId"
+          :options="imageModels"
+          placeholder="选择图片模型"
+          style="margin-bottom: 12px"
+        />
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          "
+        >
           <span>生成背景图</span>
           <el-switch v-model="generateBackground" />
         </div>
-        <ModelSelect v-if="generateBackground" v-model="backgroundImageModelId" :options="imageModels" placeholder="选择图片模型" />
+        <ModelSelect
+          v-if="generateBackground"
+          v-model="backgroundImageModelId"
+          :options="imageModels"
+          placeholder="选择图片模型"
+        />
       </div>
       <template #footer>
         <el-button @click="modelSelectVisible = false">取消</el-button>
         <el-button
           type="primary"
-          @click="confirmGenerate({ category: form.category || dialogCategory, title_hint: form.title, tags_hint: tagsInput, image_style: form.image_style, preference: form.preference || '' })"
           :disabled="!selectedModelId"
+          @click="
+            confirmGenerate({
+              category: form.category || dialogCategory,
+              title_hint: form.title,
+              tags_hint: tagsInput,
+              image_style: form.image_style,
+              preference: form.preference || '',
+            })
+          "
         >
           开始生成
         </el-button>
@@ -219,7 +397,12 @@
     </el-dialog>
 
     <!-- 独立图片生成模型选择弹窗 -->
-    <el-dialog v-model="imageModelSelectVisible" :title="imageModelDialogTitle" width="400px" destroy-on-close>
+    <el-dialog
+      v-model="imageModelSelectVisible"
+      :title="imageModelDialogTitle"
+      width="400px"
+      destroy-on-close
+    >
       <div v-if="standaloneGenerating" class="generating-steps">
         <div
           v-for="(step, idx) in standaloneGeneratingSteps"
@@ -239,15 +422,34 @@
           <span :class="{ 'flow-text': standaloneGeneratingStep === idx }">{{ step }}</span>
         </div>
       </div>
-      <ModelSelect v-model="selectedImageModelId" :options="imageModels" placeholder="选择图片模型" :disabled="standaloneGenerating" />
+      <ModelSelect
+        v-model="selectedImageModelId"
+        :options="imageModels"
+        placeholder="选择图片模型"
+        :disabled="standaloneGenerating"
+      />
       <template #footer>
-        <el-button v-if="!standaloneGenerating" @click="imageModelSelectVisible = false">取消</el-button>
-        <el-button type="primary" :disabled="!selectedImageModelId || standaloneGenerating" :loading="standaloneGenerating" @click="confirmStandaloneImageGenerate">确认生成</el-button>
+        <el-button v-if="!standaloneGenerating" @click="imageModelSelectVisible = false"
+          >取消</el-button
+        >
+        <el-button
+          type="primary"
+          :disabled="!selectedImageModelId || standaloneGenerating"
+          :loading="standaloneGenerating"
+          @click="confirmStandaloneImageGenerate"
+          >确认生成</el-button
+        >
       </template>
     </el-dialog>
 
     <!-- 生成结果预览弹窗 -->
-    <el-dialog v-model="previewVisible" title="生成结果预览" width="640px" destroy-on-close :close-on-click-modal="false">
+    <el-dialog
+      v-model="previewVisible"
+      title="生成结果预览"
+      width="640px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
       <div v-if="previewData" class="preview-result">
         <div class="preview-field">
           <div class="preview-label">标题</div>
@@ -267,7 +469,9 @@
         </div>
         <div class="preview-field">
           <div class="preview-label">开场提示词</div>
-          <div class="preview-value world-setting-preview">{{ previewData.opening_requirement || '(AI自动生成)' }}</div>
+          <div class="preview-value world-setting-preview">
+            {{ previewData.opening_requirement || '(AI自动生成)' }}
+          </div>
         </div>
         <div class="preview-field">
           <div class="preview-label">图片风格</div>
@@ -280,7 +484,19 @@
       </div>
       <template #footer>
         <el-button @click="handleCancelPreview">取消</el-button>
-        <el-button @click="() => confirmGenerate({ category: form.category || dialogCategory, title_hint: form.title, tags_hint: tagsInput, image_style: form.image_style, preference: form.preference || '' })" :loading="generating">
+        <el-button
+          :loading="generating"
+          @click="
+            () =>
+              confirmGenerate({
+                category: form.category || dialogCategory,
+                title_hint: form.title,
+                tags_hint: tagsInput,
+                image_style: form.image_style,
+                preference: form.preference || '',
+              })
+          "
+        >
           重新生成
         </el-button>
         <el-button type="primary" @click="applyPreview">确认填入</el-button>
@@ -293,7 +509,16 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { createStory, deleteStory, getStories, updateStory, standaloneGenerateCover, standaloneGenerateBackground, uploadStoryImage, getModels } from '../../api'
+import {
+  createStory,
+  deleteStory,
+  getStories,
+  updateStory,
+  standaloneGenerateCover,
+  standaloneGenerateBackground,
+  uploadStoryImage,
+  getModels,
+} from '../../api'
 import { useStoryGenerate } from '../../composables/useStoryGenerate'
 import { useStoryStore } from '../../stores/story'
 import ModelSelect from '../../components/ModelSelect.vue'
@@ -349,7 +574,7 @@ const standaloneGeneratingSteps = computed(() => [
 ])
 
 const imageModels = computed(() =>
-  allModels.value.filter((m: any) => m.model_type === MODEL_TYPE_IMAGE && !!m.enabled)
+  allModels.value.filter((m: any) => m.model_type === MODEL_TYPE_IMAGE && !!m.enabled),
 )
 
 async function loadAllModels() {
@@ -386,7 +611,10 @@ async function confirmStandaloneImageGenerate() {
       const { data } = await standaloneGenerateCover(editingId.value, selectedImageModelId.value)
       form.cover_image = data.cover_image
     } else {
-      const { data } = await standaloneGenerateBackground(editingId.value, selectedImageModelId.value)
+      const { data } = await standaloneGenerateBackground(
+        editingId.value,
+        selectedImageModelId.value,
+      )
       form.background_image = data.background_image
     }
     imageModelSelectVisible.value = false
@@ -503,7 +731,10 @@ function openDialog(row?: any) {
 }
 
 async function handleSave() {
-  form.tags = tagsInput.value.split(',').map((item) => item.trim()).filter(Boolean)
+  form.tags = tagsInput.value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
   saving.value = true
   try {
     if (editingId.value) {
@@ -563,6 +794,7 @@ async function handleDelete(id: number) {
     await storyStore.refreshStories()
     storyStore.broadcastStories()
   } catch {
+    // user cancelled confirmation dialog
   }
 }
 
@@ -570,7 +802,9 @@ async function handleBulkDelete() {
   if (selectedIds.value.length === 0) return
 
   try {
-    await ElMessageBox.confirm(`确定批量删除 ${selectedIds.value.length} 个故事？`, '确认', { type: 'warning' })
+    await ElMessageBox.confirm(`确定批量删除 ${selectedIds.value.length} 个故事？`, '确认', {
+      type: 'warning',
+    })
     const results = await Promise.allSettled(selectedIds.value.map((id) => deleteStory(id)))
     const failed = results.filter((result) => result.status === 'rejected')
     selectedIds.value = []
@@ -580,9 +814,12 @@ async function handleBulkDelete() {
     if (failed.length === 0) {
       ElMessage.success(`批量删除完成，共删除 ${results.length} 项`)
     } else {
-      ElMessage.warning(`批量删除完成，成功 ${results.length - failed.length} 项，失败 ${failed.length} 项`)
+      ElMessage.warning(
+        `批量删除完成，成功 ${results.length - failed.length} 项，失败 ${failed.length} 项`,
+      )
     }
   } catch {
+    // user cancelled confirmation dialog
   }
 }
 
@@ -591,11 +828,13 @@ function handleCancelPreview() {
     confirmButtonText: '确定放弃',
     cancelButtonText: '继续编辑',
     type: 'warning',
-  }).then(() => {
-    cancelPreview()
-  }).catch(() => {
-    // 继续编辑
   })
+    .then(() => {
+      cancelPreview()
+    })
+    .catch(() => {
+      // 继续编辑
+    })
 }
 
 function applyPreview() {
@@ -615,7 +854,7 @@ onMounted(async () => {
   await fetchList()
   const editId = route.query.editId
   if (editId) {
-    const story = stories.value.find(s => s.id === Number(editId))
+    const story = stories.value.find((s) => s.id === Number(editId))
     if (story) openDialog(story)
   }
 })
@@ -658,7 +897,11 @@ onMounted(async () => {
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--accent-color) 20%, transparent);
   background-color: var(--bg-input);
-  background-image: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 22%, var(--bg-elevated)), var(--bg-elevated));
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-color) 22%, var(--bg-elevated)),
+    var(--bg-elevated)
+  );
   background-size: cover;
   background-position: center;
 }
@@ -691,7 +934,11 @@ onMounted(async () => {
   min-height: 96px;
   border-radius: 8px;
   background-color: var(--bg-secondary);
-  background-image: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 22%, var(--bg-elevated)), var(--bg-elevated));
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-color) 22%, var(--bg-elevated)),
+    var(--bg-elevated)
+  );
   background-size: cover;
   background-position: center;
 }
@@ -763,7 +1010,11 @@ onMounted(async () => {
   border: 1px solid color-mix(in srgb, var(--accent-color) 18%, transparent);
   border-radius: 14px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.035), color-mix(in srgb, var(--accent-color) 4.5%, transparent)),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.035),
+      color-mix(in srgb, var(--accent-color) 4.5%, transparent)
+    ),
     var(--admin-card-bg);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
 }
@@ -774,7 +1025,11 @@ onMounted(async () => {
   border: 1px solid color-mix(in srgb, var(--accent-color) 20%, transparent);
   border-radius: 10px;
   background-color: var(--bg-input);
-  background-image: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 22%, var(--bg-elevated)), var(--bg-elevated));
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-color) 22%, var(--bg-elevated)),
+    var(--bg-elevated)
+  );
   background-size: cover;
   background-position: center;
 }
@@ -937,10 +1192,14 @@ onMounted(async () => {
 
 /* 下拉菜单过渡动画 */
 .dropdown-fade-enter-active {
-  transition: opacity 120ms ease, transform 120ms ease;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
 }
 .dropdown-fade-leave-active {
-  transition: opacity 80ms ease, transform 80ms ease;
+  transition:
+    opacity 80ms ease,
+    transform 80ms ease;
 }
 .dropdown-fade-enter-from {
   opacity: 0;
@@ -986,7 +1245,7 @@ onMounted(async () => {
   max-height: 180px;
   border-radius: 8px;
   object-fit: cover;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   margin-top: 8px;
 }
 
@@ -1024,7 +1283,9 @@ onMounted(async () => {
   background: var(--admin-card-bg);
   border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
   border-radius: 20px;
-  box-shadow: 0 0 40px color-mix(in srgb, var(--accent-color) 20%, transparent), 0 0 80px color-mix(in srgb, var(--accent-color) 10%, transparent);
+  box-shadow:
+    0 0 40px color-mix(in srgb, var(--accent-color) 20%, transparent),
+    0 0 80px color-mix(in srgb, var(--accent-color) 10%, transparent);
 }
 
 :deep(.el-dialog__header) {

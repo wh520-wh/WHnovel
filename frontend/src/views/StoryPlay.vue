@@ -1,11 +1,26 @@
 <template>
-  <div class="story-play" ref="storyPlayRef" :class="{ immersive: immersiveMode }">
+  <div ref="storyPlayRef" class="story-play" :class="{ immersive: immersiveMode }">
     <transition name="immersive-fade">
-      <header class="play-topbar" :class="{ scrolled: topbarScrolled }" v-if="!immersiveMode || immersiveUiVisible">
+      <header
+        v-if="!immersiveMode || immersiveUiVisible"
+        class="play-topbar"
+        :class="{ scrolled: topbarScrolled }"
+      >
         <button class="topbar-back" @click="router.back()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
         </button>
-        <div class="top-center" @click="handleTopCenterClick" style="cursor:pointer">
+        <div class="top-center" style="cursor: pointer" @click="handleTopCenterClick">
           <div class="char-avatar" :class="{ 'char-avatar--img': avatarSrc && !avatarImgError }">
             <img
               v-if="avatarSrc && !avatarImgError"
@@ -14,26 +29,98 @@
               alt=""
               @error="avatarImgError = true"
             />
-            <span v-else class="char-avatar-mono">{{ (storyStore.currentStory?.title || 'AI').charAt(0) }}</span>
+            <span v-else class="char-avatar-mono">{{
+              (storyStore.currentStory?.title || 'AI').charAt(0)
+            }}</span>
           </div>
           <div class="char-info">
             <span class="char-name">{{ storyStore.currentStory?.title || '故事互动' }}</span>
-            <span v-if="currentChapter" class="char-subtitle char-chapter">{{ currentChapter }}</span>
+            <span v-if="currentChapter" class="char-subtitle char-chapter">{{
+              currentChapter
+            }}</span>
             <span v-else class="char-subtitle world-trigger">
               {{ storyStore.currentStory?.description?.slice(0, 12) || '私密会话' }}
-              <svg class="char-subtitle-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg
+                class="char-subtitle-arrow"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </span>
           </div>
         </div>
         <div class="top-actions">
-          <button class="topbar-icon-btn immersive-toggle" :disabled="immersiveTransitioning" @click="toggleImmersive" title="沉浸模式">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <button
+            class="topbar-icon-btn immersive-toggle"
+            :disabled="immersiveTransitioning"
+            title="沉浸模式"
+            @click="toggleImmersive"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+              />
+            </svg>
           </button>
-          <button class="topbar-icon-btn" :class="{ active: rightMenuVisible }" @click="toggleRightMenu" title="设置" ref="settingsBtnRef">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m0-6l-4.2-4.2"/></svg>
+          <button
+            ref="settingsBtnRef"
+            class="topbar-icon-btn"
+            :class="{ active: rightMenuVisible }"
+            title="设置"
+            @click="toggleRightMenu"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m0-6l-4.2-4.2"
+              />
+            </svg>
           </button>
-          <button class="topbar-icon-btn timeline-toggle" :class="{ active: timelineVisible }" @click="timelineVisible = !timelineVisible" title="时间线">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <button
+            class="topbar-icon-btn timeline-toggle"
+            :class="{ active: timelineVisible }"
+            title="时间线"
+            @click="timelineVisible = !timelineVisible"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
           </button>
         </div>
       </header>
@@ -52,8 +139,8 @@
         v-if="immersiveMode && !immersiveUiVisible"
         class="immersive-dot"
         :style="{ bottom: immersiveDotPos.bottom + 'px', right: immersiveDotPos.right + 'px' }"
-        @click="showImmersiveUi"
         title="点击呼出控制"
+        @click="showImmersiveUi"
       ></div>
     </Transition>
 
@@ -80,12 +167,29 @@
         <div class="world-popup" role="dialog" aria-label="世界观">
           <div class="world-popup-header">
             <span class="world-popup-title">世界观</span>
-            <button class="world-popup-close" @click="worldSettingPopupVisible = false" type="button" aria-label="关闭">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <button
+              class="world-popup-close"
+              type="button"
+              aria-label="关闭"
+              @click="worldSettingPopupVisible = false"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
           <div class="world-popup-body">
-            <div v-if="storyStore.currentStory?.world_setting" class="world-popup-text">{{ storyStore.currentStory.world_setting }}</div>
+            <div v-if="storyStore.currentStory?.world_setting" class="world-popup-text">
+              {{ storyStore.currentStory.world_setting }}
+            </div>
             <div v-else class="world-popup-empty">暂无世界观设定</div>
           </div>
         </div>
@@ -93,38 +197,42 @@
     </Transition>
 
     <!-- 移动端世界观抽屉（底部滑出） -->
-    <el-drawer
-      v-model="storyDrawerVisible"
-      direction="btt"
-      size="60%"
-      class="world-drawer"
-    >
+    <el-drawer v-model="storyDrawerVisible" direction="btt" size="60%" class="world-drawer">
       <template #title>
         <span class="world-drawer-title">世界观</span>
       </template>
       <div class="world-drawer-content">
-        <div v-if="storyStore.currentStory?.world_setting" class="world-drawer-text">{{ storyStore.currentStory.world_setting }}</div>
+        <div v-if="storyStore.currentStory?.world_setting" class="world-drawer-text">
+          {{ storyStore.currentStory.world_setting }}
+        </div>
         <div v-else class="world-drawer-empty">暂无世界观设定</div>
       </div>
     </el-drawer>
 
     <main class="play-main">
       <aside class="story-timeline">
-        <StoryTimeline
-          :messages="chatStore.messages"
-          @jump="handleJumpToMessage"
-        />
+        <StoryTimeline :messages="chatStore.messages" @jump="handleJumpToMessage" />
       </aside>
       <section class="center-panel">
         <div
-          class="chat-area"
-          :class="{ 'has-bg': !!storyStore.currentStory?.background_image && settingsStore.settings.show_background_image !== false }"
-          :style="storyStore.currentStory?.background_image && settingsStore.settings.show_background_image !== false ? { backgroundImage: `url(${storyStore.currentStory.background_image})` } : undefined"
           ref="chatAreaRef"
           v-loading="storyStore.loading || chatStore.loading"
+          class="chat-area"
+          :class="{
+            'has-bg':
+              !!storyStore.currentStory?.background_image &&
+              settingsStore.settings.show_background_image !== false,
+          }"
+          :style="
+            storyStore.currentStory?.background_image &&
+            settingsStore.settings.show_background_image !== false
+              ? { backgroundImage: `url(${storyStore.currentStory.background_image})` }
+              : undefined
+          "
         >
           <template v-if="!hasStarted">
             <transition name="starter-fade" mode="out-in">
+              <!-- eslint-disable-next-line vue/require-toggle-inside-transition -- v-if on parent template controls visibility -->
               <div class="starter-wrap">
                 <el-card class="starter-card">
                   <template #header>
@@ -134,16 +242,22 @@
                     输入你想要的开场要求（例如：主角身份、关系基调、冲突方向），系统会用首次模型生成开场。
                   </p>
                   <textarea
-                    class="opening-textarea"
-                    v-model="openingRequirement"
                     :key="openingBounceKey || undefined"
-                    :placeholder="storyStore.currentStory?.opening_requirement || '请输入开场要求...'"
+                    v-model="openingRequirement"
+                    class="opening-textarea"
+                    :placeholder="
+                      storyStore.currentStory?.opening_requirement || '请输入开场要求...'
+                    "
                     :disabled="chatStore.sending"
                     rows="5"
                     @click="handleOpeningClick"
                   ></textarea>
                   <div class="starter-actions">
-                    <button class="start-chat-btn" :disabled="chatStore.sending" @click="handleStartStory">
+                    <button
+                      class="start-chat-btn"
+                      :disabled="chatStore.sending"
+                      @click="handleStartStory"
+                    >
                       <span v-if="chatStore.sending">生成中...</span>
                       <span v-else>开始聊天</span>
                     </button>
@@ -165,8 +279,12 @@
                 v-for="(msg, idx) in chatStore.messages"
                 :key="msg.id"
                 :msg="msg"
-                :streaming="chatStore.streaming && idx === chatStore.messages.length - 1 && msg.role === 'assistant'"
-                :selectMode="selectMode"
+                :streaming="
+                  chatStore.streaming &&
+                  idx === chatStore.messages.length - 1 &&
+                  msg.role === 'assistant'
+                "
+                :select-mode="selectMode"
                 :selected="selectedMessageIds.has(msg.id)"
                 @recall-animation-end="handleRecallAnimationEnd"
                 @select="handleMsgSelect"
@@ -183,12 +301,16 @@
                   v-if="selectedMessageIds.size > 0"
                   class="delete-bar-btn clear-btn"
                   @click="clearSelectedMessages"
-                >取消全选</button>
+                >
+                  取消全选
+                </button>
                 <button
                   class="delete-bar-btn confirm-btn"
                   :disabled="selectedMessageIds.size === 0 || deletingInProgress"
                   @click="handleBulkDelete"
-                >{{ deletingInProgress ? '删除中...' : '删除' }}</button>
+                >
+                  {{ deletingInProgress ? '删除中...' : '删除' }}
+                </button>
               </div>
             </Transition>
 
@@ -198,7 +320,10 @@
               class="new-message-indicator"
               @click="jumpToLatest"
             >
-              <span class="pending-badge" :class="{ 'badge-bounce': badgeBouncing }">{{ pendingMessageCount }}</span> 条新消息 ↑
+              <span class="pending-badge" :class="{ 'badge-bounce': badgeBouncing }">{{
+                pendingMessageCount
+              }}</span>
+              条新消息 ↑
             </button>
 
             <!-- 回到底部按钮：用户上翻时出现 -->
@@ -206,10 +331,19 @@
               <button
                 v-if="!autoFollow && userScrolledUp && pendingMessageCount === 0 && hasStarted"
                 class="back-to-bottom-btn"
-                @click="scrollToLatest"
                 title="回到底部"
+                @click="scrollToLatest"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
@@ -294,7 +428,13 @@
         @export="handleExportArchive"
         @import="handleImportArchive"
       />
-      <input ref="importFileRef" type="file" accept=".json" style="display:none" @change="onImportFile" />
+      <input
+        ref="importFileRef"
+        type="file"
+        accept=".json"
+        style="display: none"
+        @change="onImportFile"
+      />
     </el-dialog>
 
     <el-dialog
@@ -303,7 +443,7 @@
       width="360px"
       :close-on-click-modal="false"
     >
-      <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; flex-direction: column; gap: 12px">
         <el-input
           v-model="newArchiveNameInput"
           placeholder="输入存档名称"
@@ -322,7 +462,9 @@
         <div v-for="msg in chatStore.messages" :key="msg.id" class="log-row">
           <div class="log-meta">
             <span class="log-time">{{ formatTimeSeconds(msg.created_at) }}</span>
-            <span class="log-role" :class="msg.role === 'assistant' ? 'ai-tag' : 'user-tag'">{{ msg.role === 'assistant' ? 'AI' : '你' }}</span>
+            <span class="log-role" :class="msg.role === 'assistant' ? 'ai-tag' : 'user-tag'">{{
+              msg.role === 'assistant' ? 'AI' : '你'
+            }}</span>
           </div>
           <div class="log-content">{{ msg.content }}</div>
         </div>
@@ -331,13 +473,27 @@
 
     <!-- 手机模式：时间线底部弹出面板 -->
     <Teleport to="body">
-      <div class="timeline-mobile-overlay" v-if="timelineVisible" @click.self="timelineVisible = false">
+      <div
+        v-if="timelineVisible"
+        class="timeline-mobile-overlay"
+        @click.self="timelineVisible = false"
+      >
         <div class="timeline-mobile-sheet">
           <div class="timeline-mobile-handle" @click="timelineVisible = false"></div>
           <div class="timeline-mobile-header">
             <span>剧情时间线</span>
             <button class="topbar-icon-btn" @click="timelineVisible = false">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
           <StoryTimeline
@@ -452,7 +608,7 @@ const pendingRecallIds = ref<Set<string | number>>(new Set())
 let recallFallbackTimer: ReturnType<typeof window.setTimeout> | null = null
 let immersiveHideTimer: ReturnType<typeof setTimeout> | null = null
 const IMMERSIVE_HIDE_DELAY = 3000
-const IMMERSIVE_TRANSITION_DURATION = 350  // 与 CSS transition 时间匹配，防止连续切换
+const IMMERSIVE_TRANSITION_DURATION = 350 // 与 CSS transition 时间匹配，防止连续切换
 let immersiveTransitionTimer: ReturnType<typeof setTimeout> | null = null
 
 const isFullscreen = () => !!document.fullscreenElement
@@ -466,12 +622,17 @@ const currentChapter = computed(() => {
 })
 
 // 切换故事时重置图片错误状态
-watch(() => storyStore.currentStory?.id, () => {
-  avatarImgError.value = false
-})
+watch(
+  () => storyStore.currentStory?.id,
+  () => {
+    avatarImgError.value = false
+  },
+)
 
 const hasStarted = computed(() => chatStore.messages.some((m) => m.role === 'assistant'))
-const assistantMessageCount = computed(() => chatStore.messages.filter((m) => m.role === 'assistant').length)
+const assistantMessageCount = computed(
+  () => chatStore.messages.filter((m) => m.role === 'assistant').length,
+)
 const displayOptions = computed(() => {
   if (chatStore.currentOptions.length > 0) return chatStore.currentOptions
   return []
@@ -519,7 +680,8 @@ const {
 // Register queueBottomFollow callback for mobile keyboard scroll
 setBottomFollowFn(queueBottomFollow)
 
-const SPINNER_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 800ms linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+const SPINNER_ICON =
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 800ms linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
 
 function clearRecallFallbackTimer() {
   if (recallFallbackTimer === null) return
@@ -615,38 +777,44 @@ const leftMenuItems = computed<BubbleMenuItem[]>(() => [
     label: '生成剧情选项',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
     disabled: !hasStarted.value || chatStore.sending || chatStore.optionsLocked,
-    action: handleManualGenerateOptions
+    action: handleManualGenerateOptions,
   },
   {
     label: '生成状态播报',
-    icon: chatStore.generatingStateBroadcast ? SPINNER_ICON : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
-    disabled: !hasStarted.value || chatStore.sending || chatStore.streaming || chatStore.generatingStateBroadcast,
-    action: handleGenerateState
+    icon: chatStore.generatingStateBroadcast
+      ? SPINNER_ICON
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    disabled:
+      !hasStarted.value ||
+      chatStore.sending ||
+      chatStore.streaming ||
+      chatStore.generatingStateBroadcast,
+    action: handleGenerateState,
   },
   {
     label: '生成图片',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
     disabled: !hasStarted.value || chatStore.isGeneratingImage,
-    action: () => chatStore.generateImage()
+    action: () => chatStore.generateImage(),
   },
   {
     label: '冒险日志',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
     disabled: chatStore.messages.length === 0,
-    action: openLogs
+    action: openLogs,
   },
   {
     label: '撤回最后一轮',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.12 12.76a6 6 0 1 1-1.77-4.24l-2.9.65"/><path d="M20.88 18.12a6 6 0 1 1-1.77-4.24"/></svg>',
     disabled: !canRecall.value,
-    action: handleRecallLastRound
+    action: handleRecallLastRound,
   },
   {
     label: '沉浸模式',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
     disabled: immersiveTransitioning.value,
-    action: toggleImmersive
-  }
+    action: toggleImmersive,
+  },
 ])
 
 // 右侧菜单项
@@ -658,7 +826,7 @@ const rightMenuItems = computed<BubbleMenuItem[]>(() => [
     action: () => {
       const newValue = !chatStore.streamingFollow
       chatStore.setStreamingFollow(newValue)
-    }
+    },
   },
   {
     label: autoGenerateOptions.value ? '关闭自动生成选项' : '开启自动生成选项',
@@ -668,13 +836,15 @@ const rightMenuItems = computed<BubbleMenuItem[]>(() => [
       const newValue = !autoGenerateOptions.value
       chatStore.setAutoGenerateOptions(newValue)
       handleToggleAutoOptions(newValue)
-    }
+    },
   },
   {
     label: '会话管理',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
     disabled: false,
-    action: () => { archiveDialogVisible.value = true }
+    action: () => {
+      archiveDialogVisible.value = true
+    },
   },
   {
     label: '前往设置',
@@ -690,20 +860,20 @@ const rightMenuItems = computed<BubbleMenuItem[]>(() => [
       { label: '小', action: () => setFontScale(0.85) },
       { label: '中', action: () => setFontScale(1.0) },
       { label: '大', action: () => setFontScale(1.2) },
-    ]
+    ],
   },
   {
     label: '删除消息',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg>',
     disabled: chatStore.sending || chatStore.streaming || chatStore.optionsLocked,
-    action: () => enterSelectMode()
+    action: () => enterSelectMode(),
   },
   {
     label: '重置对话',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
     disabled: false,
-    action: () => handleResetArchive()
-  }
+    action: () => handleResetArchive(),
+  },
 ])
 
 function toggleLeftMenu() {
@@ -813,9 +983,8 @@ onMounted(async () => {
   bindMobileLayoutObserverFromBar()
   syncMobileViewportHeight()
   startMobileViewportTracking()
-  const preferredArchiveId = Number.isFinite(routeArchiveId.value) && routeArchiveId.value > 0
-    ? routeArchiveId.value
-    : null
+  const preferredArchiveId =
+    Number.isFinite(routeArchiveId.value) && routeArchiveId.value > 0 ? routeArchiveId.value : null
   await initByStoryId(routeStoryId.value, preferredArchiveId)
   await nextTick()
   syncMobileLayoutVarsFromBar()
@@ -837,7 +1006,9 @@ function enterImmersive() {
   if (immersiveTransitioning.value) return
   immersiveTransitioning.value = true
   clearImmersiveTransitionTimer()
-  immersiveTransitionTimer = setTimeout(() => { immersiveTransitioning.value = false }, IMMERSIVE_TRANSITION_DURATION)
+  immersiveTransitionTimer = setTimeout(() => {
+    immersiveTransitioning.value = false
+  }, IMMERSIVE_TRANSITION_DURATION)
 
   // 保存进入前的滚动位置，退出时恢复
   immersiveScrollTop = chatAreaRef.value?.scrollTop ?? 0
@@ -866,7 +1037,9 @@ function exitImmersive() {
   if (immersiveTransitioning.value) return
   immersiveTransitioning.value = true
   clearImmersiveTransitionTimer()
-  immersiveTransitionTimer = setTimeout(() => { immersiveTransitioning.value = false }, IMMERSIVE_TRANSITION_DURATION)
+  immersiveTransitionTimer = setTimeout(() => {
+    immersiveTransitioning.value = false
+  }, IMMERSIVE_TRANSITION_DURATION)
 
   // 恢复退出前的滚动位置
   const savedScrollTop = immersiveScrollTop
@@ -980,7 +1153,7 @@ function forceExitImmersive() {
   const savedScrollTop = immersiveScrollTop
   immersiveMode.value = false
   immersiveUiVisible.value = false
-  immersiveTransitioning.value = false  // 重置锁状态
+  immersiveTransitioning.value = false // 重置锁状态
   if (isFullscreen()) {
     try {
       document.exitFullscreen?.()
@@ -1017,7 +1190,8 @@ async function handleToggleAutoOptions(val: boolean) {
 }
 
 async function handleStartStory() {
-  const requirement = openingRequirement.value.trim() || storyStore.currentStory?.opening_requirement || ''
+  const requirement =
+    openingRequirement.value.trim() || storyStore.currentStory?.opening_requirement || ''
   if (!requirement) {
     ElMessage.warning('请先输入开场要求')
     return
@@ -1276,18 +1450,23 @@ function handleArchiveSelectionChange(payload: { id: number; checked: boolean })
 async function handleBulkDeleteArchives() {
   if (archiveSelection.value.length === 0) return
 
-  await ElMessageBox.confirm(`确定批量删除 ${archiveSelection.value.length} 个会话？删除后不可恢复。`, '确认删除', {
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
+  await ElMessageBox.confirm(
+    `确定批量删除 ${archiveSelection.value.length} 个会话？删除后不可恢复。`,
+    '确认删除',
+    {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    },
+  )
 
   deletingArchives.value = true
   const targetIds = [...archiveSelection.value]
   try {
     const results = await Promise.allSettled(targetIds.map((id) => deleteArchive(id)))
     const failed = results.filter((result) => result.status === 'rejected')
-    const deletedCurrent = !!chatStore.currentArchive && targetIds.includes(chatStore.currentArchive.id)
+    const deletedCurrent =
+      !!chatStore.currentArchive && targetIds.includes(chatStore.currentArchive.id)
 
     await chatStore.fetchArchives(routeStoryId.value)
     if (deletedCurrent) {
@@ -1301,7 +1480,9 @@ async function handleBulkDeleteArchives() {
     if (failed.length === 0) {
       ElMessage.success(`批量删除完成，共删除 ${results.length} 项`)
     } else {
-      ElMessage.warning(`批量删除完成，成功 ${results.length - failed.length} 项，失败 ${failed.length} 项`)
+      ElMessage.warning(
+        `批量删除完成，成功 ${results.length - failed.length} 项，失败 ${failed.length} 项`,
+      )
     }
   } finally {
     deletingArchives.value = false
@@ -1358,7 +1539,7 @@ async function onImportFile(e: Event) {
 
 // 跳转到指定消息位置
 function handleJumpToMessage(messageId: string | number) {
-  const index = chatStore.messages.findIndex(m => m.id === messageId)
+  const index = chatStore.messages.findIndex((m) => m.id === messageId)
   if (index === -1 || !chatAreaRef.value) return
 
   // 找到消息元素并滚动到可视区
@@ -1369,7 +1550,6 @@ function handleJumpToMessage(messageId: string | number) {
   }
 }
 
-
 watch(
   () => routeStoryId.value,
   async (newStoryId, oldStoryId) => {
@@ -1379,9 +1559,10 @@ watch(
     worldSettingPopupVisible.value = false
     storyDrawerVisible.value = false
     resetTransientLocalState()
-    const preferredArchiveId = Number.isFinite(routeArchiveId.value) && routeArchiveId.value > 0
-      ? routeArchiveId.value
-      : null
+    const preferredArchiveId =
+      Number.isFinite(routeArchiveId.value) && routeArchiveId.value > 0
+        ? routeArchiveId.value
+        : null
     await initByStoryId(newStoryId, preferredArchiveId)
   },
 )
@@ -1392,7 +1573,11 @@ watch(
     if (newArchiveId === oldArchiveId) return
     if (!Number.isFinite(newArchiveId) || newArchiveId <= 0) return
     if (!Number.isFinite(routeStoryId.value) || routeStoryId.value <= 0) return
-    if (chatStore.currentArchive?.id === newArchiveId && chatStore.currentArchive?.story_id === routeStoryId.value) return
+    if (
+      chatStore.currentArchive?.id === newArchiveId &&
+      chatStore.currentArchive?.story_id === routeStoryId.value
+    )
+      return
     resetTransientLocalState()
     await initByStoryId(routeStoryId.value, newArchiveId)
   },
@@ -1403,15 +1588,21 @@ watch(
   async (archiveStoryId) => {
     if (!archiveStoryId) return
     if (archiveStoryId === routeStoryId.value) return
-    const preferredArchiveId = Number.isFinite(routeArchiveId.value) && routeArchiveId.value > 0
-      ? routeArchiveId.value
-      : null
+    const preferredArchiveId =
+      Number.isFinite(routeArchiveId.value) && routeArchiveId.value > 0
+        ? routeArchiveId.value
+        : null
     await initByStoryId(routeStoryId.value, preferredArchiveId)
   },
 )
 
 watch(
-  () => [hasStarted.value, immersiveMode.value, immersiveUiVisible.value, chatStore.currentOptions.length],
+  () => [
+    hasStarted.value,
+    immersiveMode.value,
+    immersiveUiVisible.value,
+    chatStore.currentOptions.length,
+  ],
   async () => {
     await nextTick()
     bindMobileLayoutObserverFromBar()
@@ -1474,10 +1665,12 @@ watch(
 }
 
 .play-topbar.scrolled {
-  box-shadow: var(--shadow-md), 0 0 20px color-mix(in srgb, var(--accent-color) 10%, transparent);
+  box-shadow:
+    var(--shadow-md),
+    0 0 20px color-mix(in srgb, var(--accent-color) 10%, transparent);
 }
 
-[data-theme="light"] .play-topbar {
+[data-theme='light'] .play-topbar {
   background: rgba(250, 249, 252, 0.85);
   border-bottom-color: #e8e4ef;
 }
@@ -1517,12 +1710,17 @@ watch(
   padding: 4px 10px 4px 8px;
   cursor: pointer;
   font-size: 12px;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
   display: flex;
   align-items: center;
   gap: 5px;
 }
-.immersive-exit:hover { color: var(--text-primary); border-color: var(--accent-color); }
+.immersive-exit:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-color);
+}
 .exit-hint {
   font-size: 10px;
   padding: 1px 4px;
@@ -1609,7 +1807,9 @@ watch(
 /* ---- 沉浸模式退出/小圆点淡入淡出 ---- */
 .immersive-exit-fade-enter-active,
 .immersive-exit-fade-leave-active {
-  transition: opacity 250ms var(--ease-smooth), transform 250ms var(--ease-smooth);
+  transition:
+    opacity 250ms var(--ease-smooth),
+    transform 250ms var(--ease-smooth);
 }
 .immersive-exit-fade-enter-from,
 .immersive-exit-fade-leave-to {
@@ -1619,7 +1819,9 @@ watch(
 
 .immersive-dot-fade-enter-active,
 .immersive-dot-fade-leave-active {
-  transition: opacity 300ms var(--ease-smooth), transform 300ms var(--ease-smooth);
+  transition:
+    opacity 300ms var(--ease-smooth),
+    transform 300ms var(--ease-smooth);
 }
 .immersive-dot-fade-enter-from,
 .immersive-dot-fade-leave-to {
@@ -1698,7 +1900,9 @@ watch(
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 6px;
-  transition: background 150ms, color 150ms;
+  transition:
+    background 150ms,
+    color 150ms;
 }
 .world-trigger:hover {
   background: var(--bg-hover);
@@ -1848,7 +2052,9 @@ watch(
 
 .opening-textarea:focus {
   border-color: var(--accent-color);
-  box-shadow: var(--shadow-sm), 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
 }
 
 /* Q弹动画：每次 key 变化时重挂载后播放 */
@@ -1869,8 +2075,15 @@ watch(
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
-  box-shadow: var(--shadow-md), 0 0 0 0 var(--accent-glow);
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+  box-shadow:
+    var(--shadow-md),
+    0 0 0 0 var(--accent-glow);
 }
 
 .start-chat-btn:hover:not(:disabled) {
@@ -1917,7 +2130,10 @@ watch(
 /* ---- 沉浸模式过渡 ---- */
 .immersive-fade-enter-active,
 .immersive-fade-leave-active {
-  transition: opacity 300ms var(--ease-smooth), transform 300ms var(--ease-smooth), filter 300ms var(--ease-smooth);
+  transition:
+    opacity 300ms var(--ease-smooth),
+    transform 300ms var(--ease-smooth),
+    filter 300ms var(--ease-smooth);
 }
 .immersive-fade-enter-from,
 .immersive-fade-leave-to {
@@ -2133,7 +2349,9 @@ watch(
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  box-shadow: var(--shadow-md), 0 0 16px var(--accent-glow);
+  box-shadow:
+    var(--shadow-md),
+    0 0 16px var(--accent-glow);
   z-index: 5;
   width: fit-content;
   margin: 0 auto;
@@ -2153,8 +2371,13 @@ watch(
 }
 
 @keyframes badge-bounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.35); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.35);
+  }
 }
 
 .new-message-indicator:active {
@@ -2163,9 +2386,18 @@ watch(
 }
 
 @keyframes indicator-pop-in {
-  0%   { opacity: 0; transform: translateX(-50%) scale(0.7) translateY(10px); }
-  60%  { opacity: 1; transform: translateX(-50%) scale(1.05) translateY(0); }
-  100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.7) translateY(10px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.05) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) translateY(0);
+  }
 }
 
 /* ---- 回到底部按钮 ---- */
@@ -2208,7 +2440,9 @@ watch(
 
 .back-bottom-fade-enter-active,
 .back-bottom-fade-leave-active {
-  transition: opacity 200ms var(--ease-smooth), transform 200ms var(--ease-spring);
+  transition:
+    opacity 200ms var(--ease-smooth),
+    transform 200ms var(--ease-spring);
 }
 .back-bottom-fade-enter-from,
 .back-bottom-fade-leave-to {
@@ -2319,15 +2553,21 @@ watch(
   justify-content: space-between;
   cursor: default;
 }
-.drawer-item--switch:hover { background: transparent; }
+.drawer-item--switch:hover {
+  background: transparent;
+}
 .drawer-item-left {
   display: flex;
   align-items: center;
   gap: 14px;
 }
 
-.drawer-item--danger { color: var(--color-danger); }
-.drawer-item--danger:hover:not(:disabled) { background: color-mix(in srgb, var(--color-danger) 10%, transparent); }
+.drawer-item--danger {
+  color: var(--color-danger);
+}
+.drawer-item--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
 
 .drawer-divider {
   height: 1px;
@@ -2412,7 +2652,9 @@ watch(
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--border-color) 30%, transparent);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px color-mix(in srgb, var(--border-color) 30%, transparent);
 }
 
 .world-popup-header {
@@ -2443,7 +2685,10 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 150ms, color 150ms, border-color 150ms;
+  transition:
+    background 150ms,
+    color 150ms,
+    border-color 150ms;
 }
 .world-popup-close:hover {
   background: var(--bg-hover);
@@ -2478,7 +2723,9 @@ watch(
 }
 .world-popup-fade-enter-active .world-popup,
 .world-popup-fade-leave-active .world-popup {
-  transition: transform 220ms var(--ease-spring), opacity 220ms var(--ease-smooth);
+  transition:
+    transform 220ms var(--ease-spring),
+    opacity 220ms var(--ease-smooth);
 }
 .world-popup-fade-enter-from,
 .world-popup-fade-leave-to {
@@ -2594,62 +2841,126 @@ watch(
 
 /* 状态播报：从 scale + 淡入 + 边框脉冲 */
 :deep(.msg-state) {
-  animation: msg-state-enter 250ms ease-out both,
-             msg-state-pulse 600ms ease-in-out 250ms 1;
+  animation:
+    msg-state-enter 250ms ease-out both,
+    msg-state-pulse 600ms ease-in-out 250ms 1;
 }
 
 @keyframes msg-slide-up {
-  from { transform: translateY(12px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes msg-slide-right {
-  from { transform: translateX(20px); opacity: 0; }
-  to   { transform: translateX(0);   opacity: 1; }
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes msg-state-enter {
-  from { transform: scale(0.96); opacity: 0; }
-  to   { transform: scale(1);    opacity: 1; }
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes msg-state-pulse {
-  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-color) 30%, transparent); }
-  50%  { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color) 15%, transparent); }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-color) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-color) 15%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 /* AI 消息 - 等离子玻璃弹性入场 */
 @keyframes msg-ai-in {
-  0%   { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(4px); }
-  50%  { opacity: 1; transform: scale(1.02) translateY(-2px); filter: blur(0); }
-  70%  { transform: scale(0.98) translateY(1px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+    filter: blur(4px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02) translateY(-2px);
+    filter: blur(0);
+  }
+  70% {
+    transform: scale(0.98) translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
 }
 
 /* 用户消息 - 右侧滑入 + 发光边框 */
 @keyframes msg-user-in {
-  0%   { opacity: 0; transform: translateX(30px); }
-  40%  { box-shadow: 0 0 20px rgba(236,72,153,0.4), 0 0 40px rgba(236,72,153,0.2); }
-  100% { opacity: 1; transform: translateX(0); }
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  40% {
+    box-shadow:
+      0 0 20px rgba(236, 72, 153, 0.4),
+      0 0 40px rgba(236, 72, 153, 0.2);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes msg-ai-in-reduced {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes msg-user-in-reduced {
-  from { opacity: 0; transform: translateX(12px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* prefers-reduced-motion 降级 */
 @media (prefers-reduced-motion: reduce) {
-  .msg-ai, .msg-user, .msg-state {
+  .msg-ai,
+  .msg-user,
+  .msg-state {
     animation: none;
   }
-  .badge-bounce, .pending-badge {
+  .badge-bounce,
+  .pending-badge {
     animation: none;
   }
 }
@@ -2720,8 +3031,12 @@ watch(
 }
 
 @keyframes timeline-sheet-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2748,13 +3063,17 @@ watch(
   background: var(--bg-card);
   border: 1px solid rgba(20, 184, 166, 0.35);
   z-index: 50;
-  box-shadow: var(--shadow-lg), 0 0 24px rgba(20, 184, 166, 0.18);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 24px rgba(20, 184, 166, 0.18);
 }
 
 /* 输入/选项淡入淡出过渡 */
 .input-fade-enter-active,
 .input-fade-leave-active {
-  transition: opacity 350ms var(--ease-smooth), transform 350ms var(--ease-smooth);
+  transition:
+    opacity 350ms var(--ease-smooth),
+    transform 350ms var(--ease-smooth);
 }
 .input-fade-enter-from,
 .input-fade-leave-to {
@@ -2770,28 +3089,44 @@ watch(
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: transform 150ms, box-shadow 150ms, background-color 150ms, border-color 150ms, color 150ms;
+  transition:
+    transform 150ms,
+    box-shadow 150ms,
+    background-color 150ms,
+    border-color 150ms,
+    color 150ms;
 }
 
 .cancel-btn {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-secondary);
 }
-.cancel-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
 
 .clear-btn {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-secondary);
 }
-.clear-btn:hover { background: rgba(255, 255, 255, 0.14); }
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
 
 .confirm-btn {
   background: var(--accent-color);
   color: #fff;
 }
-.confirm-btn:hover:not(:disabled) { filter: brightness(1.1); }
-.confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.confirm-btn:active:not(:disabled) { transform: scale(0.96); }
+.confirm-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.confirm-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
 
 .delete-bar-count {
   flex: 1;
@@ -2803,7 +3138,9 @@ watch(
 
 .delete-bar-fade-enter-active,
 .delete-bar-fade-leave-active {
-  transition: opacity 250ms var(--ease-smooth), transform 250ms var(--ease-smooth);
+  transition:
+    opacity 250ms var(--ease-smooth),
+    transform 250ms var(--ease-smooth);
 }
 .delete-bar-fade-enter-from,
 .delete-bar-fade-leave-to {
@@ -2811,5 +3148,3 @@ watch(
   transform: translateX(-50%) translateY(16px);
 }
 </style>
-
-

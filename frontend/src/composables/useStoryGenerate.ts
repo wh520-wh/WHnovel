@@ -46,13 +46,24 @@ export function useStoryGenerate() {
   const previewVisible = ref(false)
   const modelSelectVisible = ref(false)
   const selectedModelId = ref<number | null>(null)
-  const availableModels = ref<{ id: number; name: string; model_id: string; api_base_url: string }[]>([])
+  const availableModels = ref<
+    { id: number; name: string; model_id: string; api_base_url: string }[]
+  >([])
 
   async function loadAvailableModels() {
     try {
       const resp = await getModels()
-      const modelsData = resp.data as { id: number; name: string; model_id: string; api_base_url: string; enabled?: boolean; model_type?: string }[]
-      availableModels.value = modelsData.filter((m) => !!m.enabled && m.model_type === MODEL_TYPE_CHAT)
+      const modelsData = resp.data as {
+        id: number
+        name: string
+        model_id: string
+        api_base_url: string
+        enabled?: boolean
+        model_type?: string
+      }[]
+      availableModels.value = modelsData.filter(
+        (m) => !!m.enabled && m.model_type === MODEL_TYPE_CHAT,
+      )
     } catch {
       availableModels.value = []
     }
@@ -110,12 +121,16 @@ export function useStoryGenerate() {
         image_style: params.image_style,
         preference: params.preference,
         generate_cover: generateCover.value || undefined,
-        cover_image_model_id: generateCover.value ? (coverImageModelId.value ?? undefined) : undefined,
+        cover_image_model_id: generateCover.value
+          ? (coverImageModelId.value ?? undefined)
+          : undefined,
         generate_background: generateBackground.value || undefined,
-        background_image_model_id: generateBackground.value ? (backgroundImageModelId.value ?? undefined) : undefined,
+        background_image_model_id: generateBackground.value
+          ? (backgroundImageModelId.value ?? undefined)
+          : undefined,
       })
 
-      let result = sanitizeGeneratedStory(data)
+      const result = sanitizeGeneratedStory(data)
 
       // 后端已处理封面/背景生成，只需更新步骤显示
       if (generateCover.value) {

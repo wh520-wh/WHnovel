@@ -3,7 +3,12 @@
     <div class="page-header">
       <h2>模型配置</h2>
       <div class="header-actions">
-        <el-button type="danger" plain :disabled="selectedIds.length === 0" @click="handleBulkDelete">
+        <el-button
+          type="danger"
+          plain
+          :disabled="selectedIds.length === 0"
+          @click="handleBulkDelete"
+        >
           批量删除
         </el-button>
         <el-button type="primary" @click="openDialog()">添加模型</el-button>
@@ -18,7 +23,12 @@
       </el-radio-group>
     </div>
 
-    <el-table :data="filteredModels" stripe v-loading="loading" @selection-change="handleSelectionChange">
+    <el-table
+      v-loading="loading"
+      :data="filteredModels"
+      stripe
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="48" />
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="名称" width="150" />
@@ -37,7 +47,9 @@
       </el-table-column>
       <el-table-column label="调用" width="70">
         <template #default="{ row }">
-          <el-tag :type="row.enabled ? 'success' : 'info'" size="small">{{ row.enabled ? '是' : '否' }}</el-tag>
+          <el-tag :type="row.enabled ? 'success' : 'info'" size="small">{{
+            row.enabled ? '是' : '否'
+          }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="priority" label="优先级" width="80" />
@@ -50,7 +62,13 @@
       </el-table-column>
       <el-table-column label="操作" width="220">
         <template #default="{ row }">
-          <el-button size="small" :loading="testingIds.has(row.id)" :disabled="testingIds.has(row.id)" @click="handleTest(row.id, row.name)">检测</el-button>
+          <el-button
+            size="small"
+            :loading="testingIds.has(row.id)"
+            :disabled="testingIds.has(row.id)"
+            @click="handleTest(row.id, row.name)"
+            >检测</el-button
+          >
           <el-button size="small" @click="openDialog(row)">编辑</el-button>
           <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
         </template>
@@ -82,7 +100,7 @@
           <el-input v-model="form.model_id" placeholder="如：gpt-4" />
         </el-form-item>
         <el-form-item v-if="form.model_type === MODEL_TYPE_CHAT" label="API 模式">
-          <el-select v-model="form.api_mode" style="width: 100%;">
+          <el-select v-model="form.api_mode" style="width: 100%">
             <el-option
               v-for="opt in API_MODE_OPTIONS"
               :key="opt.value"
@@ -94,7 +112,9 @@
         <el-form-item v-if="form.model_type === MODEL_TYPE_CHAT" label="API 地址">
           <el-input
             v-model="form.api_base_url"
-            :placeholder="form.api_mode === 'custom_chat' ? '输入完整 API 地址' : 'https://api.openai.com'"
+            :placeholder="
+              form.api_mode === 'custom_chat' ? '输入完整 API 地址' : 'https://api.openai.com'
+            "
           />
           <p class="api-suffix-hint">{{ fullApiUrl }}</p>
         </el-form-item>
@@ -102,7 +122,7 @@
           <el-input v-model="form.image_model_id" placeholder="如：doubao-seedream-5-0-260128" />
         </el-form-item>
         <el-form-item v-if="form.model_type === MODEL_TYPE_IMAGE" label="图片 API 模式">
-          <el-select v-model="form.image_api_mode" style="width: 100%;">
+          <el-select v-model="form.image_api_mode" style="width: 100%">
             <el-option
               v-for="opt in IMAGE_API_MODE_OPTIONS"
               :key="opt.value"
@@ -114,31 +134,65 @@
         <el-form-item v-if="form.model_type === MODEL_TYPE_IMAGE" label="图片 API Base">
           <el-input
             v-model="form.image_api_base"
-            :placeholder="form.image_api_mode === 'comfyui' ? 'http://127.0.0.1:8188' : (form.image_api_mode === 'custom_image' || form.image_api_mode === 'minimax_images' ? '输入完整 API 地址' : '如：https://api.openai.com')"
+            :placeholder="
+              form.image_api_mode === 'comfyui'
+                ? 'http://127.0.0.1:8188'
+                : form.image_api_mode === 'custom_image' || form.image_api_mode === 'minimax_images'
+                  ? '输入完整 API 地址'
+                  : '如：https://api.openai.com'
+            "
           />
           <p class="api-suffix-hint">{{ fullApiUrl }}</p>
         </el-form-item>
-        <el-form-item v-if="form.model_type === MODEL_TYPE_IMAGE && form.image_api_mode !== 'comfyui'" label="图片 API Key">
-          <el-input v-model="form.image_api_key" type="password" show-password placeholder="图片模型专用 Key" />
+        <el-form-item
+          v-if="form.model_type === MODEL_TYPE_IMAGE && form.image_api_mode !== 'comfyui'"
+          label="图片 API Key"
+        >
+          <el-input
+            v-model="form.image_api_key"
+            type="password"
+            show-password
+            placeholder="图片模型专用 Key"
+          />
         </el-form-item>
-        <el-form-item v-if="form.model_type === MODEL_TYPE_IMAGE && form.image_api_mode === 'comfyui'" label="Workflow 模板">
-          <el-input v-model="form.image_workflow_template" type="textarea" :rows="8" placeholder="粘贴 ComfyUI 导出的 workflow JSON（提示词文本替换为 {prompt}）" />
+        <el-form-item
+          v-if="form.model_type === MODEL_TYPE_IMAGE && form.image_api_mode === 'comfyui'"
+          label="Workflow 模板"
+        >
+          <el-input
+            v-model="form.image_workflow_template"
+            type="textarea"
+            :rows="8"
+            placeholder="粘贴 ComfyUI 导出的 workflow JSON（提示词文本替换为 {prompt}）"
+          />
         </el-form-item>
         <el-form-item v-if="form.model_type === MODEL_TYPE_CHAT" label="API Key">
-          <el-input v-model="form.api_key" type="password" show-password placeholder="留空表示保留旧 Key" />
+          <el-input
+            v-model="form.api_key"
+            type="password"
+            show-password
+            placeholder="留空表示保留旧 Key"
+          />
         </el-form-item>
         <el-form-item v-if="form.model_type === MODEL_TYPE_CHAT" label="温度 (Temperature)">
-          <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-            <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="display: flex; flex-direction: column; gap: 8px; width: 100%">
+            <div style="display: flex; align-items: center; gap: 10px">
               <el-slider
                 v-model="tempValue"
                 :min="0"
                 :max="1"
                 :step="0.05"
                 :show-tooltip="false"
-                style="flex: 1;"
+                style="flex: 1"
               />
-              <span style="min-width: 44px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">
+              <span
+                style="
+                  min-width: 44px;
+                  text-align: right;
+                  font-weight: 600;
+                  font-variant-numeric: tabular-nums;
+                "
+              >
                 {{ tempValue.toFixed(2) }}
               </span>
             </div>
@@ -147,7 +201,14 @@
               <el-radio-button label="均衡" :value="0.7" />
               <el-radio-button label="创意" :value="0.9" />
             </el-radio-group>
-            <el-button size="small" text @click="tempValue = 0.7; form.temperature = null">
+            <el-button
+              size="small"
+              text
+              @click="
+                tempValue = 0.7
+                form.temperature = null
+              "
+            >
               恢复默认 (0.7)
             </el-button>
           </div>
@@ -157,11 +218,13 @@
           <p class="api-suffix-hint">关闭后该模型不会被聊天、故事生成等调用选中</p>
         </el-form-item>
         <el-form-item v-if="form.model_type === MODEL_TYPE_CHAT" label="结构化输出格式">
-          <el-select v-model="form.response_format_mode" style="width: 100%;">
+          <el-select v-model="form.response_format_mode" style="width: 100%">
             <el-option label="JSON Schema（严格模式）" value="json_schema" />
             <el-option label="JSON Object（兼容模式）" value="json_object" />
           </el-select>
-          <p class="api-suffix-hint">若模型不支持 JSON Schema 会产生额外 400 请求，可切换为 JSON Object</p>
+          <p class="api-suffix-hint">
+            若模型不支持 JSON Schema 会产生额外 400 请求，可切换为 JSON Object
+          </p>
         </el-form-item>
         <el-form-item label="优先级">
           <el-input-number v-model="form.priority" :min="1" :max="9999" />
@@ -172,9 +235,12 @@
             <el-radio value="per_1m">每 1M tokens</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="form.model_type === MODEL_TYPE_CHAT" :label="'输入单价/' + (form.pricing_unit === 'per_1m' ? '1M' : '1K')">
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <el-select v-model="priceInputEnabled" style="width: 90px;">
+        <el-form-item
+          v-if="form.model_type === MODEL_TYPE_CHAT"
+          :label="'输入单价/' + (form.pricing_unit === 'per_1m' ? '1M' : '1K')"
+        >
+          <div style="display: flex; gap: 8px; align-items: center">
+            <el-select v-model="priceInputEnabled" style="width: 90px">
               <el-option label="无" :value="false" />
               <el-option label="自定义" :value="true" />
             </el-select>
@@ -184,13 +250,16 @@
               :precision="6"
               :min="0"
               :step="0.0001"
-              style="flex: 1;"
+              style="flex: 1"
             />
           </div>
         </el-form-item>
-        <el-form-item v-if="form.model_type === MODEL_TYPE_CHAT" :label="'输出单价/' + (form.pricing_unit === 'per_1m' ? '1M' : '1K')">
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <el-select v-model="priceOutputEnabled" style="width: 90px;">
+        <el-form-item
+          v-if="form.model_type === MODEL_TYPE_CHAT"
+          :label="'输出单价/' + (form.pricing_unit === 'per_1m' ? '1M' : '1K')"
+        >
+          <div style="display: flex; gap: 8px; align-items: center">
+            <el-select v-model="priceOutputEnabled" style="width: 90px">
               <el-option label="无" :value="false" />
               <el-option label="自定义" :value="true" />
             </el-select>
@@ -200,14 +269,14 @@
               :precision="6"
               :min="0"
               :step="0.0001"
-              style="flex: 1;"
+              style="flex: 1"
             />
           </div>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -283,7 +352,9 @@ const form = reactive({
 
 const tempValue = computed({
   get: () => form.temperature ?? 0.7,
-  set: (v: number) => { form.temperature = v },
+  set: (v: number) => {
+    form.temperature = v
+  },
 })
 
 const fullApiUrl = computed(() => {
@@ -332,8 +403,8 @@ function openDialog(row?: any) {
       priority: row.priority,
       price_input_per_1k: row.price_input_per_1k,
       price_output_per_1k: row.price_output_per_1k,
-      priceInputEnabled: !!(row.price_input_per_1k),
-      priceOutputEnabled: !!(row.price_output_per_1k),
+      priceInputEnabled: !!row.price_input_per_1k,
+      priceOutputEnabled: !!row.price_output_per_1k,
       model_type: row.model_type || MODEL_TYPE_CHAT,
       image_api_base: row.image_api_base || '',
       image_api_key: '',
@@ -410,9 +481,13 @@ async function handleDelete(id: number) {
 async function handleBatchToggle(enabled: 0 | 1) {
   const action = enabled === 1 ? '启用' : '禁用'
   try {
-    await ElMessageBox.confirm(`确定${action}选中的 ${selectedIds.value.length} 个模型？`, '确认', { type: 'warning' })
-    const results = await Promise.allSettled(selectedIds.value.map(id => updateModel(id, { enabled })))
-    const failed = results.filter(r => r.status === 'rejected')
+    await ElMessageBox.confirm(`确定${action}选中的 ${selectedIds.value.length} 个模型？`, '确认', {
+      type: 'warning',
+    })
+    const results = await Promise.allSettled(
+      selectedIds.value.map((id) => updateModel(id, { enabled })),
+    )
+    const failed = results.filter((r) => r.status === 'rejected')
     selectedIds.value = []
     await fetchList()
     if (failed.length === 0) {
@@ -429,7 +504,9 @@ async function handleBulkDelete() {
   if (selectedIds.value.length === 0) return
 
   try {
-    await ElMessageBox.confirm(`确定批量删除 ${selectedIds.value.length} 个模型？`, '确认', { type: 'warning' })
+    await ElMessageBox.confirm(`确定批量删除 ${selectedIds.value.length} 个模型？`, '确认', {
+      type: 'warning',
+    })
     const results = await Promise.allSettled(selectedIds.value.map((id) => deleteModel(id)))
     const failed = results.filter((result) => result.status === 'rejected')
     selectedIds.value = []
@@ -437,7 +514,9 @@ async function handleBulkDelete() {
     if (failed.length === 0) {
       ElMessage.success(`批量删除完成，共删除 ${results.length} 项`)
     } else {
-      ElMessage.warning(`批量删除完成，成功 ${results.length - failed.length} 项，失败 ${failed.length} 项`)
+      ElMessage.warning(
+        `批量删除完成，成功 ${results.length - failed.length} 项，失败 ${failed.length} 项`,
+      )
     }
   } catch {
     // ignore cancel
@@ -520,7 +599,9 @@ onMounted(fetchList)
   background: var(--admin-card-bg);
   border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
   border-radius: 20px;
-  box-shadow: 0 0 40px color-mix(in srgb, var(--accent-color) 20%, transparent), 0 0 80px color-mix(in srgb, var(--accent-color) 10%, transparent);
+  box-shadow:
+    0 0 40px color-mix(in srgb, var(--accent-color) 20%, transparent),
+    0 0 80px color-mix(in srgb, var(--accent-color) 10%, transparent);
 }
 
 :deep(.el-dialog__header) {
@@ -600,7 +681,9 @@ onMounted(fetchList)
 }
 .batch-bar-enter-active,
 .batch-bar-leave-active {
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
 }
 .batch-bar-enter-from,
 .batch-bar-leave-to {

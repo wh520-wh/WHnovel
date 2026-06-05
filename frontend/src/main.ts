@@ -29,7 +29,7 @@ app.component('DataAnalysis', DataAnalysis)
 app.component('Fold', Fold)
 app.component('House', House)
 app.component('Refresh', Refresh)
-app.component('Search', Search)
+app.component('Search', Search) // eslint-disable-line vue/no-reserved-component-names -- Element Plus icon, not HTML element
 app.component('Setting', Setting)
 
 // 全局错误边界

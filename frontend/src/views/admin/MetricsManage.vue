@@ -3,7 +3,7 @@
     <div class="page-header">
       <h2>调用统计</h2>
       <div class="tools">
-        <el-button @click="fetchAll" :loading="loading">刷新</el-button>
+        <el-button :loading="loading" @click="fetchAll">刷新</el-button>
         <el-button type="danger" plain @click="handleReset">清零统计日志</el-button>
       </div>
     </div>
@@ -20,10 +20,44 @@
     />
 
     <el-row :gutter="12" class="kpis">
-      <el-col :span="6" :xs="12"><el-card><div class="kpi"><div class="label">总调用</div><div class="value">{{ summaryLoaded ? summary.total_calls : '--' }}</div></div></el-card></el-col>
-      <el-col :span="6" :xs="12"><el-card><div class="kpi"><div class="label">成功率</div><div class="value">{{ summaryLoaded ? `${summary.success_rate.toFixed(2)}%` : '--' }}</div></div></el-card></el-col>
-      <el-col :span="6" :xs="12"><el-card><div class="kpi"><div class="label">平均耗时</div><div class="value">{{ summaryLoaded ? `${summary.avg_latency_ms.toFixed(0)} ms` : '--' }}</div></div></el-card></el-col>
-      <el-col :span="6" :xs="12"><el-card><div class="kpi"><div class="label">总费用</div><div class="value">{{ summaryLoaded ? `¥ ${summary.total_cost.toFixed(4)}` : '--' }}</div></div></el-card></el-col>
+      <el-col :span="6" :xs="12"
+        ><el-card
+          ><div class="kpi">
+            <div class="label">总调用</div>
+            <div class="value">{{ summaryLoaded ? summary.total_calls : '--' }}</div>
+          </div></el-card
+        ></el-col
+      >
+      <el-col :span="6" :xs="12"
+        ><el-card
+          ><div class="kpi">
+            <div class="label">成功率</div>
+            <div class="value">
+              {{ summaryLoaded ? `${summary.success_rate.toFixed(2)}%` : '--' }}
+            </div>
+          </div></el-card
+        ></el-col
+      >
+      <el-col :span="6" :xs="12"
+        ><el-card
+          ><div class="kpi">
+            <div class="label">平均耗时</div>
+            <div class="value">
+              {{ summaryLoaded ? `${summary.avg_latency_ms.toFixed(0)} ms` : '--' }}
+            </div>
+          </div></el-card
+        ></el-col
+      >
+      <el-col :span="6" :xs="12"
+        ><el-card
+          ><div class="kpi">
+            <div class="label">总费用</div>
+            <div class="value">
+              {{ summaryLoaded ? `¥ ${summary.total_cost.toFixed(4)}` : '--' }}
+            </div>
+          </div></el-card
+        ></el-col
+      >
     </el-row>
 
     <el-card class="section">
@@ -46,52 +80,95 @@
 
     <el-card class="section">
       <template #header><span>按天趋势</span></template>
-      <div class="trend-chart" v-if="recentData.length > 0">
+      <div v-if="recentData.length > 0" class="trend-chart">
         <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="bar-chart">
           <!-- Y轴网格线 -->
-          <line v-for="i in 4" :key="'grid'+i"
-            :x1="paddingL" :y1="paddingT + (chartH / 4) * (i - 1)"
-            :x2="chartWidth - paddingR" :y2="paddingT + (chartH / 4) * (i - 1)"
-            stroke="color-mix(in srgb, var(--accent-color) 12%, transparent)" stroke-width="1" stroke-dasharray="4,4"
+          <line
+            v-for="i in 4"
+            :key="'grid' + i"
+            :x1="paddingL"
+            :y1="paddingT + (chartH / 4) * (i - 1)"
+            :x2="chartWidth - paddingR"
+            :y2="paddingT + (chartH / 4) * (i - 1)"
+            stroke="color-mix(in srgb, var(--accent-color) 12%, transparent)"
+            stroke-width="1"
+            stroke-dasharray="4,4"
           />
           <!-- Y轴标签 -->
-          <text v-for="(label, i) in yLabels" :key="'y'+i"
-            :x="paddingL - 6" :y="paddingT + (chartH / 4) * i + 4"
-            text-anchor="end" font-size="10" fill="var(--text-muted)">{{ label }}</text>
+          <text
+            v-for="(label, i) in yLabels"
+            :key="'y' + i"
+            :x="paddingL - 6"
+            :y="paddingT + (chartH / 4) * i + 4"
+            text-anchor="end"
+            font-size="10"
+            fill="var(--text-muted)"
+          >
+            {{ label }}
+          </text>
           <!-- X轴标签 -->
-          <text v-for="(item, i) in recentData" :key="'x'+i"
-            :x="barX(i)" :y="chartHeight - 4"
-            text-anchor="middle" font-size="9" fill="var(--text-muted)">{{ item.day.slice(5) }}</text>
+          <text
+            v-for="(item, i) in recentData"
+            :key="'x' + i"
+            :x="barX(i)"
+            :y="chartHeight - 4"
+            text-anchor="middle"
+            font-size="9"
+            fill="var(--text-muted)"
+          >
+            {{ item.day.slice(5) }}
+          </text>
           <!-- 柱形 -->
-          <rect v-for="(item, i) in recentData" :key="'bar'+i"
+          <rect
+            v-for="(item, i) in recentData"
+            :key="'bar' + i"
             :x="barX(i) - barW / 2"
             :y="barY(item.total_calls)"
             :width="barW"
             :height="chartH - (barY(item.total_calls) - paddingT)"
-            rx="3" ry="3"
-            :fill="item.total_calls > 0 ? 'url(#barGrad)' : 'color-mix(in srgb, var(--accent-color) 10%, transparent)'"
-            :stroke="item.total_calls > 0 ? 'color-mix(in srgb, var(--accent-color) 40%, transparent)' : 'transparent'"
+            rx="3"
+            ry="3"
+            :fill="
+              item.total_calls > 0
+                ? 'url(#barGrad)'
+                : 'color-mix(in srgb, var(--accent-color) 10%, transparent)'
+            "
+            :stroke="
+              item.total_calls > 0
+                ? 'color-mix(in srgb, var(--accent-color) 40%, transparent)'
+                : 'transparent'
+            "
             stroke-width="1"
           />
           <!-- 柱形顶部的数字 -->
-          <template v-for="(item, i) in recentData" :key="'num'+i">
-            <text v-if="item.total_calls > 0"
+          <template v-for="(item, i) in recentData" :key="'num' + i">
+            <text
+              v-if="item.total_calls > 0"
               :x="barX(i)"
               :y="barY(item.total_calls) - 4"
-              text-anchor="middle" font-size="9" fill="var(--accent-color)">{{ item.total_calls }}</text>
+              text-anchor="middle"
+              font-size="9"
+              fill="var(--accent-color)"
+            >
+              {{ item.total_calls }}
+            </text>
           </template>
           <defs>
             <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--accent-hover)"/>
-              <stop offset="100%" stop-color="var(--accent-color)"/>
+              <stop offset="0%" stop-color="var(--accent-hover)" />
+              <stop offset="100%" stop-color="var(--accent-color)" />
             </linearGradient>
           </defs>
         </svg>
         <div class="chart-legend">
           <span class="legend-item"><span class="dot teal"></span>日调用量（近14天）</span>
           <span class="legend-sep">|</span>
-          <span class="legend-item">最高 <b>{{ maxCalls }}</b></span>
-          <span class="legend-item">平均 <b>{{ avgCalls }}</b></span>
+          <span class="legend-item"
+            >最高 <b>{{ maxCalls }}</b></span
+          >
+          <span class="legend-item"
+            >平均 <b>{{ avgCalls }}</b></span
+          >
         </div>
       </div>
       <el-table v-else :data="[]" stripe>
@@ -113,7 +190,13 @@
         <el-table-column prop="created_at" label="时间" width="170">
           <template #default="{ row }">{{ formatDateTime(row.created_at) || '-' }}</template>
         </el-table-column>
-        <el-table-column v-if="!isMobile" prop="request_id" label="请求ID" min-width="180" show-overflow-tooltip />
+        <el-table-column
+          v-if="!isMobile"
+          prop="request_id"
+          label="请求ID"
+          min-width="180"
+          show-overflow-tooltip
+        />
         <el-table-column prop="model_name" label="模型" width="160" show-overflow-tooltip />
         <el-table-column v-if="!isMobile" prop="story_id" label="故事ID" width="80" />
         <el-table-column v-if="!isMobile" prop="archive_id" label="会话ID" width="80" />
@@ -217,10 +300,18 @@ const errorList = computed(() => {
     items.push({ key: 'byModel', title: '按模型统计加载失败', description: sectionErrors.byModel })
   }
   if (sectionErrors.timeseries) {
-    items.push({ key: 'timeseries', title: '按天趋势加载失败', description: sectionErrors.timeseries })
+    items.push({
+      key: 'timeseries',
+      title: '按天趋势加载失败',
+      description: sectionErrors.timeseries,
+    })
   }
   if (sectionErrors.streamRequests) {
-    items.push({ key: 'streamRequests', title: '流式请求明细加载失败', description: sectionErrors.streamRequests })
+    items.push({
+      key: 'streamRequests',
+      title: '流式请求明细加载失败',
+      description: sectionErrors.streamRequests,
+    })
   }
   return items
 })
@@ -277,7 +368,6 @@ async function fetchAll() {
   }
 }
 
-
 async function handleReset() {
   try {
     await ElMessageBox.confirm('此操作不可恢复，确定要清空所有调用统计日志吗？', '清空统计日志', {
@@ -308,7 +398,7 @@ const chartH = computed(() => chartHeight - paddingT - paddingB)
 const recentData = computed(() => timeseries.value.slice(-14))
 const callsMax = computed(() => {
   const r = recentData.value
-  return r.length ? Math.max(...r.map(d => d.total_calls), 1) : 1
+  return r.length ? Math.max(...r.map((d) => d.total_calls), 1) : 1
 })
 
 const barSlot = computed(() => chartW.value / Math.max(recentData.value.length, 1))
@@ -331,7 +421,7 @@ const avgCalls = computed(() => {
 })
 const yLabels = computed(() => {
   const max = callsMax.value
-  return [0, 0.25, 0.5, 0.75].map(p => Math.round(max * (1 - p)).toString())
+  return [0, 0.25, 0.5, 0.75].map((p) => Math.round(max * (1 - p)).toString())
 })
 </script>
 

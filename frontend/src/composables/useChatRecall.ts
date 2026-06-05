@@ -13,8 +13,14 @@ export function useChatRecall(params: {
   onClearHighlightTerms: () => void
 }) {
   const {
-    messages, currentArchive, currentState, currentStoryState, currentMemoryLog,
-    onFinishOptionLock, onClearOptions, onClearHighlightTerms,
+    messages,
+    currentArchive,
+    currentState,
+    currentStoryState,
+    currentMemoryLog,
+    onFinishOptionLock,
+    onClearOptions,
+    onClearHighlightTerms,
   } = params
   const recallInProgress = ref(false)
 
@@ -87,7 +93,7 @@ export function useChatRecall(params: {
     onClearHighlightTerms()
 
     // Restore state from the last remaining assistant message
-    const lastAi = [...messages.value].reverse().find(m => m.role === 'assistant')
+    const lastAi = [...messages.value].reverse().find((m) => m.role === 'assistant')
     if (lastAi) {
       currentState.value = lastAi.state_snapshot || {}
       currentStoryState.value = lastAi.story_state || {}

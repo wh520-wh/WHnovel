@@ -4,7 +4,7 @@
       <h2>全局提示词</h2>
     </div>
 
-    <el-card class="section-card" v-loading="loading">
+    <el-card v-loading="loading" class="section-card">
       <template #header>
         <span>全局默认系统提示词（每次聊天都会注入）</span>
       </template>
@@ -21,11 +21,13 @@
       />
     </el-card>
 
-    <el-card class="section-card" v-loading="loading">
+    <el-card v-loading="loading" class="section-card">
       <template #header>
         <span>状态播报提示词</span>
       </template>
-      <p class="prompt-hint">用户点击「生成状态」时，AI 将以此提示词结合对话上下文生成状态播报消息。留空则禁用该功能。</p>
+      <p class="prompt-hint">
+        用户点击「生成状态」时，AI 将以此提示词结合对话上下文生成状态播报消息。留空则禁用该功能。
+      </p>
       <el-input
         v-model="stateBroadcastPrompt"
         type="textarea"
@@ -35,7 +37,7 @@
     </el-card>
 
     <div class="actions">
-      <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
+      <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
     </div>
 
     <el-card class="section-card">
@@ -65,7 +67,8 @@ const promptText = ref('')
 const promptSource = ref<'example_default' | 'custom' | 'empty' | string>('custom')
 const stateBroadcastPrompt = ref('')
 
-const stateBroadcastPlaceholder = '请根据当前小说世界观和上下文，生成角色/剧情状态的键值对列表。\n\n要求：\n- 根据小说设定和当前剧情上下文自行判断应展示哪些属性，不要使用固定字段列表\n- 每行一个属性，格式为：属性名 | 属性值\n- 空值显示"无"，不省略\n- 仅输出键值对，不要任何解释或描述\n\n示例（仅供参考，实际字段由AI根据上下文自行判断）：\n地点 | 废弃神社后院\n时间 | 子夜\n情绪 | 警觉中带着不安'
+const stateBroadcastPlaceholder =
+  '请根据当前小说世界观和上下文，生成角色/剧情状态的键值对列表。\n\n要求：\n- 根据小说设定和当前剧情上下文自行判断应展示哪些属性，不要使用固定字段列表\n- 每行一个属性，格式为：属性名 | 属性值\n- 空值显示"无"，不省略\n- 仅输出键值对，不要任何解释或描述\n\n示例（仅供参考，实际字段由AI根据上下文自行判断）：\n地点 | 废弃神社后院\n时间 | 子夜\n情绪 | 警觉中带着不安'
 const promptSourceLabel = computed(() => {
   if (promptSource.value === 'example_default') return '示例默认提示词'
   if (promptSource.value === 'custom') return '后台自定义内容'

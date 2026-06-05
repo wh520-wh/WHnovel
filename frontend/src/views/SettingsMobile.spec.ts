@@ -269,7 +269,9 @@ describe('SettingsMobile section shell', () => {
       ALLOWED_SETTINGS_SECTIONS.length,
     )
     expect(homeWrapper.find('.header-back').classes()).toContain('mobile-action-btn')
-    expect(homeWrapper.findAll('.settings-mobile-card')[0].classes()).toContain('mobile-control-card')
+    expect(homeWrapper.findAll('.settings-mobile-card')[0].classes()).toContain(
+      'mobile-control-card',
+    )
 
     const detailRouter = createMobileRouter()
 
@@ -392,7 +394,11 @@ describe('SettingsMobile section shell', () => {
 
     await flushPromises()
 
-    const buttons = wrapper.findAll('.choice-row').at(0)?.findAll('button').map((node) => node.text())
+    const buttons = wrapper
+      .findAll('.choice-row')
+      .at(0)
+      ?.findAll('button')
+      .map((node) => node.text())
     expect(buttons).toEqual(['简洁 (~173字)', '详细 (~280字)', '创意 (~360字)'])
   })
 
@@ -462,5 +468,4 @@ describe('SettingsMobile section shell', () => {
 
     expect(wrapper.find('.settings-mobile-scroll').exists()).toBe(true)
   })
-
 })

@@ -22,10 +22,10 @@
         </div>
       </div>
       <textarea
+        :key="bounceKey || undefined"
         class="opening-textarea"
         :class="{ 'input-bounce': bounceKey }"
         :model-value="modelValue"
-        :key="bounceKey || undefined"
         placeholder="示例：我是刚转学来的学生，希望开场是雨夜校园，先遇到一位看似冷漠但关键的角色。"
         :disabled="disabled"
         rows="5"
@@ -64,9 +64,17 @@ defineEmits<{
 
 const presetOpenings: PresetOpening[] = [
   { id: 1, label: '我是转学生', value: '我是一名刚转入这所学校的学生，对这里的一切都很陌生...' },
-  { id: 2, label: '我是新来者', value: '作为刚到这座城市/门派/星球的新人，我对这个地方一无所知...' },
+  {
+    id: 2,
+    label: '我是新来者',
+    value: '作为刚到这座城市/门派/星球的新人，我对这个地方一无所知...',
+  },
   { id: 3, label: '我是青梅竹马', value: '我和她是从小一起长大的，但最近她变得有些奇怪...' },
-  { id: 4, label: '我是救命恩人', value: '一个月前，我意外救了她一命，从此我们的命运交织在一起...' },
+  {
+    id: 4,
+    label: '我是救命恩人',
+    value: '一个月前，我意外救了她一命，从此我们的命运交织在一起...',
+  },
   { id: 5, label: '我从梦中醒来', value: '我从梦中惊醒，发现自己躺在一个陌生的房间里...' },
 ]
 </script>
@@ -119,7 +127,12 @@ const presetOpenings: PresetOpening[] = [
   background: transparent;
   color: var(--text-primary);
   cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
 }
 
 .preset-btn:hover {
@@ -157,7 +170,9 @@ const presetOpenings: PresetOpening[] = [
 
 .opening-textarea:focus {
   border-color: var(--accent-color);
-  box-shadow: var(--shadow-sm), 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
 }
 
 /* Q弹动画：每次 key 变化时重挂载后播放 */
@@ -177,8 +192,15 @@ const presetOpenings: PresetOpening[] = [
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
-  box-shadow: var(--shadow-md), 0 0 0 0 var(--accent-glow);
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+  box-shadow:
+    var(--shadow-md),
+    0 0 0 0 var(--accent-glow);
 }
 
 .start-chat-btn:hover:not(:disabled) {
