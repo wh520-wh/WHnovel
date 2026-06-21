@@ -510,9 +510,13 @@ export const createModel = (data: any) => api.post('/admin/models', data)
 export const updateModel = (id: number, data: any) => api.put(`/admin/models/${id}`, data)
 export const deleteModel = (id: number) => api.delete(`/admin/models/${id}`)
 export const testModelConnection = (modelId: number) =>
-  api.post<{ success: boolean; duration_ms?: number; error?: string }>(`/admin/models/test`, null, {
-    params: { model_id: modelId },
-  })
+  api.post<{ success: boolean; duration_ms?: number; error?: string; is_drift?: boolean }>(
+    `/admin/models/test`,
+    null,
+    {
+      params: { model_id: modelId },
+    },
+  )
 
 // ---- Admin: app settings ----
 export const getAppSettings = () => api.get('/admin/app-settings')
