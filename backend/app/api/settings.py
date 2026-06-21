@@ -36,6 +36,8 @@ def _get_or_create(db: Session) -> models.UserSettings:
         s.disable_chat_bubble_elastic = 0
     if s.show_background_image is None:
         s.show_background_image = 1
+    if s.memory_inject_count is None:
+        s.memory_inject_count = 50
     db.commit()
     db.refresh(s)
     return s
@@ -85,6 +87,7 @@ def get_settings(db: Session = Depends(get_db)):
             "copy_image_format": s.copy_image_format,
             "disable_chat_bubble_elastic": bool(s.disable_chat_bubble_elastic),
             "show_background_image": bool(s.show_background_image),
+            "memory_inject_count": s.memory_inject_count,
         }
         redis.set(
             SETTINGS_CACHE_KEY, json.dumps(cache_data, ensure_ascii=False), ttl=SETTINGS_CACHE_TTL
@@ -133,6 +136,8 @@ def update_settings(payload: schemas.UserSettingsUpdate, db: Session = Depends(g
         data["disable_chat_bubble_elastic"] = 1 if data["disable_chat_bubble_elastic"] else 0
     if "show_background_image" in data:
         data["show_background_image"] = 1 if data["show_background_image"] else 0
+    if "memory_inject_count" in data:
+        data["memory_inject_count"] = max(0, min(100, int(data["memory_inject_count"])))
 
     for k, v in data.items():
         setattr(s, k, v)

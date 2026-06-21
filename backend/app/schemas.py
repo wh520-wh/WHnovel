@@ -216,6 +216,7 @@ class UserSettingsOut(BaseModel):
     copy_image_format: str = "url"
     disable_chat_bubble_elastic: bool = False
     show_background_image: bool = True
+    memory_inject_count: int = 50
 
 
 class UserSettingsUpdate(BaseModel):
@@ -233,6 +234,7 @@ class UserSettingsUpdate(BaseModel):
     copy_image_format: str | None = None
     disable_chat_bubble_elastic: bool | None = None
     show_background_image: bool | None = None
+    memory_inject_count: int | None = None
 
 
 # ---- ModelConfig ----
