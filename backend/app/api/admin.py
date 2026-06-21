@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..app_settings_service import ensure_app_settings
 from ..config_backup import export_backup_file, import_backup_file
-from ..crypto import decrypt, encrypt
+from ..crypto import decrypt, decrypt_safe, encrypt
 from ..database import get_db
 from ..prompts.defaults import infer_prompt_source
 from ..redis_client import get_redis
@@ -195,7 +195,7 @@ def test_model(model_id: int, db: Session = Depends(get_db)):
         max_tokens=16,
     )
     raw_key = m.api_key or ""
-    api_key = decrypt(raw_key) if raw_key else ""
+    api_key, key_drift = decrypt_safe(raw_key) if raw_key else ("", False)
     headers = ad["headers"](api_key)
 
     start = time.monotonic()
@@ -209,7 +209,13 @@ def test_model(model_id: int, db: Session = Depends(get_db)):
     duration_ms = int((time.monotonic() - start) * 1000)
 
     if resp.status_code == 401:
-        return {"success": False, "error": "API Key 错误"}
+        if key_drift:
+            return {
+                "success": False,
+                "error": "API Key 无法解密（疑似加密密钥漂移：换机器/重装系统/改过 ENCRYPTION_KEY 会触发），请在管理后台重新填写该模型 API Key 并保存，将用当前机器密钥重新加密",
+                "is_drift": True,
+            }
+        return {"success": False, "error": "API Key 错误", "is_drift": False}
     if resp.status_code == 403:
         return {"success": False, "error": "无访问权限"}
     if resp.status_code == 404:
@@ -242,7 +248,8 @@ def _test_image_model(m: models.ModelConfig) -> dict:
     else:
         url = ad["url"](base_url, m.model_id, False)
 
-    key = decrypt(m.image_api_key) if m.image_api_key else decrypt(m.api_key) if m.api_key else ""
+    raw_key = m.image_api_key or m.api_key or ""
+    key, key_drift = decrypt_safe(raw_key) if raw_key else ("", False)
     headers = ad["headers"](key) if ad.get("headers") else {"Content-Type": "application/json"}
 
     start = time.monotonic()
@@ -256,7 +263,13 @@ def _test_image_model(m: models.ModelConfig) -> dict:
     duration_ms = int((time.monotonic() - start) * 1000)
 
     if resp.status_code == 401:
-        return {"success": False, "error": "API Key 错误"}
+        if key_drift:
+            return {
+                "success": False,
+                "error": "API Key 无法解密（疑似加密密钥漂移：换机器/重装系统/改过 ENCRYPTION_KEY 会触发），请在管理后台重新填写该模型 API Key 并保存，将用当前机器密钥重新加密",
+                "is_drift": True,
+            }
+        return {"success": False, "error": "API Key 错误", "is_drift": False}
     if resp.status_code == 403:
         return {"success": False, "error": "无访问权限"}
     if resp.status_code == 404:
