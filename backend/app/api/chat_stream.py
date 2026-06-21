@@ -54,6 +54,7 @@ from .chat_models import (
 from .chat_sse import _sse_event, _sse_keepalive
 from .chat_storage import (
     ANTI_INJECTION_CLAUSE,
+    _build_memory_section,
     _build_messages,
     _build_tail_messages,
     _count_rounds_without_plot_label,
@@ -64,6 +65,7 @@ from .chat_storage import (
     _persist_draft_exchange,
     _persist_exchange,
     _query_dialogue_history,
+    _resolve_memory_inject_count,
 )
 
 # Concurrency lock for stream generation (per-archive)
@@ -124,6 +126,7 @@ def _build_stream_prompt_sections(
     forced_plot_label: bool = False,
     characters: list[dict] | None = None,
     reply_style: str | None = None,
+    memory_section: str | None = None,
 ) -> list[str]:
     app_settings = _get_or_create_app_settings(db)
     global_default_system_prompt = (app_settings.default_system_prompt or "").strip()
@@ -139,6 +142,8 @@ def _build_stream_prompt_sections(
         sections.append("【故事专属系统提示词】\n" + story.system_prompt.strip())
     if world_text:
         sections.append("【故事世界观提示词】\n" + world_text)
+    if memory_section:
+        sections.append(memory_section)
     # Inject writing style skill if enabled
     if app_settings.style_skill_enabled and (app_settings.style_skill_content or "").strip():
         sections.append(
@@ -176,12 +181,17 @@ def _stream_chat_response(
     forced_plot_label = rounds_without_label >= MAX_ROUNDS_WITHOUT_PLOT_LABEL
 
     characters = _get_story_characters(db, story.id)
+    inject_count = _resolve_memory_inject_count(settings.memory_inject_count)
+    memory_section = _build_memory_section(
+        archive.memory_log, inject_count, archive_id=archive.id, escape=False
+    )
     stream_sections = _build_stream_prompt_sections(
         story,
         db,
         forced_plot_label=forced_plot_label,
         characters=characters,
         reply_style=settings.reply_style,
+        memory_section=memory_section,
     )
     messages: list[dict] = [{"role": "system", "content": "\n\n".join(stream_sections)}]
     if include_history:
@@ -650,6 +660,10 @@ def _generate_chat_response(
     rounds_without_label = _count_rounds_without_plot_label(db, archive.id)
     forced_plot_label = rounds_without_label >= MAX_ROUNDS_WITHOUT_PLOT_LABEL
 
+    inject_count = _resolve_memory_inject_count(settings.memory_inject_count)
+    memory_section = _build_memory_section(
+        archive.memory_log, inject_count, archive_id=archive.id, escape=True
+    )
     messages = _build_messages(
         story,
         archive,
@@ -661,6 +675,7 @@ def _generate_chat_response(
         extra_sections=extra_sections,
         forced_plot_label=forced_plot_label,
         characters=_get_story_characters(db, story.id),
+        memory_section=memory_section,
     )
     candidates = _get_normal_model_candidates(db, settings)
     temperature = _get_temperature(candidates[0] if candidates else None)

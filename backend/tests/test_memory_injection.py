@@ -217,3 +217,100 @@ def test_persist_exchange_never_drops_existing_facts():
     db.refresh(archive)
     # 既有两条原样保留，新增的重复条被丢弃
     assert archive.memory_log == ["既有事件A", "既有事件B"]
+
+
+def _ensure_stream_model_config(db) -> None:
+    """流式正文生成需要可用模型候选，否则 _get_normal_model_candidates 抛 503。"""
+    from app import models
+
+    model = models.ModelConfig(
+        name="memory-inject-stream-model",
+        model_id="memory-inject-stream-model",
+        api_base_url="https://example.com/v1",
+        api_key="x",
+        enabled=1,
+        priority=1,
+    )
+    db.add(model)
+    db.commit()
+    db.refresh(model)
+
+    settings = db.query(models.UserSettings).first()
+    if not settings:
+        settings = models.UserSettings()
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+    settings.primary_model_id = model.id
+    settings.backup_model_ids = []
+    db.commit()
+
+
+def test_stream_chat_response_injects_memory():
+    """流式正文生成时 system 含记忆 section。"""
+    from app import models
+    from app.api import chat_stream
+    from app.api.chat_storage import _get_or_create_settings
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    _ensure_stream_model_config(db)
+    story = models.Story(title="stream mem test")
+    archive = models.Archive(story=story, name="sm archive", memory_log=["第1轮关键事件"])
+    db.add(archive)
+    db.commit()
+    db.refresh(archive)
+
+    captured = {}
+
+    def fake_stream(model_cfg, messages, temperature, usage):
+        captured["messages"] = messages
+        usage["prompt_tokens"] = 1
+        yield ""
+
+    settings = _get_or_create_settings(db)
+    settings.memory_inject_count = 50
+    db.commit()
+
+    gen = chat_stream._stream_chat_response(
+        db, story=story, archive=archive, settings=settings,
+        user_content="继续", persist_user_content="继续",
+        include_history=False, first_opening=False, stream_fn=fake_stream,
+    )
+    list(gen)
+    assert "第1轮关键事件" in captured["messages"][0]["content"]
+
+
+def test_stream_chat_response_no_memory_when_count_zero():
+    """memory_inject_count=0 → system 不含记忆 section。"""
+    from app import models
+    from app.api import chat_stream
+    from app.api.chat_storage import _get_or_create_settings
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    _ensure_stream_model_config(db)
+    story = models.Story(title="zero mem test")
+    archive = models.Archive(story=story, name="zm archive", memory_log=["不应出现"])
+    db.add(archive)
+    db.commit()
+    db.refresh(archive)
+
+    captured = {}
+
+    def fake_stream(model_cfg, messages, temperature, usage):
+        captured["messages"] = messages
+        usage["prompt_tokens"] = 1
+        yield ""
+
+    settings = _get_or_create_settings(db)
+    settings.memory_inject_count = 0
+    db.commit()
+
+    gen = chat_stream._stream_chat_response(
+        db, story=story, archive=archive, settings=settings,
+        user_content="继续", persist_user_content="继续",
+        include_history=False, first_opening=False, stream_fn=fake_stream,
+    )
+    list(gen)
+    assert "不应出现" not in captured["messages"][0]["content"]
