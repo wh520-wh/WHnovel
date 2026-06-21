@@ -187,3 +187,27 @@ def test_build_messages_excludes_non_dialogue_history():
     bodies = [m["content"] for m in messages[1:]]
     assert "broadcast text" not in bodies
     assert "hello" in bodies and "world" in bodies
+
+
+def test_count_rounds_excludes_draft_broadcast_image():
+    """_count_rounds 不计 draft/broadcast/图片这类无 plot_label 的 assistant。"""
+    db = SessionLocal()
+    story = models.Story(title="count filter test")
+    archive = models.Archive(story=story, name="cf archive")
+    db.add(archive)
+    db.commit()
+    db.refresh(archive)
+
+    base = datetime(2026, 1, 1, 12, 0, 0)
+    # 一条带 label 的 + 多条无 label 的污染消息
+    db.add_all([
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="labeled", created_at=base, is_draft=0, plot_label="起"),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="draft", created_at=base + timedelta(seconds=1), is_draft=1),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="broadcast", created_at=base + timedelta(seconds=2), is_state_broadcast=1),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="", created_at=base + timedelta(seconds=3), is_draft=0, image_url="x.png"),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="real no-label", created_at=base + timedelta(seconds=4), is_draft=0),
+    ])
+    db.commit()
+
+    # labeled 之后只有 1 条真正无 label 的正常 assistant
+    assert _count_rounds_without_plot_label(db, archive.id) == 1

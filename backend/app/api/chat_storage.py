@@ -246,6 +246,9 @@ def _count_rounds_without_plot_label(db: Session, archive_id: int) -> int:
             .filter(
                 models.ChatMessage.archive_id == archive_id,
                 models.ChatMessage.role == "assistant",
+                models.ChatMessage.is_draft == 0,
+                models.ChatMessage.is_state_broadcast == 0,
+                models.ChatMessage.content != "",
             )
             .count()
         )
@@ -255,6 +258,9 @@ def _count_rounds_without_plot_label(db: Session, archive_id: int) -> int:
         .filter(
             models.ChatMessage.archive_id == archive_id,
             models.ChatMessage.role == "assistant",
+            models.ChatMessage.is_draft == 0,
+            models.ChatMessage.is_state_broadcast == 0,
+            models.ChatMessage.content != "",
             models.ChatMessage.created_at > last_with_label.created_at,
         )
         .count()
