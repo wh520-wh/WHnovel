@@ -84,38 +84,61 @@ def encrypt(plaintext: str) -> str:
         return plaintext
 
 
-def decrypt(ciphertext: str) -> str:
-    """Decrypt AES-256-GCM ciphertext. Returns plaintext string.
+def decrypt_safe(ciphertext: str) -> tuple[str, bool]:
+    """解密并返回 (明文或原值, 是否漂移)。
 
-    If the input is not valid base64 or decryption fails (e.g. encryption key
-    drift), the input is assumed to be plaintext already and returned as-is.
-    This handles the case where keys were stored before encryption was enabled.
+    - 非合法 base64 / 长度<13 / 加密未启用 / 无 key → 视为明文，返回 (原值, False)
+    - 解密成功 → (明文, False)
+    - 解密失败（疑似密钥漂移）→ (原值, True)
+
+    is_drift=True 时调用方应"仅失败时归因"：照常发请求，合法明文 key 会 200 成功、
+    is_drift 永不浮现；只有真正 401 时才用 is_drift 区分文案。
+    注意：合法明文 key 若恰好是合法 base64 且解码>=13 字节会被判 is_drift=True，
+    这是可接受的启发式误判（靠"仅失败时归因"吸收，重填提示对两种情况都有效）。
     """
     if not CRYPTO_AVAILABLE:
-        return ciphertext
+        return ciphertext, False
 
     key = _get_key()
     if key is None:
-        return ciphertext
+        return ciphertext, False
 
     # Quick check: if it doesn't look like base64, it's probably plaintext
     try:
         data = base64.b64decode(ciphertext.encode("ascii"), validate=True)
     except Exception:
         # Not valid base64 — treat as plaintext
-        return ciphertext
+        return ciphertext, False
 
     if len(data) < 13:  # 12-byte nonce + at least 1 byte ciphertext
-        return ciphertext
+        return ciphertext, False
 
     try:
         nonce = data[:12]
         ct = data[12:]
         aesgcm = AESGCM(key)
-        return aesgcm.decrypt(nonce, ct, None).decode("utf-8")
+        return aesgcm.decrypt(nonce, ct, None).decode("utf-8"), False
     except Exception as e:
-        logger.error(f"Decryption failed: {e}")
-        return ""
+        logger.warning(
+            "Decryption failed (likely encryption key drift or plaintext-as-base64): %s; "
+            "returning ciphertext as-is",
+            e,
+        )
+        return ciphertext, True
+
+
+def decrypt(ciphertext: str) -> str:
+    """Decrypt AES-256-GCM ciphertext. Returns plaintext string.
+
+    If the input is not valid base64 or decryption fails (e.g. encryption key
+    drift), the input is assumed to be plaintext already and returned as-is.
+    This handles the case where keys were stored before encryption was enabled.
+
+    Note: chat_models.py 故意保留 decrypt 调用（不迁移到 decrypt_safe）以兼容
+    test_structured_output_robust.py 的 5 处 patch('app.api.chat_models.decrypt')。
+    需要漂移信号时用 decrypt_safe。
+    """
+    return decrypt_safe(ciphertext)[0]
 
 
 def mask_secret(original: str) -> str:
