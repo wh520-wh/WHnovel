@@ -105,7 +105,8 @@ def test_build_messages_injects_memory_section():
     db.refresh(archive)
 
     settings = _get_or_create_settings(db)
-    section = _build_memory_section(archive.memory_log, 50, archive_id=archive.id)
+    # 对齐生产接线：非流式 _generate_chat_response 调 _build_memory_section(escape=True)
+    section = _build_memory_section(archive.memory_log, 50, archive_id=archive.id, escape=True)
     messages = _build_messages(
         story, archive, "input", settings, db,
         include_history=False,
@@ -139,6 +140,32 @@ def test_build_messages_no_memory_section_when_none():
         # 不传 memory_section → 默认 None
     )
     assert "不应出现的记忆" not in messages[0]["content"]
+
+
+def test_build_memory_section_escape_flag():
+    """escape=True 对含分隔符的记忆做转义；escape=False 原样保留。
+
+    转义形式 <ESCAPED_<<<STRUCTURED_TAIL>>>> 内部仍含裸 delimiter 子串，
+    故用转义标记的有无区分两路径，而非裸 delimiter 的缺失。
+    """
+    from app.api.chat_storage import _build_memory_section
+    from app.prompts import STREAM_TAIL_DELIMITER, _escape_tail_delimiter
+
+    delimiter = STREAM_TAIL_DELIMITER
+    entry = "含" + delimiter + "分隔的记忆"
+    escaped_entry = _escape_tail_delimiter(entry, delimiter)  # 对齐生产转义规则
+
+    # escape=False：原样保留裸 delimiter，无转义标记
+    section_raw = _build_memory_section([entry], 50, escape=False)
+    assert delimiter in section_raw
+    assert escaped_entry not in section_raw
+    assert f"- {entry}" in section_raw
+
+    # escape=True：裸 delimiter 被转义为 <ESCAPED_...> 形式，原条目不再原样出现
+    section_esc = _build_memory_section([entry], 50, escape=True)
+    assert escaped_entry in section_esc
+    assert f"- {entry}" not in section_esc
+
 
 
 def test_persist_exchange_conservative_dedupe():
