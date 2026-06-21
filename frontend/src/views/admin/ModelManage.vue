@@ -522,6 +522,12 @@ async function handleTest(modelId: number, modelName: string) {
     const res = await testModelConnection(modelId)
     if (res.data.success) {
       ElMessage.success(`模型「${modelName}」检测成功，响应 ${res.data.duration_ms}ms`)
+    } else if (res.data.is_drift) {
+      ElMessageBox.alert(
+        '此模型的 API Key 在本机无法解密，可能是换机器、重装系统或修改过 ENCRYPTION_KEY 导致的密钥漂移。\n\n请在下方重新填写该模型的 API Key 并保存，系统会用当前机器密钥重新加密，之后即可正常使用。',
+        '疑似加密密钥漂移',
+        { type: 'warning', confirmButtonText: '我知道了' },
+      )
     } else {
       ElMessage.error(`模型「${modelName}」检测失败：${res.data.error}`)
     }
