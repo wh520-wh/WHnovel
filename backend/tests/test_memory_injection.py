@@ -314,3 +314,15 @@ def test_stream_chat_response_no_memory_when_count_zero():
     )
     list(gen)
     assert "不应出现" not in captured["messages"][0]["content"]
+
+
+def test_tail_prompt_memory_update_constraint():
+    from app.prompts.chat_tail import _TAIL_META_PROMPT
+
+    assert "与已有记忆重复则不记" in _TAIL_META_PROMPT
+    assert "无新增返回空数组 []" in _TAIL_META_PROMPT
+    assert "不得编造" in _TAIL_META_PROMPT
+    # 不再授权矛盾纠错
+    assert "修正" not in _TAIL_META_PROMPT
+    # 记忆区标题改为"已记忆事件"，引导判断重复而非简单罗列
+    assert "已记忆事件" in _TAIL_META_PROMPT
