@@ -195,3 +195,64 @@ def test_supports_response_format_flag():
     assert get_adapter("claude_messages")["supports_response_format"] is False
     assert get_adapter("gemini_generate_content")["supports_response_format"] is False
     assert get_adapter("custom_chat")["supports_response_format"] is False
+
+
+def test_sanitize_merges_consecutive_same_role():
+    from app.api.chat_api_adapter import _sanitize_dialogue_turns
+    out = _sanitize_dialogue_turns([
+        {"role": "user", "content": "u1"},
+        {"role": "user", "content": "u2"},
+        {"role": "assistant", "content": "a1"},
+    ])
+    assert out[0]["role"] == "user"
+    assert out[0]["content"] == "u1\n\nu2"
+    assert out[1]["role"] == "assistant"
+
+
+def test_sanitize_drops_empty_content(caplog):
+    import logging
+    from app.api.chat_api_adapter import _sanitize_dialogue_turns
+    with caplog.at_level(logging.WARNING):
+        out = _sanitize_dialogue_turns([
+            {"role": "user", "content": ""},
+            {"role": "assistant", "content": "a1"},
+        ])
+    # 空 user 被丢弃并告警；丢弃后首条变 assistant → 补占位 user，保证首条为 user（防 Claude 400）
+    assert any("dropped empty" in r.message for r in caplog.records)
+    assert out[0]["role"] == "user"
+    assert out[-1]["content"] == "a1"
+    assert all(t["content"].strip() != "" for t in out)
+
+
+def test_sanitize_inserts_placeholder_when_first_is_assistant(caplog):
+    import logging
+    from app.api.chat_api_adapter import _sanitize_dialogue_turns
+    with caplog.at_level(logging.WARNING):
+        out = _sanitize_dialogue_turns([
+            {"role": "assistant", "content": "lone assistant"},
+            {"role": "user", "content": "u1"},
+        ])
+    assert out[0]["role"] == "user"
+    assert out[1]["content"] == "lone assistant"
+
+
+def test_sanitize_noop_on_clean_alternating():
+    from app.api.chat_api_adapter import _sanitize_dialogue_turns
+    clean = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "u1"},
+        {"role": "assistant", "content": "a1"},
+        {"role": "user", "content": "u2"},
+    ]
+    out = _sanitize_dialogue_turns(clean)
+    assert out == clean  # 幂等
+    assert _sanitize_dialogue_turns(out) == out  # 二次 sanitize 不变
+
+
+def test_sanitize_all_empty_inserts_placeholder(caplog):
+    import logging
+    from app.api.chat_api_adapter import _sanitize_dialogue_turns
+    with caplog.at_level(logging.WARNING):
+        out = _sanitize_dialogue_turns([{"role": "user", "content": ""}])
+    assert out[-1]["role"] == "user"
+    assert out[-1]["content"] == "."

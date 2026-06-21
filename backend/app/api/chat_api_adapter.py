@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import Any
 
@@ -15,6 +16,8 @@ ResponseParser = Callable[[dict], tuple[str, dict]]  # (text, usage)
 StreamExtractor = Callable[[dict], str | None]  # delta text or None
 
 Adapter = dict[str, Any]
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -56,6 +59,49 @@ def _url_custom_image(base: str, model_id: str, stream: bool = False) -> str:
 # ---------------------------------------------------------------------------
 # Body builders — non-streaming
 # ---------------------------------------------------------------------------
+
+
+def _sanitize_dialogue_turns(messages: list[dict]) -> list[dict]:
+    """对对话消息做交替兜底，防止 Claude/Gemini 因脏 history 400。
+
+    - 合并连续同角色（content 以 \\n\\n 拼接）
+    - 丢弃 strip 后为空的内容并 warning
+    - 首条非 system 若为 assistant，前面补占位 user '.'
+    - 全空则补占位 user '.'
+    - system 合并为单条 leading system
+    对干净交替输入幂等 no-op。
+    """
+    system_parts: list[str] = []
+    dialogue: list[dict] = []
+    for m in messages:
+        if m.get("role") == "system":
+            system_parts.append(str(m.get("content", "")))
+            continue
+        content = str(m.get("content", ""))
+        if content.strip() == "":
+            logger.warning("sanitize: dropped empty %s turn", m.get("role"))
+            continue
+        role = m.get("role", "user")
+        if role != "assistant":
+            role = "user"
+        # 合并相邻同角色
+        if dialogue and dialogue[-1]["role"] == role:
+            dialogue[-1]["content"] = dialogue[-1]["content"] + "\n\n" + content
+        else:
+            dialogue.append({"role": role, "content": content})
+
+    if not dialogue:
+        logger.warning("sanitize: all dialogue empty/dropped; inserted placeholder user")
+        dialogue.append({"role": "user", "content": "."})
+    elif dialogue[0]["role"] != "user":
+        logger.warning("sanitize: first non-system turn is assistant; inserted placeholder user")
+        dialogue.insert(0, {"role": "user", "content": "."})
+
+    out: list[dict] = []
+    if system_parts:
+        out.append({"role": "system", "content": "\n\n".join(system_parts)})
+    out.extend(dialogue)
+    return out
 
 
 def _body_openai_chat(
