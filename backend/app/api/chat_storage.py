@@ -59,6 +59,20 @@ def _expand_character_references(world_setting: str, characters: list[dict]) -> 
 MAX_MEMORY_LOG = 100
 
 
+def _dialogue_message_filters() -> tuple:
+    """正文对话消息的过滤谓词：排除 draft/状态播报/空内容（含图片）。
+
+    流式失败草稿(is_draft=1)、状态播报(is_state_broadcast=1)、空内容消息
+    (纯图片 lone-assistant / 异常空)都应被排除出正文生成的对话历史与计数。
+    展开进 .filter(...)，新增排除条件只改这一处即可全量生效。
+    """
+    return (
+        models.ChatMessage.is_draft == 0,
+        models.ChatMessage.is_state_broadcast == 0,
+        models.ChatMessage.content != "",
+    )
+
+
 def _query_dialogue_history(db: Session, archive_id: int, limit: int) -> list[models.ChatMessage]:
     """查询正文生成用的对话历史。
 
@@ -70,9 +84,7 @@ def _query_dialogue_history(db: Session, archive_id: int, limit: int) -> list[mo
         db.query(models.ChatMessage)
         .filter(
             models.ChatMessage.archive_id == archive_id,
-            models.ChatMessage.is_draft == 0,
-            models.ChatMessage.is_state_broadcast == 0,
-            models.ChatMessage.content != "",
+            *_dialogue_message_filters(),
         )
         .order_by(models.ChatMessage.created_at.desc())
         .limit(limit)
@@ -246,9 +258,7 @@ def _count_rounds_without_plot_label(db: Session, archive_id: int) -> int:
             .filter(
                 models.ChatMessage.archive_id == archive_id,
                 models.ChatMessage.role == "assistant",
-                models.ChatMessage.is_draft == 0,
-                models.ChatMessage.is_state_broadcast == 0,
-                models.ChatMessage.content != "",
+                *_dialogue_message_filters(),
             )
             .count()
         )
@@ -258,9 +268,7 @@ def _count_rounds_without_plot_label(db: Session, archive_id: int) -> int:
         .filter(
             models.ChatMessage.archive_id == archive_id,
             models.ChatMessage.role == "assistant",
-            models.ChatMessage.is_draft == 0,
-            models.ChatMessage.is_state_broadcast == 0,
-            models.ChatMessage.content != "",
+            *_dialogue_message_filters(),
             models.ChatMessage.created_at > last_with_label.created_at,
         )
         .count()
