@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .database import DB_PATH
 
-SCHEMA_VERSION = 26
+SCHEMA_VERSION = 27
 
 
 def _ensure_schema_meta(conn: sqlite3.Connection) -> None:
@@ -421,6 +421,17 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_to_v27(conn: sqlite3.Connection) -> None:
+    """v27: UserSettings 加 memory_inject_count 列（默认 50）。"""
+    _add_column_if_missing(
+        conn,
+        "user_settings",
+        "memory_inject_count",
+        "memory_inject_count INTEGER NOT NULL DEFAULT 50",
+    )
+    conn.commit()
+
+
 def _backup_db_file(db_path: Path) -> Path | None:
     if not db_path.exists() or db_path.stat().st_size == 0:
         return None
@@ -571,6 +582,9 @@ def run_migrations() -> None:
         if version < 26:
             _migrate_to_v26(conn)
             _set_version(conn, 26)
+        if version < 27:
+            _migrate_to_v27(conn)
+            _set_version(conn, 27)
     except Exception:
         conn.close()
         if backup_path and backup_path.exists():

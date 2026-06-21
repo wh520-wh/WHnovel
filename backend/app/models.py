@@ -135,6 +135,7 @@ class UserSettings(Base):
     copy_image_format = Column(String(20), default="url")
     disable_chat_bubble_elastic = Column(Integer, default=0)
     show_background_image = Column(Integer, default=1)
+    memory_inject_count = Column(Integer, default=50)  # 正文注入的长期记忆条数，0=关闭
 
 
 class ModelConfig(Base):
