@@ -125,6 +125,48 @@ class TestCallImageApi:
         with pytest.raises(RuntimeError, match="未配置 API Key"):
             _call_image_api(api_key="", api_base="https://base", model="model", prompt="prompt")
 
+    @patch("app.api.image_generation.certifi.where", return_value=True)
+    @patch("app.api.chat_api_adapter.get_adapter")
+    @patch("app.api.image_generation.httpx.Client")
+    def test_drift_key_triggers_401_not_unconfigured(
+        self, mock_client_cls, mock_get_adapter, mock_certifi
+    ):
+        """漂移修复后：非空（密文）key 不触发'未配置'短路，发请求得真 401。"""
+        mock_get_adapter.return_value = {
+            "url": MagicMock(return_value="https://fake.api/v1/images/generations"),
+            "headers": MagicMock(return_value={"Authorization": "Bearer blob"}),
+            "image_body": MagicMock(return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}),
+        }
+        mock_instance = MagicMock()
+        mock_instance.__enter__ = MagicMock(return_value=mock_instance)
+        mock_instance.__exit__ = MagicMock(return_value=False)
+        mock_instance.post.return_value.status_code = 401
+        mock_instance.post.return_value.text = "unauthorized"
+        mock_client_cls.return_value = mock_instance
+
+        with pytest.raises(RuntimeError, match="Image API HTTP 401"):
+            _call_image_api(
+                api_key="non-empty-ciphertext-blob",
+                api_base="https://fake.api",
+                model="m",
+                prompt="p",
+            )
+
+    @patch("app.api.image_generation.certifi.where", return_value=True)
+    @patch("app.api.chat_api_adapter.get_adapter")
+    @patch("app.api.image_generation.httpx.Client")
+    def test_missing_api_key_still_reports_unconfigured(
+        self, mock_client_cls, mock_get_adapter, mock_certifi
+    ):
+        """api_key='' 仍命中'未配置'短路（回归保护）。"""
+        mock_get_adapter.return_value = {
+            "url": MagicMock(return_value="https://fake.api/v1/images/generations"),
+            "headers": MagicMock(return_value={}),
+            "image_body": MagicMock(return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}),
+        }
+        with pytest.raises(RuntimeError, match="未配置 API Key"):
+            _call_image_api(api_key="", api_base="https://fake.api", model="m", prompt="p")
+
 
 class TestSaveImageLocally:
     @patch("app.api.image_generation.httpx.Client")
