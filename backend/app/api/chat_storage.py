@@ -59,6 +59,29 @@ def _expand_character_references(world_setting: str, characters: list[dict]) -> 
 MAX_MEMORY_LOG = 100
 
 
+def _query_dialogue_history(db: Session, archive_id: int, limit: int) -> list[models.ChatMessage]:
+    """查询正文生成用的对话历史。
+
+    排除非对话消息：流式失败草稿(is_draft=1)、状态播报(is_state_broadcast=1)、
+    空内容消息(纯图片 lone-assistant / 异常空)。单一条件 content!='' 同时排除这三类。
+    返回最旧在前。
+    """
+    history = (
+        db.query(models.ChatMessage)
+        .filter(
+            models.ChatMessage.archive_id == archive_id,
+            models.ChatMessage.is_draft == 0,
+            models.ChatMessage.is_state_broadcast == 0,
+            models.ChatMessage.content != "",
+        )
+        .order_by(models.ChatMessage.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    history.reverse()
+    return history
+
+
 CHAR_CACHE_KEY = "cache:characters:{story_id}"
 CHAR_CACHE_TTL = 600  # 10 minutes
 

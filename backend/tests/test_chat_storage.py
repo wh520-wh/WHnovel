@@ -116,3 +116,42 @@ def test_count_rounds_without_plot_label_counts_messages_after_latest_label():
         db.delete(story)
         db.commit()
         db.close()
+
+
+def test_query_dialogue_history_excludes_draft_broadcast_image_and_empty():
+    """_query_dialogue_history 只返回正常对话消息，排除 draft/broadcast/空内容。"""
+    from app.api.chat_storage import _query_dialogue_history
+
+    db = SessionLocal()
+    story = models.Story(title="history filter test")
+    archive = models.Archive(story=story, name="filter archive")
+    db.add(archive)
+    db.commit()
+    db.refresh(archive)
+
+    base = datetime(2026, 1, 1, 12, 0, 0)
+    # 正常对话
+    db.add_all([
+        models.ChatMessage(archive_id=archive.id, role="user", content="u1", created_at=base),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="a1", created_at=base + timedelta(seconds=1), is_draft=0),
+        models.ChatMessage(archive_id=archive.id, role="user", content="u2", created_at=base + timedelta(seconds=2)),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="a2", created_at=base + timedelta(seconds=3), is_draft=0),
+    ])
+    # 污染消息（都应被排除）
+    db.add_all([
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="draft残文", created_at=base + timedelta(seconds=4), is_draft=1),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="属性 | 属性值", created_at=base + timedelta(seconds=5), is_state_broadcast=1),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="", created_at=base + timedelta(seconds=6), is_draft=0, is_state_broadcast=0, image_url="x.png"),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="", created_at=base + timedelta(seconds=7), is_draft=0, is_state_broadcast=0),
+    ])
+    db.commit()
+
+    result = _query_dialogue_history(db, archive.id, 100)
+    contents = [m.content for m in result]
+    assert contents == ["u1", "a1", "u2", "a2"]  # 最旧在前，仅正常对话
+    assert "draft残文" not in contents
+    assert "属性 | 属性值" not in contents
+
+    # limit 生效：取最近 N 条正常对话，返回时最旧在前
+    result_limited = _query_dialogue_history(db, archive.id, 2)
+    assert [m.content for m in result_limited] == ["u2", "a2"]
