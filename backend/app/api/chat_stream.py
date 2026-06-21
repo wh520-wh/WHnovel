@@ -63,6 +63,7 @@ from .chat_storage import (
     _get_story_characters,
     _persist_draft_exchange,
     _persist_exchange,
+    _query_dialogue_history,
 )
 
 # Concurrency lock for stream generation (per-archive)
@@ -186,14 +187,7 @@ def _stream_chat_response(
     if include_history:
         current_settings = _get_or_create_settings(db)
         context_length = current_settings.context_length or 10
-        history = (
-            db.query(models.ChatMessage)
-            .filter(models.ChatMessage.archive_id == archive.id)
-            .order_by(models.ChatMessage.created_at.desc())
-            .limit(context_length)
-            .all()
-        )
-        history.reverse()
+        history = _query_dialogue_history(db, archive.id, context_length)
         for item in history:
             messages.append(
                 {
