@@ -155,3 +155,35 @@ def test_query_dialogue_history_excludes_draft_broadcast_image_and_empty():
     # limit 生效：取最近 N 条正常对话，返回时最旧在前
     result_limited = _query_dialogue_history(db, archive.id, 2)
     assert [m.content for m in result_limited] == ["u2", "a2"]
+
+
+def test_build_messages_excludes_non_dialogue_history():
+    """_build_messages 构建的 history 不含 draft/broadcast/图片消息。"""
+    from app.api.chat_storage import _build_messages
+    from app.api.ai_contracts import TASK_CHAT_RESPONSE, get_contract_output_rule
+
+    db = SessionLocal()
+    story = models.Story(title="bm test", world_setting="")
+    archive = models.Archive(story=story, name="bm archive")
+    db.add(archive)
+    db.commit()
+    db.refresh(archive)
+
+    base = datetime(2026, 1, 1, 12, 0, 0)
+    db.add_all([
+        models.ChatMessage(archive_id=archive.id, role="user", content="hello", created_at=base),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="world", created_at=base + timedelta(seconds=1), is_draft=0),
+        models.ChatMessage(archive_id=archive.id, role="assistant", content="broadcast text", created_at=base + timedelta(seconds=2), is_state_broadcast=1),
+    ])
+    db.commit()
+
+    settings = _get_or_create_settings(db)
+    messages = _build_messages(
+        story, archive, "next input", settings, db,
+        include_history=True,
+        output_rule_prompt=get_contract_output_rule(TASK_CHAT_RESPONSE),
+    )
+    # messages[0]=system, 之后是 history(user/assistant) + 末尾 user
+    bodies = [m["content"] for m in messages[1:]]
+    assert "broadcast text" not in bodies
+    assert "hello" in bodies and "world" in bodies

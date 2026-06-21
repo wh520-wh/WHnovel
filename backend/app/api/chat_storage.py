@@ -291,14 +291,7 @@ def _build_messages(
         effective_context_length = (
             context_length if context_length is not None else (settings.context_length or 10)
         )
-        history = (
-            db.query(models.ChatMessage)
-            .filter(models.ChatMessage.archive_id == archive.id)
-            .order_by(models.ChatMessage.created_at.desc())
-            .limit(effective_context_length)
-            .all()
-        )
-        history.reverse()
+        history = _query_dialogue_history(db, archive.id, effective_context_length)
         for m in history:
             messages.append(
                 {
