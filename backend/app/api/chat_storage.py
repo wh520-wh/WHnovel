@@ -269,6 +269,9 @@ def _get_or_create_settings(db: Session) -> models.UserSettings:
     if settings.auto_generate_options is None:
         settings.auto_generate_options = 1
         needs_commit = True
+    if settings.memory_inject_count is None:
+        settings.memory_inject_count = DEFAULT_MEMORY_INJECT_COUNT
+        needs_commit = True
     if needs_commit:
         db.commit()
         db.refresh(settings)
@@ -506,8 +509,16 @@ def _persist_exchange(
 
     archive.state_data = cs_dict
     archive.story_state = ss_dict
-    new_memory_log = list(archive.memory_log or []) + list(validated.memory_update or [])
+    deduped = _dedupe_memory_updates(archive.memory_log or [], validated.memory_update or [])
+    new_memory_log = list(archive.memory_log or []) + deduped
     archive.memory_log = new_memory_log[-MAX_MEMORY_LOG:]
+    logger.info(
+        "memory_persist archive_id=%s appended=%s dedup_dropped=%s new_len=%s",
+        archive.id,
+        len(deduped),
+        len(validated.memory_update or []) - len(deduped),
+        len(archive.memory_log),
+    )
 
     ai_msg = models.ChatMessage(
         archive_id=archive.id,
