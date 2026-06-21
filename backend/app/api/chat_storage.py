@@ -338,6 +338,7 @@ def _build_prompt_sections(
     forced_plot_label: bool = False,
     characters: list[dict] | None = None,
     delimiter: str = STREAM_TAIL_DELIMITER,
+    memory_section: str | None = None,
 ) -> list[str]:
     app_settings = _get_or_create_app_settings(db)
     global_default_system_prompt = (app_settings.default_system_prompt or "").strip()
@@ -356,6 +357,8 @@ def _build_prompt_sections(
         )
     if world_text:
         sections.append("【故事世界观提示词】\n" + _escape_tail_delimiter(world_text, delimiter))
+    if memory_section:
+        sections.append(memory_section)
     sections.append("【叙事增强规则】\n" + STYLE_RULE_PROMPT)
     sections.append(HUMANIZED_WRITING_RULES)
     if extra_sections:
@@ -417,6 +420,7 @@ def _build_messages(
     characters: list[dict] | None = None,
     delimiter: str = STREAM_TAIL_DELIMITER,
     context_length: int | None = None,
+    memory_section: str | None = None,
 ) -> list[dict]:
     sections = _build_prompt_sections(
         story,
@@ -426,6 +430,7 @@ def _build_messages(
         forced_plot_label=forced_plot_label,
         characters=characters,
         delimiter=delimiter,
+        memory_section=memory_section,
     )
     messages: list[dict] = [{"role": "system", "content": "\n\n".join(sections)}]
 

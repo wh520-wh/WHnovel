@@ -89,3 +89,53 @@ def test_dedupe_keeps_superset_new():
 def test_dedupe_within_batch():
     assert _dedupe_memory_updates([], ["A", "A"]) == ["A"]
     assert _dedupe_memory_updates([], ["获得宝剑的剑鞘", "获得宝剑"]) == ["获得宝剑的剑鞘"]
+
+
+def test_build_messages_injects_memory_section():
+    from app import models
+    from app.api.ai_contracts import TASK_CHAT_RESPONSE, get_contract_output_rule
+    from app.api.chat_storage import _build_messages, _build_memory_section, _get_or_create_settings
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    story = models.Story(title="mem inject test", world_setting="")
+    archive = models.Archive(story=story, name="mi archive", memory_log=["关键事件A", "关键事件B"])
+    db.add(archive)
+    db.commit()
+    db.refresh(archive)
+
+    settings = _get_or_create_settings(db)
+    section = _build_memory_section(archive.memory_log, 50, archive_id=archive.id)
+    messages = _build_messages(
+        story, archive, "input", settings, db,
+        include_history=False,
+        output_rule_prompt=get_contract_output_rule(TASK_CHAT_RESPONSE),
+        memory_section=section,
+    )
+    system_content = messages[0]["content"]
+    assert "关键事件A" in system_content
+    assert "关键事件B" in system_content
+
+
+def test_build_messages_no_memory_section_when_none():
+    """memory_section=None → system 不含记忆 section（默认调用方零变化）。"""
+    from app import models
+    from app.api.ai_contracts import TASK_CHAT_RESPONSE, get_contract_output_rule
+    from app.api.chat_storage import _build_messages, _get_or_create_settings
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    story = models.Story(title="no mem test", world_setting="")
+    archive = models.Archive(story=story, name="nm archive", memory_log=["不应出现的记忆"])
+    db.add(archive)
+    db.commit()
+    db.refresh(archive)
+
+    settings = _get_or_create_settings(db)
+    messages = _build_messages(
+        story, archive, "input", settings, db,
+        include_history=False,
+        output_rule_prompt=get_contract_output_rule(TASK_CHAT_RESPONSE),
+        # 不传 memory_section → 默认 None
+    )
+    assert "不应出现的记忆" not in messages[0]["content"]
