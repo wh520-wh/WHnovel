@@ -113,6 +113,7 @@ def _body_openai_chat(
     stream: bool = False,
     max_tokens: int = 6000,
 ) -> dict:
+    messages = _sanitize_dialogue_turns(messages)
     body: dict = {
         "model": model_id,
         "messages": messages,
@@ -135,6 +136,7 @@ def _body_openai_responses(
     stream: bool = False,
     max_tokens: int = 6000,
 ) -> dict:
+    messages = _sanitize_dialogue_turns(messages)
     body: dict = {
         "model": model_id,
         "input": _messages_to_responses_input(messages),
@@ -171,6 +173,7 @@ def _body_claude_messages(
     stream: bool = False,
     max_tokens: int = 6000,
 ) -> dict:
+    messages = _sanitize_dialogue_turns(messages)
     system_parts: list[str] = []
     user_assistant: list[dict] = []
     for m in messages:
@@ -205,6 +208,7 @@ def _body_gemini(
     stream: bool = False,
     max_tokens: int = 6000,
 ) -> dict:
+    messages = _sanitize_dialogue_turns(messages)
     system_parts: list[str] = []
     contents: list[dict] = []
     for m in messages:

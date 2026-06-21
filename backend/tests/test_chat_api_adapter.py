@@ -256,3 +256,47 @@ def test_sanitize_all_empty_inserts_placeholder(caplog):
         out = _sanitize_dialogue_turns([{"role": "user", "content": ""}])
     assert out[-1]["role"] == "user"
     assert out[-1]["content"] == "."
+
+
+def test_body_builders_reject_dirty_history():
+    """四个适配器对脏 history 都产出首条对话为 user、无空 part。"""
+    from app.api.chat_api_adapter import (
+        _body_openai_chat, _body_openai_responses, _body_claude_messages, _body_gemini,
+        _sanitize_dialogue_turns,
+    )
+    dirty = [
+        {"role": "system", "content": "sys"},
+        {"role": "assistant", "content": "lone"},
+        {"role": "assistant", "content": "second"},
+        {"role": "user", "content": ""},
+        {"role": "user", "content": "real user"},
+    ]
+    # 先验证 sanitize 后的对话序列正确（builders 内部会做同样 sanitize）
+    sanitized = _sanitize_dialogue_turns(dirty)
+    dialogue = [t for t in sanitized if t["role"] != "system"]
+    assert dialogue[0]["role"] == "user"
+    assert dialogue[0]["content"] == "."  # 补的占位 user
+    assert all(t["content"].strip() != "" for t in dialogue)
+
+    # 再验证四个 builder 不抛异常且产出安全 turns（首条对话为 user、无空内容）
+    builders = [
+        lambda m: _body_openai_chat("m", m, 0.5),
+        lambda m: _body_openai_responses("m", m, 0.5),
+        lambda m: _body_claude_messages("m", m, 0.5),
+        lambda m: _body_gemini("m", m, 0.5),
+    ]
+    for b in builders:
+        body = b(dirty)  # 不应抛异常
+        turns = body.get("messages") or body.get("input") or body.get("contents")
+        assert turns, "body has no turns"
+        # 首条对话 turn 必须是 user（gemini 也用 "user"），不得是 assistant/model
+        first_role = turns[0].get("role")
+        if first_role == "system":
+            first_role = turns[1].get("role")
+        assert first_role == "user", f"first dialogue role {first_role!r} not user"
+        # 无空内容（openai/claude 用 content 字符串，gemini 用 parts[].text）
+        for t in turns:
+            content = t.get("content")
+            if content is None:
+                content = "".join(p.get("text", "") for p in t.get("parts", []))
+            assert str(content).strip() != "", f"empty content in turn {t}"
