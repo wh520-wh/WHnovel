@@ -201,14 +201,7 @@
               <el-radio-button label="均衡" :value="0.7" />
               <el-radio-button label="创意" :value="0.9" />
             </el-radio-group>
-            <el-button
-              size="small"
-              text
-              @click="
-                tempValue = 0.7
-                form.temperature = null
-              "
-            >
+            <el-button size="small" text @click="tempValue = 0.7; form.temperature = null">
               恢复默认 (0.7)
             </el-button>
           </div>
