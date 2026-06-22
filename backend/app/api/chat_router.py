@@ -543,6 +543,28 @@ def delete_last_ai_message(archive_id: int, db: Session = Depends(get_db)):
         db.delete(messages[last_ai_idx + 1])
         deleted_count += 1
 
+    # Bug #7: 撤回时回滚 archive 三字段到 last_ai 写入前的旧值（last_ai.pre_* 快照）。
+    # last_ai 无 pre_* 时（fix 部署前的老数据），回退到更老的 assistant 输出快照；都没有则用初始默认。
+    last_remaining_ai = None
+    for msg in messages[last_ai_idx + 1:]:
+        if msg.role == "assistant":
+            last_remaining_ai = msg
+            break
+
+    pre_state = last_ai.pre_state_data
+    pre_story = last_ai.pre_story_state
+    pre_memory = last_ai.pre_memory_log
+    if pre_state is None and last_remaining_ai is not None:
+        pre_state = last_remaining_ai.state_snapshot
+    if pre_story is None and last_remaining_ai is not None:
+        pre_story = last_remaining_ai.story_state
+    if pre_memory is None and last_remaining_ai is not None:
+        pre_memory = last_remaining_ai.memory_update
+
+    archive.state_data = pre_state if pre_state is not None else {}
+    archive.story_state = pre_story if pre_story is not None else {}
+    archive.memory_log = list(pre_memory) if pre_memory is not None else []
+
     db.commit()
     return {"deleted": deleted_count}
 
