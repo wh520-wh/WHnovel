@@ -1,4 +1,5 @@
 """Tests for crypto decrypt/decrypt_safe drift detection."""
+
 from app import crypto
 
 
@@ -17,6 +18,7 @@ def test_decrypt_safe_plaintext_non_base64_returns_as_is():
 
 def test_decrypt_safe_short_base64_returns_as_is():
     import base64
+
     short = base64.b64encode(b"short").decode("ascii")  # < 13 bytes
     value, is_drift = crypto.decrypt_safe(short)
     assert value == short
@@ -26,8 +28,6 @@ def test_decrypt_safe_short_base64_returns_as_is():
 def test_decrypt_safe_drift_blob_returns_ciphertext_true(monkeypatch):
     """用 keyA 加密，切换到 keyB 解密 → is_drift=True，返回原 blob。"""
     blob = crypto.encrypt("sk-drift-test")
-
-    original_load = crypto._load_key
 
     def fake_load_key():
         return b"\x11" * 32  # 不同于真实 key 的 32 字节
@@ -58,6 +58,7 @@ def test_decrypt_safe_plaintext_base64_key_boundary():
     """合法 base64 且解码>=13 字节的明文 key → decrypt_safe 判 is_drift=True
     （但 decrypt 仍返回该 key 非空，调用方靠'仅失败时归因'吸收）。"""
     import base64
+
     plaintext_key = "AIzaSyFakeKeyForTesting1234567890"
     blob_like = base64.b64encode(plaintext_key.encode()).decode("ascii")
     value, is_drift = crypto.decrypt_safe(blob_like)

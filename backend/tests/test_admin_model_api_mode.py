@@ -150,21 +150,29 @@ def test_test_endpoint_with_image_model():
 
 def test_test_model_reports_drift_on_401_with_drift_key(monkeypatch):
     """漂移 key + 401 → is_drift=True，文案含'密钥漂移'。"""
-    from app.api import admin
+    import base64
+
     from app import models
+    from app.api import admin
     from app.database import SessionLocal
 
-    import base64
     drift_blob = base64.b64encode(b"this-is-at-least-13-bytes-long!!").decode("ascii")
 
-    monkeypatch.setattr(admin, "decrypt_safe", lambda c: (c, True) if c == drift_blob else (c, False))
+    monkeypatch.setattr(
+        admin, "decrypt_safe", lambda c: (c, True) if c == drift_blob else (c, False)
+    )
 
     s = SessionLocal()
     try:
         m = models.ModelConfig(
-            name="drift-model", model_id="m", api_base_url="https://fake.api",
-            api_key=drift_blob, api_mode="openai_chat_completions", model_type="chat",
-            enabled=1, priority=1,
+            name="drift-model",
+            model_id="m",
+            api_base_url="https://fake.api",
+            api_key=drift_blob,
+            api_mode="openai_chat_completions",
+            model_type="chat",
+            enabled=1,
+            priority=1,
         )
         s.add(m)
         s.commit()
@@ -173,11 +181,20 @@ def test_test_model_reports_drift_on_401_with_drift_key(monkeypatch):
         class FakeResp:
             status_code = 401
             text = "unauthorized"
+
         class FakeClient:
-            def __init__(self, *a, **k): pass
-            def __enter__(self): return self
-            def __exit__(self, *a): return False
-            def post(self, *a, **k): return FakeResp()
+            def __init__(self, *a, **k):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def post(self, *a, **k):
+                return FakeResp()
+
         monkeypatch.setattr(admin.httpx, "Client", FakeClient)
 
         result = admin.test_model(m.id, s)
@@ -189,8 +206,8 @@ def test_test_model_reports_drift_on_401_with_drift_key(monkeypatch):
 
 def test_test_model_reports_apikey_error_on_401_with_plaintext_key(monkeypatch):
     """明文错 key + 401 → is_drift=False，文案='API Key 错误'。"""
-    from app.api import admin
     from app import models
+    from app.api import admin
     from app.database import SessionLocal
 
     monkeypatch.setattr(admin, "decrypt_safe", lambda c: (c, False))
@@ -198,9 +215,14 @@ def test_test_model_reports_apikey_error_on_401_with_plaintext_key(monkeypatch):
     s = SessionLocal()
     try:
         m = models.ModelConfig(
-            name="plain-model", model_id="m", api_base_url="https://fake.api",
-            api_key="wrong-plaintext-key", api_mode="openai_chat_completions",
-            model_type="chat", enabled=1, priority=1,
+            name="plain-model",
+            model_id="m",
+            api_base_url="https://fake.api",
+            api_key="wrong-plaintext-key",
+            api_mode="openai_chat_completions",
+            model_type="chat",
+            enabled=1,
+            priority=1,
         )
         s.add(m)
         s.commit()
@@ -209,11 +231,20 @@ def test_test_model_reports_apikey_error_on_401_with_plaintext_key(monkeypatch):
         class FakeResp:
             status_code = 401
             text = "unauthorized"
+
         class FakeClient:
-            def __init__(self, *a, **k): pass
-            def __enter__(self): return self
-            def __exit__(self, *a): return False
-            def post(self, *a, **k): return FakeResp()
+            def __init__(self, *a, **k):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def post(self, *a, **k):
+                return FakeResp()
+
         monkeypatch.setattr(admin.httpx, "Client", FakeClient)
 
         result = admin.test_model(m.id, s)

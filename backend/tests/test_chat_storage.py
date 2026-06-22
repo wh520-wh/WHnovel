@@ -131,19 +131,67 @@ def test_query_dialogue_history_excludes_draft_broadcast_image_and_empty():
 
     base = datetime(2026, 1, 1, 12, 0, 0)
     # 正常对话
-    db.add_all([
-        models.ChatMessage(archive_id=archive.id, role="user", content="u1", created_at=base),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="a1", created_at=base + timedelta(seconds=1), is_draft=0),
-        models.ChatMessage(archive_id=archive.id, role="user", content="u2", created_at=base + timedelta(seconds=2)),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="a2", created_at=base + timedelta(seconds=3), is_draft=0),
-    ])
+    db.add_all(
+        [
+            models.ChatMessage(archive_id=archive.id, role="user", content="u1", created_at=base),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="a1",
+                created_at=base + timedelta(seconds=1),
+                is_draft=0,
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="user",
+                content="u2",
+                created_at=base + timedelta(seconds=2),
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="a2",
+                created_at=base + timedelta(seconds=3),
+                is_draft=0,
+            ),
+        ]
+    )
     # 污染消息（都应被排除）
-    db.add_all([
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="draft残文", created_at=base + timedelta(seconds=4), is_draft=1),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="属性 | 属性值", created_at=base + timedelta(seconds=5), is_state_broadcast=1),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="", created_at=base + timedelta(seconds=6), is_draft=0, is_state_broadcast=0, image_url="x.png"),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="", created_at=base + timedelta(seconds=7), is_draft=0, is_state_broadcast=0),
-    ])
+    db.add_all(
+        [
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="draft残文",
+                created_at=base + timedelta(seconds=4),
+                is_draft=1,
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="属性 | 属性值",
+                created_at=base + timedelta(seconds=5),
+                is_state_broadcast=1,
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="",
+                created_at=base + timedelta(seconds=6),
+                is_draft=0,
+                is_state_broadcast=0,
+                image_url="x.png",
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="",
+                created_at=base + timedelta(seconds=7),
+                is_draft=0,
+                is_state_broadcast=0,
+            ),
+        ]
+    )
     db.commit()
 
     result = _query_dialogue_history(db, archive.id, 100)
@@ -159,8 +207,8 @@ def test_query_dialogue_history_excludes_draft_broadcast_image_and_empty():
 
 def test_build_messages_excludes_non_dialogue_history():
     """_build_messages 构建的 history 不含 draft/broadcast/图片消息。"""
-    from app.api.chat_storage import _build_messages
     from app.api.ai_contracts import TASK_CHAT_RESPONSE, get_contract_output_rule
+    from app.api.chat_storage import _build_messages
 
     db = SessionLocal()
     story = models.Story(title="bm test", world_setting="")
@@ -170,16 +218,36 @@ def test_build_messages_excludes_non_dialogue_history():
     db.refresh(archive)
 
     base = datetime(2026, 1, 1, 12, 0, 0)
-    db.add_all([
-        models.ChatMessage(archive_id=archive.id, role="user", content="hello", created_at=base),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="world", created_at=base + timedelta(seconds=1), is_draft=0),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="broadcast text", created_at=base + timedelta(seconds=2), is_state_broadcast=1),
-    ])
+    db.add_all(
+        [
+            models.ChatMessage(
+                archive_id=archive.id, role="user", content="hello", created_at=base
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="world",
+                created_at=base + timedelta(seconds=1),
+                is_draft=0,
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="broadcast text",
+                created_at=base + timedelta(seconds=2),
+                is_state_broadcast=1,
+            ),
+        ]
+    )
     db.commit()
 
     settings = _get_or_create_settings(db)
     messages = _build_messages(
-        story, archive, "next input", settings, db,
+        story,
+        archive,
+        "next input",
+        settings,
+        db,
         include_history=True,
         output_rule_prompt=get_contract_output_rule(TASK_CHAT_RESPONSE),
     )
@@ -200,13 +268,47 @@ def test_count_rounds_excludes_draft_broadcast_image():
 
     base = datetime(2026, 1, 1, 12, 0, 0)
     # 一条带 label 的 + 多条无 label 的污染消息
-    db.add_all([
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="labeled", created_at=base, is_draft=0, plot_label="起"),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="draft", created_at=base + timedelta(seconds=1), is_draft=1),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="broadcast", created_at=base + timedelta(seconds=2), is_state_broadcast=1),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="", created_at=base + timedelta(seconds=3), is_draft=0, image_url="x.png"),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="real no-label", created_at=base + timedelta(seconds=4), is_draft=0),
-    ])
+    db.add_all(
+        [
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="labeled",
+                created_at=base,
+                is_draft=0,
+                plot_label="起",
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="draft",
+                created_at=base + timedelta(seconds=1),
+                is_draft=1,
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="broadcast",
+                created_at=base + timedelta(seconds=2),
+                is_state_broadcast=1,
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="",
+                created_at=base + timedelta(seconds=3),
+                is_draft=0,
+                image_url="x.png",
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="real no-label",
+                created_at=base + timedelta(seconds=4),
+                is_draft=0,
+            ),
+        ]
+    )
     db.commit()
 
     # labeled 之后只有 1 条真正无 label 的正常 assistant

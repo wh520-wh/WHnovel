@@ -199,11 +199,14 @@ def test_supports_response_format_flag():
 
 def test_sanitize_merges_consecutive_same_role():
     from app.api.chat_api_adapter import _sanitize_dialogue_turns
-    out = _sanitize_dialogue_turns([
-        {"role": "user", "content": "u1"},
-        {"role": "user", "content": "u2"},
-        {"role": "assistant", "content": "a1"},
-    ])
+
+    out = _sanitize_dialogue_turns(
+        [
+            {"role": "user", "content": "u1"},
+            {"role": "user", "content": "u2"},
+            {"role": "assistant", "content": "a1"},
+        ]
+    )
     assert out[0]["role"] == "user"
     assert out[0]["content"] == "u1\n\nu2"
     assert out[1]["role"] == "assistant"
@@ -211,12 +214,16 @@ def test_sanitize_merges_consecutive_same_role():
 
 def test_sanitize_drops_empty_content(caplog):
     import logging
+
     from app.api.chat_api_adapter import _sanitize_dialogue_turns
+
     with caplog.at_level(logging.WARNING):
-        out = _sanitize_dialogue_turns([
-            {"role": "user", "content": ""},
-            {"role": "assistant", "content": "a1"},
-        ])
+        out = _sanitize_dialogue_turns(
+            [
+                {"role": "user", "content": ""},
+                {"role": "assistant", "content": "a1"},
+            ]
+        )
     # 空 user 被丢弃并告警；丢弃后首条变 assistant → 补占位 user，保证首条为 user（防 Claude 400）
     assert any("dropped empty" in r.message for r in caplog.records)
     assert out[0]["role"] == "user"
@@ -226,18 +233,23 @@ def test_sanitize_drops_empty_content(caplog):
 
 def test_sanitize_inserts_placeholder_when_first_is_assistant(caplog):
     import logging
+
     from app.api.chat_api_adapter import _sanitize_dialogue_turns
+
     with caplog.at_level(logging.WARNING):
-        out = _sanitize_dialogue_turns([
-            {"role": "assistant", "content": "lone assistant"},
-            {"role": "user", "content": "u1"},
-        ])
+        out = _sanitize_dialogue_turns(
+            [
+                {"role": "assistant", "content": "lone assistant"},
+                {"role": "user", "content": "u1"},
+            ]
+        )
     assert out[0]["role"] == "user"
     assert out[1]["content"] == "lone assistant"
 
 
 def test_sanitize_noop_on_clean_alternating():
     from app.api.chat_api_adapter import _sanitize_dialogue_turns
+
     clean = [
         {"role": "system", "content": "sys"},
         {"role": "user", "content": "u1"},
@@ -251,7 +263,9 @@ def test_sanitize_noop_on_clean_alternating():
 
 def test_sanitize_all_empty_inserts_placeholder(caplog):
     import logging
+
     from app.api.chat_api_adapter import _sanitize_dialogue_turns
+
     with caplog.at_level(logging.WARNING):
         out = _sanitize_dialogue_turns([{"role": "user", "content": ""}])
     assert out[-1]["role"] == "user"
@@ -261,9 +275,13 @@ def test_sanitize_all_empty_inserts_placeholder(caplog):
 def test_body_builders_reject_dirty_history():
     """四个适配器对脏 history 都产出首条对话为 user、无空 part。"""
     from app.api.chat_api_adapter import (
-        _body_openai_chat, _body_openai_responses, _body_claude_messages, _body_gemini,
+        _body_claude_messages,
+        _body_gemini,
+        _body_openai_chat,
+        _body_openai_responses,
         _sanitize_dialogue_turns,
     )
+
     dirty = [
         {"role": "system", "content": "sys"},
         {"role": "assistant", "content": "lone"},

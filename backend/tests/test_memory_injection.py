@@ -1,4 +1,5 @@
 """Tests for memory injection into chat body generation."""
+
 from app.api.chat_storage import (
     _build_memory_section,
     _dedupe_memory_updates,
@@ -94,7 +95,7 @@ def test_dedupe_within_batch():
 def test_build_messages_injects_memory_section():
     from app import models
     from app.api.ai_contracts import TASK_CHAT_RESPONSE, get_contract_output_rule
-    from app.api.chat_storage import _build_messages, _build_memory_section, _get_or_create_settings
+    from app.api.chat_storage import _build_memory_section, _build_messages, _get_or_create_settings
     from app.database import SessionLocal
 
     db = SessionLocal()
@@ -108,7 +109,11 @@ def test_build_messages_injects_memory_section():
     # 对齐生产接线：非流式 _generate_chat_response 调 _build_memory_section(escape=True)
     section = _build_memory_section(archive.memory_log, 50, archive_id=archive.id, escape=True)
     messages = _build_messages(
-        story, archive, "input", settings, db,
+        story,
+        archive,
+        "input",
+        settings,
+        db,
         include_history=False,
         output_rule_prompt=get_contract_output_rule(TASK_CHAT_RESPONSE),
         memory_section=section,
@@ -134,7 +139,11 @@ def test_build_messages_no_memory_section_when_none():
 
     settings = _get_or_create_settings(db)
     messages = _build_messages(
-        story, archive, "input", settings, db,
+        story,
+        archive,
+        "input",
+        settings,
+        db,
         include_history=False,
         output_rule_prompt=get_contract_output_rule(TASK_CHAT_RESPONSE),
         # 不传 memory_section → 默认 None
@@ -165,7 +174,6 @@ def test_build_memory_section_escape_flag():
     section_esc = _build_memory_section([entry], 50, escape=True)
     assert escaped_entry in section_esc
     assert f"- {entry}" not in section_esc
-
 
 
 def test_persist_exchange_conservative_dedupe():
@@ -211,9 +219,12 @@ def test_persist_exchange_empty_existing_passthrough():
     db.refresh(archive)
 
     validated = schemas.ChatResponse(
-        reply_text="正文", scene="",
-        character_state=schemas.CharacterState(), story_state=schemas.StoryState(),
-        options=[], memory_update=["测试记忆"],
+        reply_text="正文",
+        scene="",
+        character_state=schemas.CharacterState(),
+        story_state=schemas.StoryState(),
+        options=[],
+        memory_update=["测试记忆"],
     )
     _persist_exchange(db, archive=archive, user_content="u", validated=validated)
     db.refresh(archive)
@@ -228,17 +239,18 @@ def test_persist_exchange_never_drops_existing_facts():
 
     db = SessionLocal()
     story = models.Story(title="never drop existing test")
-    archive = models.Archive(
-        story=story, name="nde archive", memory_log=["既有事件A", "既有事件B"]
-    )
+    archive = models.Archive(story=story, name="nde archive", memory_log=["既有事件A", "既有事件B"])
     db.add(archive)
     db.commit()
     db.refresh(archive)
 
     validated = schemas.ChatResponse(
-        reply_text="正文", scene="",
-        character_state=schemas.CharacterState(), story_state=schemas.StoryState(),
-        options=[], memory_update=["既有事件A"],  # 与既有完全相同 → 丢弃新条
+        reply_text="正文",
+        scene="",
+        character_state=schemas.CharacterState(),
+        story_state=schemas.StoryState(),
+        options=[],
+        memory_update=["既有事件A"],  # 与既有完全相同 → 丢弃新条
     )
     _persist_exchange(db, archive=archive, user_content="u", validated=validated)
     db.refresh(archive)
@@ -300,9 +312,15 @@ def test_stream_chat_response_injects_memory():
     db.commit()
 
     gen = chat_stream._stream_chat_response(
-        db, story=story, archive=archive, settings=settings,
-        user_content="继续", persist_user_content="继续",
-        include_history=False, first_opening=False, stream_fn=fake_stream,
+        db,
+        story=story,
+        archive=archive,
+        settings=settings,
+        user_content="继续",
+        persist_user_content="继续",
+        include_history=False,
+        first_opening=False,
+        stream_fn=fake_stream,
     )
     list(gen)
     assert "第1轮关键事件" in captured["messages"][0]["content"]
@@ -335,9 +353,15 @@ def test_stream_chat_response_no_memory_when_count_zero():
     db.commit()
 
     gen = chat_stream._stream_chat_response(
-        db, story=story, archive=archive, settings=settings,
-        user_content="继续", persist_user_content="继续",
-        include_history=False, first_opening=False, stream_fn=fake_stream,
+        db,
+        story=story,
+        archive=archive,
+        settings=settings,
+        user_content="继续",
+        persist_user_content="继续",
+        include_history=False,
+        first_opening=False,
+        stream_fn=fake_stream,
     )
     list(gen)
     assert "不应出现" not in captured["messages"][0]["content"]

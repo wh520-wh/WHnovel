@@ -135,7 +135,9 @@ class TestCallImageApi:
         mock_get_adapter.return_value = {
             "url": MagicMock(return_value="https://fake.api/v1/images/generations"),
             "headers": MagicMock(return_value={"Authorization": "Bearer blob"}),
-            "image_body": MagicMock(return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}),
+            "image_body": MagicMock(
+                return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}
+            ),
         }
         mock_instance = MagicMock()
         mock_instance.__enter__ = MagicMock(return_value=mock_instance)
@@ -162,7 +164,9 @@ class TestCallImageApi:
         mock_get_adapter.return_value = {
             "url": MagicMock(return_value="https://fake.api/v1/images/generations"),
             "headers": MagicMock(return_value={}),
-            "image_body": MagicMock(return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}),
+            "image_body": MagicMock(
+                return_value={"model": "m", "prompt": "p", "size": "2k", "watermark": True}
+            ),
         }
         with pytest.raises(RuntimeError, match="未配置 API Key"):
             _call_image_api(api_key="", api_base="https://fake.api", model="m", prompt="p")

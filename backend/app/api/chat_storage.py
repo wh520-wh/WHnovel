@@ -187,7 +187,12 @@ def _build_memory_section(
 
     logger.info(
         "memory_inject archive_id=%s requested=%s kept=%s dropped_dirty=%s truncated=%s total=%s",
-        archive_id, count, len(kept), dropped_dirty, truncated, len(log),
+        archive_id,
+        count,
+        len(kept),
+        dropped_dirty,
+        truncated,
+        len(log),
     )
     return section
 
@@ -199,12 +204,10 @@ def _dedupe_memory_updates(existing: list | None, incoming: list | None) -> list
     子串判断用 ``norm in ref_norm and norm != ref_norm``：只有当新条是既有项的
     真子串（更短/更模糊）才丢；超集（更长/更具体）保留。
     """
-    recent = [
-        (_normalize_memory(e), e) for e in (existing or [])[-10:] if isinstance(e, str)
-    ]
+    recent = [(_normalize_memory(e), e) for e in (existing or [])[-10:] if isinstance(e, str)]
     accepted: list[tuple[str, str]] = []
     result: list[str] = []
-    for raw in (incoming or []):
+    for raw in incoming or []:
         if not isinstance(raw, str):
             continue
         norm = _normalize_memory(raw)

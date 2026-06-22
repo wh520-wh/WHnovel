@@ -93,9 +93,10 @@ def test_stream_body_pollution_option_block_after_delta_returns_special_error(mo
 def test_stream_chat_response_filters_non_dialogue_history(monkeypatch):
     """流式 history 不含 draft/broadcast/图片，首条非 system 为 user。"""
     from datetime import datetime, timedelta
+
     from app import models
-    from app.database import SessionLocal
     from app.api import chat_router, chat_stream
+    from app.database import SessionLocal
 
     _ensure_model_config()
     db = SessionLocal()
@@ -106,11 +107,25 @@ def test_stream_chat_response_filters_non_dialogue_history(monkeypatch):
     db.refresh(archive)
 
     base = datetime(2026, 1, 1, 12, 0, 0)
-    db.add_all([
-        models.ChatMessage(archive_id=archive.id, role="user", content="q1", created_at=base),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="a1", created_at=base + timedelta(seconds=1), is_draft=0),
-        models.ChatMessage(archive_id=archive.id, role="assistant", content="状态播报文本", created_at=base + timedelta(seconds=2), is_state_broadcast=1),
-    ])
+    db.add_all(
+        [
+            models.ChatMessage(archive_id=archive.id, role="user", content="q1", created_at=base),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="a1",
+                created_at=base + timedelta(seconds=1),
+                is_draft=0,
+            ),
+            models.ChatMessage(
+                archive_id=archive.id,
+                role="assistant",
+                content="状态播报文本",
+                created_at=base + timedelta(seconds=2),
+                is_state_broadcast=1,
+            ),
+        ]
+    )
     db.commit()
 
     captured = {}
@@ -124,9 +139,15 @@ def test_stream_chat_response_filters_non_dialogue_history(monkeypatch):
 
     settings = chat_router._get_or_create_settings(db)
     gen = chat_stream._stream_chat_response(
-        db, story=story, archive=archive, settings=settings,
-        user_content="q2", persist_user_content="q2",
-        include_history=True, first_opening=False, stream_fn=fake_stream,
+        db,
+        story=story,
+        archive=archive,
+        settings=settings,
+        user_content="q2",
+        persist_user_content="q2",
+        include_history=True,
+        first_opening=False,
+        stream_fn=fake_stream,
     )
     # 消耗生成器
     list(gen)
