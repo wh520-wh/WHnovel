@@ -5,7 +5,7 @@
 
 ---
 
-## Bug #1：长期记忆 memory_log 从未接通正文生成，导致长对话遗忘 ✅ 已修复（2026-06-22，合并入 main 至 479f50e）
+## Bug #1：长期记忆 memory_log 从未接通正文生成，导致长对话遗忘 ✅ 已修复（2026-06-22，合并入 main 至 b89c214）
 
 **位置**：
 - `backend/app/api/chat_stream.py` `_build_stream_prompt_sections`（约 119–158 行）
@@ -112,7 +112,7 @@
 
 ---
 
-## Bug #4：crypto.decrypt 解密失败静默返回空字符串，违背自身 docstring，密钥漂移不可诊断不可恢复 ✅ 已修复（2026-06-22，合并入 main 至 479f50e）
+## Bug #4：crypto.decrypt 解密失败静默返回空字符串，违背自身 docstring，密钥漂移不可诊断不可恢复 ✅ 已修复（2026-06-22，合并入 main 至 b89c214）
 
 **位置**：`backend/app/crypto.py` `decrypt`（约 87–118 行）、`_load_key`（约 23–52 行）
 
@@ -149,7 +149,7 @@
 
 ---
 
-## Bug #5：draft/state_broadcast/图片等非对话消息混入正文 history，且 Claude/Gemini 适配器不合并连续同角色，导致 Claude 用户流式 400 硬报错 ✅ 已修复（2026-06-22，合并入 main 至 479f50e）
+## Bug #5：draft/state_broadcast/图片等非对话消息混入正文 history，且 Claude/Gemini 适配器不合并连续同角色，导致 Claude 用户流式 400 硬报错 ✅ 已修复（2026-06-22，合并入 main 至 b89c214）
 
 **位置**：
 - 正文 history 查询：`backend/app/api/chat_stream.py:189-203`、`backend/app/api/chat_storage.py:271-285`（`_build_messages`）
