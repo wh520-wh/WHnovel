@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import re
@@ -507,6 +508,11 @@ def _persist_exchange(
     )
     db.add(user_msg)
 
+    # Bug #7: 快照 archive 旧值，存到 ai_msg.pre_* 用于撤回回滚（必须在覆盖 archive 之前 deepcopy）
+    pre_state_data = copy.deepcopy(archive.state_data) if archive.state_data else {}
+    pre_story_state = copy.deepcopy(archive.story_state) if archive.story_state else {}
+    pre_memory_log = list(archive.memory_log) if archive.memory_log else []
+
     cs_dict = validated.character_state.model_dump()
     ss_dict = validated.story_state.model_dump()
 
@@ -534,6 +540,9 @@ def _persist_exchange(
         is_draft=0,
         plot_label=validated.plot_label or None,
         model_name=model_name,
+        pre_state_data=pre_state_data,
+        pre_story_state=pre_story_state,
+        pre_memory_log=pre_memory_log,
     )
     db.add(ai_msg)
     db.flush()
