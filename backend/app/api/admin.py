@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..app_settings_service import ensure_app_settings
 from ..config_backup import export_backup_file, import_backup_file
-from ..crypto import decrypt, decrypt_safe, encrypt
+from ..crypto import decrypt_safe, encrypt
 from ..database import get_db
 from ..prompts.defaults import infer_prompt_source
 from ..redis_client import get_redis
