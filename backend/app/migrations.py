@@ -433,25 +433,28 @@ def _migrate_to_v27(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_to_v28(conn: sqlite3.Connection) -> None:
-    """v28: ChatMessage 加 pre_state_data / pre_story_state / pre_memory_log 三字段（撤回回滚用）。"""
-    # SQLite JSON 列以 TEXT 存储，DEFAULT 用 JSON 字符串字面量；Python 端 Column default=dict/list 兜底。
+    """v28: ChatMessage 加 pre_state_data / pre_story_state / pre_memory_log（撤回回滚用，可空）。
+
+    故意不加 NOT NULL/DEFAULT：老行 NULL 让 `is None` 哨兵可达（fallback 到 last_remaining_ai 的输出快照），
+    新行由 _persist_exchange 显式 deepcopy 写入；模型 Python default=dict/list 为未设置时兜底。
+    """
     _add_column_if_missing(
         conn,
         "chat_messages",
         "pre_state_data",
-        "pre_state_data JSON NOT NULL DEFAULT '{}'",
+        "pre_state_data JSON",
     )
     _add_column_if_missing(
         conn,
         "chat_messages",
         "pre_story_state",
-        "pre_story_state JSON NOT NULL DEFAULT '{}'",
+        "pre_story_state JSON",
     )
     _add_column_if_missing(
         conn,
         "chat_messages",
         "pre_memory_log",
-        "pre_memory_log JSON NOT NULL DEFAULT '[]'",
+        "pre_memory_log JSON",
     )
     conn.commit()
 

@@ -261,3 +261,72 @@ def test_recall_only_ai_no_pre_snapshot_uses_initial_defaults():
         assert archive.memory_log in (None, [])
     finally:
         db.close()
+
+
+def test_recall_old_data_multi_exchange_fallback_to_remaining_ai_state():
+    """老数据（ai2.pre_*=NULL）+ 存在 last_remaining_ai → state/story 从 ai1.state_snapshot/story_state
+    精确回滚到 S1；memory_log 保留原值（追加式 FIFO 无法精确逆推减 delta，宁可保留不删错）。"""
+    from app.api.chat_router import delete_last_ai_message
+
+    db = SessionLocal()
+    try:
+        story = models.Story(title="recall old-data multi test", world_setting="")
+        archive = models.Archive(
+            story=story,
+            name="rom archive",
+            state_data={"hp": 5, "gold": 1},  # S2 polluted
+            story_state={"chapter": "第十章", "progress": 9},
+            memory_log=["历史A", "历史B", "历史C", "事件2"],  # 含 ai2 污染
+        )
+        db.add(archive)
+        db.commit()
+        db.refresh(archive)
+
+        user1 = models.ChatMessage(
+            archive_id=archive.id,
+            role="user",
+            content="走",
+            created_at=datetime(2026, 1, 1, 12, 0, 0),
+        )
+        ai1 = models.ChatMessage(
+            archive_id=archive.id,
+            role="assistant",
+            content="第一章正文",
+            state_snapshot={"hp": 80, "gold": 40},  # S1（fallback 源）
+            story_state={"chapter": "第二章", "progress": 2},
+            memory_update=["事件1"],
+            pre_state_data=None,
+            pre_story_state=None,
+            pre_memory_log=None,
+            created_at=datetime(2026, 1, 1, 12, 0, 1),
+        )
+        user2 = models.ChatMessage(
+            archive_id=archive.id,
+            role="user",
+            content="再走",
+            created_at=datetime(2026, 1, 1, 12, 0, 2),
+        )
+        ai2 = models.ChatMessage(
+            archive_id=archive.id,
+            role="assistant",
+            content="第二章正文",
+            state_snapshot={"hp": 5, "gold": 1},  # S2
+            story_state={"chapter": "第十章", "progress": 9},
+            memory_update=["事件2"],
+            pre_state_data=None,  # 旧数据 → 触发 NULL fallback
+            pre_story_state=None,
+            pre_memory_log=None,
+            created_at=datetime(2026, 1, 1, 12, 0, 3),
+        )
+        db.add_all([user1, ai1, user2, ai2])
+        db.commit()
+
+        delete_last_ai_message(archive.id, db)
+        db.refresh(archive)
+        # state/story 精确回滚到 ai1 的输出快照（S1）
+        assert archive.state_data == {"hp": 80, "gold": 40}
+        assert archive.story_state == {"chapter": "第二章", "progress": 2}
+        # memory_log 保留原值（Important #1：无法精确逆推）
+        assert archive.memory_log == ["历史A", "历史B", "历史C", "事件2"]
+    finally:
+        db.close()
