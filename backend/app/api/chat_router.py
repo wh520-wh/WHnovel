@@ -546,7 +546,7 @@ def delete_last_ai_message(archive_id: int, db: Session = Depends(get_db)):
     # Bug #7: 撤回时回滚 archive 三字段到 last_ai 写入前的旧值（last_ai.pre_* 快照）。
     # last_ai 无 pre_* 时（fix 部署前的老数据），回退到更老的 assistant 输出快照；都没有则用初始默认。
     last_remaining_ai = None
-    for msg in messages[last_ai_idx + 1:]:
+    for msg in messages[last_ai_idx + 1 :]:
         if msg.role == "assistant":
             last_remaining_ai = msg
             break

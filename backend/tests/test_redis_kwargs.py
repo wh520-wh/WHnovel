@@ -5,8 +5,9 @@ The RedisClient.set wrapper signature is `set(key, value, ttl=300)`, not
 time (before the wrapper's try/except), crashing every chat call once Redis
 is enabled. These tests guard both call sites.
 """
-from app.api import chat_storage, chat_models
+
 from app import models
+from app.api import chat_models, chat_storage
 from app.database import SessionLocal
 
 
@@ -20,9 +21,7 @@ def _make_fake_redis():
 
         def set(self, *args, **kwargs):
             if "ex" in kwargs:
-                raise TypeError(
-                    f"redis.set got unexpected keyword argument 'ex': {kwargs}"
-                )
+                raise TypeError(f"redis.set got unexpected keyword argument 'ex': {kwargs}")
             return None
 
         def get(self, *args, **kwargs):

@@ -167,11 +167,15 @@ def test_recall_multi_exchange_restores_from_deleted_ai_pre():
         db.refresh(archive)
 
         user1 = models.ChatMessage(
-            archive_id=archive.id, role="user", content="走",
+            archive_id=archive.id,
+            role="user",
+            content="走",
             created_at=datetime(2026, 1, 1, 12, 0, 0),
         )
         ai1 = models.ChatMessage(
-            archive_id=archive.id, role="assistant", content="第一章正文",
+            archive_id=archive.id,
+            role="assistant",
+            content="第一章正文",
             state_snapshot={"hp": 80, "gold": 40},  # S1
             story_state={"chapter": "第二章", "progress": 2},
             memory_update=["事件1"],
@@ -181,11 +185,15 @@ def test_recall_multi_exchange_restores_from_deleted_ai_pre():
             created_at=datetime(2026, 1, 1, 12, 0, 1),
         )
         user2 = models.ChatMessage(
-            archive_id=archive.id, role="user", content="再走",
+            archive_id=archive.id,
+            role="user",
+            content="再走",
             created_at=datetime(2026, 1, 1, 12, 0, 2),
         )
         ai2 = models.ChatMessage(
-            archive_id=archive.id, role="assistant", content="第二章正文",
+            archive_id=archive.id,
+            role="assistant",
+            content="第二章正文",
             state_snapshot={"hp": 10, "gold": 5},  # S2
             story_state={"chapter": "第十章", "progress": 9},
             memory_update=["事件2"],
@@ -229,11 +237,15 @@ def test_recall_only_ai_no_pre_snapshot_uses_initial_defaults():
         db.refresh(archive)
 
         user_msg = models.ChatMessage(
-            archive_id=archive.id, role="user", content="唯一输入",
+            archive_id=archive.id,
+            role="user",
+            content="唯一输入",
             created_at=datetime(2026, 1, 1, 12, 0, 0),
         )
         ai_msg = models.ChatMessage(
-            archive_id=archive.id, role="assistant", content="唯一正文",
+            archive_id=archive.id,
+            role="assistant",
+            content="唯一正文",
             pre_state_data=None,
             pre_story_state=None,
             pre_memory_log=None,
