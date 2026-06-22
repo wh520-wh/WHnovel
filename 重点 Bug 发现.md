@@ -229,7 +229,7 @@
 
 ---
 
-## Bug #7：撤回（recall）最后一轮 AI 消息后，archive 的状态/剧情/记忆未回滚，tail 仍读陈旧字段导致状态漂移与 memory_log 污染
+## Bug #7：撤回（recall）最后一轮 AI 消息后，archive 的状态/剧情/记忆未回滚，tail 仍读陈旧字段导致状态漂移与 memory_log 污染 ✅ 已修复（2026-06-22，合并入 main 至 77e7156）
 
 **位置**：
 - `backend/app/api/chat_router.py` `delete_last_ai_message`（507–547 行）
@@ -256,9 +256,19 @@
 
 **子代理审查结论**：降级但成立。子代理逐行验证核心机制（撤回跳过回滚；状态字段每轮写入；tail 下轮读取），并反驳掉候选两项夸大影响（UI 状态条由前端恢复；正文鬼回合因 history 取 ChatMessage 行而不会发生）。真实影响收敛为：tail 元数据基线漂移 + memory_log 残留污染，无数据丢失/无硬故障/正文不被污染。判为中等正确性缺陷。
 
+**修复记录**（main 分支，subagent-driven-development 完整流程，已合并 77e7156）：
+- 给 ChatMessage 加 3 个 pre_* JSON 字段（`pre_state_data` / `pre_story_state` / `pre_memory_log`，可空）+ v28 迁移（`_migrate_to_v28`，列 nullable 让老行保留 NULL 哨兵）。
+- `_persist_exchange` 在覆盖 archive 之前用 `copy.deepcopy`（state/story）+ `list()`（memory）快照旧值，传入 ai_msg 构造。
+- `delete_last_ai_message` 撤回时从 `last_ai.pre_*` 恢复 archive（**关键设计决策**：S0→E1→S1→E2→S2 时间线下，撤 E2 应回到 S1 = ai2.pre_*，不是 ai1.pre_*=S0；plan 初稿错用 last_remaining_ai，implementer 独立推演后修正）。
+- 旧数据兼容（pre_*=NULL）：有更早 AI 时 state/story 从 `last_remaining_ai.state_snapshot`/`story_state` 精确回滚，memory_log **保留 archive 原值**（追加式 FIFO 无法精确逆推减每一轮 delta，宁可保留现状）；无更早 AI 时全部回初始默认。
+- 路径隔离：前端 useChatRecall.ts / `_persist_draft_exchange` / Bug #1/#4/#5 已修代码全部未动。
+- 测试：test_recall_rollback.py（6 用例，含多轮撤回 S0→S1→S2 守护 + 老数据 NULL fallback 路径守护）。
+- **两阶段审查揪出 1 Critical + 2 Important**：DDL `NOT NULL DEFAULT` 让 NULL-fallback 死代码（部署后撤回现有会话会清空 archive 三字段造成数据丢失回归，已修 DDL 改 nullable）；memory_log fallback 语义不一致（state 用完整快照 vs memory 用 delta，会丢历史，已修 memory_log 保留原值）；fallback 路径无测试（已加 `test_recall_old_data_multi_exchange_fallback_to_remaining_ai_state`）。
+- 全量回归：244 passed + ruff 全过。
+
 ---
 
-## Bug #8：`redis.set(..., ex=...)` 关键字参数与 wrapper 签名不匹配，启用 Redis 时每次角色加载抛 TypeError → 聊天硬 500（含第二处 chat_models.py:399）
+## Bug #8：`redis.set(..., ex=...)` 关键字参数与 wrapper 签名不匹配，启用 Redis 时每次角色加载抛 TypeError → 聊天硬 500（含第二处 chat_models.py:399） ✅ 已修复（2026-06-22，合并入 main 至 be609ca）
 
 **位置**：
 - `backend/app/api/chat_storage.py:88-89`（`redis.set(cache_key, json.dumps(result), ex=CHAR_CACHE_TTL)`）
@@ -285,6 +295,13 @@
 - `requirements.txt:9` `# redis>=5.0  # 可选`；`conftest.py:29` `REDIS_PORT=0`；测试零覆盖 Redis-on 路径（搜 `_get_story_characters`/`redis.set`/`ex=` 在测试中零命中）。
 
 **子代理审查结论**：降级但成立。子代理确认代码事实铁证如山（`ex=` 非法、TypeError 在参数绑定阶段抛出、内部 try/except 抓不到、无 inherited set、无 `**kwargs`），并发现第二处 `chat_models.py:399`。判定沿用本项目对 Bug #2（redis 锁）的休眠惯例：**默认休眠**（redis 包未装、`requirements.txt:9` 注释、测试强制 `REDIS_PORT=0`），但与 Bug #2 不同的是本 bug 一旦启用 Redis 即**确定性硬崩**（非罕见竞态），比 Bug #2 更严重。判为中等（默认休眠，启用即崩的文档化可选功能）。修复 trivial：`s/ex=/ttl=/`，两处同改。
+
+**修复记录**（main 分支，trivial 修复，已合并 be609ca）：
+- `backend/app/api/chat_storage.py:255` `ex=CHAR_CACHE_TTL` → `ttl=CHAR_CACHE_TTL`
+- `backend/app/api/chat_models.py:399` `ex=MODEL_CACHE_TTL` → `ttl=MODEL_CACHE_TTL`
+- 新增 `backend/tests/test_redis_kwargs.py`（2 用例）：monkeypatch `get_redis` 返回 fake redis，其 `.set` 收到 `ex=` kwarg 就抛 TypeError。验证 `_get_story_characters` 和 `_get_enabled_models` 调用时不会触发 ex=（否则立刻抛错）。两个测试都通过 = 修复有效，bug 复发会红。
+- 行为零变化：原本 TTL 数值（CHAR_CACHE_TTL=600 / MODEL_CACHE_TTL=300）未改；只是关键字参数名从 ex= 改 ttl= 以匹配 RedisClient.set 签名。
+- 全量回归：238 passed（前 236 + 2 新测试）+ ruff 全过。
 
 ---
 
