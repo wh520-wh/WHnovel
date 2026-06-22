@@ -396,7 +396,7 @@ def _get_enabled_models(
     ).all()
 
     if use_cache and redis.is_available() and models_list:
-        redis.set(MODEL_CACHE_KEY, json.dumps([m.id for m in models_list]), ex=MODEL_CACHE_TTL)
+        redis.set(MODEL_CACHE_KEY, json.dumps([m.id for m in models_list]), ttl=MODEL_CACHE_TTL)
 
     return models_list
 

@@ -252,7 +252,7 @@ def _get_story_characters(db: Session, story_id: int) -> list[dict]:
     ]
 
     if redis.is_available():
-        redis.set(cache_key, json.dumps(result), ex=CHAR_CACHE_TTL)
+        redis.set(cache_key, json.dumps(result), ttl=CHAR_CACHE_TTL)
 
     return result
 
