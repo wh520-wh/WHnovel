@@ -104,6 +104,10 @@ class ChatMessage(Base):
     content = Column(Text, nullable=False)
     state_snapshot = Column(JSON, default=dict)
     story_state = Column(JSON, default=dict)
+    # Bug #7: 该 AI 消息写入 archive 之前的 archive 三字段快照（撤回时恢复用）
+    pre_state_data = Column(JSON, default=dict)
+    pre_story_state = Column(JSON, default=dict)
+    pre_memory_log = Column(JSON, default=list)
     options = Column(JSON, default=list)  # AI返回的快捷选项
     memory_update = Column(JSON, default=list)
     image_url = Column(String(500), nullable=True)  # 对话内生成的图片URL

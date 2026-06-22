@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .database import DB_PATH
 
-SCHEMA_VERSION = 27
+SCHEMA_VERSION = 28
 
 
 def _ensure_schema_meta(conn: sqlite3.Connection) -> None:
@@ -432,6 +432,30 @@ def _migrate_to_v27(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_to_v28(conn: sqlite3.Connection) -> None:
+    """v28: ChatMessage 加 pre_state_data / pre_story_state / pre_memory_log 三字段（撤回回滚用）。"""
+    # SQLite JSON 列以 TEXT 存储，DEFAULT 用 JSON 字符串字面量；Python 端 Column default=dict/list 兜底。
+    _add_column_if_missing(
+        conn,
+        "chat_messages",
+        "pre_state_data",
+        "pre_state_data JSON NOT NULL DEFAULT '{}'",
+    )
+    _add_column_if_missing(
+        conn,
+        "chat_messages",
+        "pre_story_state",
+        "pre_story_state JSON NOT NULL DEFAULT '{}'",
+    )
+    _add_column_if_missing(
+        conn,
+        "chat_messages",
+        "pre_memory_log",
+        "pre_memory_log JSON NOT NULL DEFAULT '[]'",
+    )
+    conn.commit()
+
+
 def _backup_db_file(db_path: Path) -> Path | None:
     if not db_path.exists() or db_path.stat().st_size == 0:
         return None
@@ -585,6 +609,9 @@ def run_migrations() -> None:
         if version < 27:
             _migrate_to_v27(conn)
             _set_version(conn, 27)
+        if version < 28:
+            _migrate_to_v28(conn)
+            _set_version(conn, 28)
     except Exception:
         conn.close()
         if backup_path and backup_path.exists():
