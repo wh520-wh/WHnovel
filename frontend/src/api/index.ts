@@ -142,9 +142,16 @@ export async function postSSE(
       try {
         while (true) {
           const { done, value } = await reader.read()
-          if (done) break
-
-          buffer += decoder.decode(value, { stream: true })
+          if (done) {
+            // Bug #30：流结束时 flush 残留 buffer——最后一个事件（如 tail）
+            // 可能未以空行结尾；补事件分隔符后落入下方解析循环，解析完再退出
+            if (value) buffer += decoder.decode(value, { stream: true })
+            buffer += decoder.decode()
+            if (!buffer.trim()) break
+            buffer += '\n\n'
+          } else {
+            buffer += decoder.decode(value, { stream: true })
+          }
 
           while (true) {
             const m = buffer.match(/\r?\n\r?\n/)
@@ -201,6 +208,7 @@ export async function postSSE(
               throw new Error(msg)
             }
           }
+          if (done) break
         }
       } finally {
         reader.releaseLock()

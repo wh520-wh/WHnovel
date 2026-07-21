@@ -664,7 +664,7 @@
 
 ---
 
-## Bug #30：SSE 解析器 `done` 时直接 `break` 不 flush 残留 buffer，最后一个事件（`tail`）可能静默丢失
+## Bug #30：SSE 解析器 `done` 时直接 `break` 不 flush 残留 buffer，最后一个事件（`tail`）可能静默丢失 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`frontend/src/api/index.ts:142-149, 204`
 
@@ -675,6 +675,11 @@
 **证据**：`api/index.ts:147-149` `while (true)` 中 `if (done) break`；`:204` 结束循环；整个解析逻辑没有处理 `buffer` 中残留的不完整块。
 
 **主循环一眼赞同**：成立（中危）。修复 trivial——`done` 后 `processBuffer(buffer)` flush 一次。
+
+**修复记录**（fix/core-experience-bugs 分支，TDD：先红后绿）：
+- `api/index.ts` SSE 读取循环：`done` 时先带上最后一块 `value`、flush 解码器残留字节；buffer 非空则补 `\n\n` 分隔符 `continue`，让残留事件走同一条已验证的解析路径（含事件名校验/JSON 校验/done/error 语义），buffer 为空才 `break`。
+- 未重构出独立 `processBuffer`（外科范围）：复用内联解析循环，避免双份解析逻辑漂移。
+- 测试：`api/index.spec.ts` 新增用例——tail 事件无结尾空行 + 流关闭，断言 `onEvent` 收到完整 tail 且 promise 正常 resolve。
 
 ---
 
