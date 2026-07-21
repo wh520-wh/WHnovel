@@ -193,7 +193,7 @@
 
 ---
 
-## Bug #6：config_backup 导出/导入丢失 v17 之后新增的全部 ModelConfig 字段，恢复备份后 ComfyUI/自定义 API 模式静默失效
+## Bug #6：config_backup 导出/导入丢失 v17 之后新增的全部 ModelConfig 字段，恢复备份后 ComfyUI/自定义 API 模式静默失效 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支，治本重构）
 
 **位置**：`backend/app/config_backup.py` `build_backup_payload`（约 24–81 行）、`_normalize_model_payload`（约 130–157 行）、`import_backup_file`（约 160–300 行）
 
@@ -226,6 +226,13 @@
 - `migrate_to_file.py`/`migrate_from_file.py` 为迁移主路径；`test_admin_metrics.py:530-562` 往返测试固化的备份 JSON 本身不含这些字段（测试固化了残缺形状，未捕获此 bug）。
 
 **子代理审查结论**：成立，真实重大。子代理逐字段对照 models.py 确认 6 个字段遗漏，确认"新建丢字段/更新保留"的区分准确，确认 migration_version=2 硬编码无版本兜底无 backfill，确认 run_migrations 不读备份 JSON 无法回填。影响链经调用链验证（ComfyUI/custom_image/api_mode/response_format_mode 均实际使用）。判为重大——备份/恢复在迁移/重装主用途下静默丢失 ComfyUI workflow 与自定义模式配置，用户看到导入成功实际功能失效，且测试固化了残缺形状使该 bug 长期未被捕获。
+
+**修复记录**（2026-07-21，fix/core-experience-bugs 分支，治本：单一事实源 + 版本护栏，TDD：先红后绿）：
+- **字段清单单一事实源**：新增 `_MODEL_OPTIONAL_BACKUP_FIELDS`（api_mode / image_api_mode / image_workflow_template / temperature / max_tokens / response_format_mode，各带导入 coerce），导出与 `_normalize_model_payload` 共用同一份清单，消除两侧手工清单漂移的根因。
+- **旧备份兼容语义**：导入时键存在才纳入 normalized——旧版备份缺键时新建取 DB 默认值、更新保留现值，不会被默认值覆盖。
+- **版本号对齐**：导出 `migration_version` 改为引用 `migrations.SCHEMA_VERSION`（当前 28）取代硬编码 2；`load_backup_payload` 新增版本护栏，拒绝来自更新版本系统的备份（400 + 明确提示）。
+- **次要加重项一并补齐**：AppSettings 导出/导入补 `style_skill_enabled` / `style_skill_content`；UserSettings 补 `show_background_image`；`image_size` 导入接入 #18 的 `resolve_image_size` 兜底，导出同样走该校验，封堵"非法值从备份后门写入"路径。
+- **测试**：新增 `tests/test_config_backup.py` 5 用例（导出含新字段+版本号 / 空库导入还原 ComfyUI 配置 / 旧备份缺键兼容 / 拒绝更高版本备份 / 非法 image_size 兜底，前 4 个先红后绿）；既有 `test_admin_metrics.py` 16 用例（含旧形状往返测试，兼作旧备份兼容回归）未改动全绿——原"测试固化残缺形状"问题由新测试文件覆盖。
 
 ---
 

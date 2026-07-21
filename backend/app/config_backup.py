@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -8,7 +9,21 @@ from sqlalchemy.orm import Session
 
 from . import config as backup_store
 from . import models
+from .api.image_generation import resolve_image_size
 from .app_settings_service import ensure_app_settings
+from .migrations import SCHEMA_VERSION
+
+# Bug #6 治本：ModelConfig 可选备份字段（v17+ 新增）的导出/导入共用同一份清单，
+# 防止两侧字段清单再次漂移。导入时旧版备份缺少这些键则跳过——
+# 新建走 DB 默认值、更新保留现值，不做无谓覆盖。
+_MODEL_OPTIONAL_BACKUP_FIELDS: dict[str, Callable[[Any], Any]] = {
+    "api_mode": lambda v: str(v or "openai_chat_completions"),
+    "image_api_mode": lambda v: str(v or "openai_images"),
+    "image_workflow_template": lambda v: None if v is None else str(v),
+    "temperature": lambda v: None if v is None else _coerce_float(v, 0.0),
+    "max_tokens": lambda v: None if v is None else (_coerce_int(v, 0) or None),
+    "response_format_mode": lambda v: str(v or "json_schema"),
+}
 
 
 def _get_or_create_user_settings(db: Session) -> models.UserSettings:
@@ -47,6 +62,9 @@ def build_backup_payload(db: Session) -> dict[str, Any]:
                 "ssl_verify": bool(item.ssl_verify),
             }
         )
+        # 可选字段（v17+）：与导入共用 _MODEL_OPTIONAL_BACKUP_FIELDS 清单
+        for field in _MODEL_OPTIONAL_BACKUP_FIELDS:
+            models_payload[-1][field] = getattr(item, field)
 
     app_settings = ensure_app_settings(db)
     user_settings = _get_or_create_user_settings(db)
@@ -54,16 +72,18 @@ def build_backup_payload(db: Session) -> dict[str, Any]:
     return {
         "exported_at": datetime.now().isoformat(timespec="seconds"),
         "source": "database",
-        "migration_version": 2,
+        "migration_version": SCHEMA_VERSION,
         "models": models_payload,
         "app_settings": {
             "default_system_prompt": app_settings.default_system_prompt or "",
             "state_broadcast_prompt": app_settings.state_broadcast_prompt or "",
             "enable_image_generation": bool(app_settings.enable_image_generation),
             "default_image_model_id": app_settings.default_image_model_id,
-            "image_size": app_settings.image_size or "2K",
+            "image_size": resolve_image_size(app_settings.image_size),
             "image_watermark": bool(app_settings.image_watermark),
             "default_image_style": app_settings.default_image_style or "",
+            "style_skill_enabled": bool(app_settings.style_skill_enabled),
+            "style_skill_content": app_settings.style_skill_content or "",
         },
         "user_settings": {
             "model_name": user_settings.model_name or "",
@@ -77,6 +97,7 @@ def build_backup_payload(db: Session) -> dict[str, Any]:
             "options_prompt": user_settings.options_prompt or "",
             "copy_image_format": user_settings.copy_image_format or "url",
             "disable_chat_bubble_elastic": bool(user_settings.disable_chat_bubble_elastic),
+            "show_background_image": bool(user_settings.show_background_image),
         },
     }
 
@@ -96,6 +117,13 @@ def load_backup_payload() -> dict[str, Any]:
     models_payload = payload.get("models")
     if not isinstance(models_payload, list):
         raise ValueError("备份文件缺少合法的 models 列表")
+    # 版本护栏：拒绝来自更新版本系统的备份（旧版备份缺字段由导入侧兼容处理）
+    backup_version = payload.get("migration_version")
+    if backup_version is not None and _coerce_int(backup_version, 0) > SCHEMA_VERSION:
+        raise ValueError(
+            f"备份文件版本（{backup_version}）高于当前系统支持的版本（{SCHEMA_VERSION}），"
+            "请升级系统后再导入"
+        )
     return payload
 
 
@@ -139,7 +167,7 @@ def _normalize_model_payload(item: dict[str, Any], index: int) -> dict[str, Any]
     if not api_base_url:
         raise ValueError(f"models[{index}].api_base_url 不能为空")
 
-    return {
+    normalized = {
         "id": model_pk,
         "name": name,
         "model_id": model_id,
@@ -155,6 +183,11 @@ def _normalize_model_payload(item: dict[str, Any], index: int) -> dict[str, Any]
         "image_api_key": str(item.get("image_api_key") or ""),
         "ssl_verify": bool(item.get("ssl_verify", True)),
     }
+    # 可选字段（v17+）：键存在才纳入——旧版备份缺键时新建取 DB 默认值、更新保留现值
+    for field, coerce in _MODEL_OPTIONAL_BACKUP_FIELDS.items():
+        if field in item:
+            normalized[field] = coerce(item.get(field))
+    return normalized
 
 
 def import_backup_file(db: Session) -> dict[str, Any]:
@@ -247,6 +280,9 @@ def import_backup_file(db: Session) -> dict[str, Any]:
         user_settings.disable_chat_bubble_elastic = (
             1 if bool(user_payload.get("disable_chat_bubble_elastic", False)) else 0
         )
+        user_settings.show_background_image = (
+            1 if bool(user_payload.get("show_background_image", True)) else 0
+        )
 
     app_payload = payload.get("app_settings")
     if isinstance(app_payload, dict):
@@ -266,12 +302,18 @@ def import_backup_file(db: Session) -> dict[str, Any]:
             1 if bool(app_payload.get("enable_image_generation", False)) else 0
         )
         app_settings.default_image_model_id = default_image_model_id
-        app_settings.image_size = str(
-            app_payload.get("image_size") or app_settings.image_size or "2K"
+        app_settings.image_size = resolve_image_size(
+            app_payload.get("image_size") or app_settings.image_size
         )
         app_settings.image_watermark = 1 if bool(app_payload.get("image_watermark", False)) else 0
         app_settings.default_image_style = str(
             app_payload.get("default_image_style") or app_settings.default_image_style or ""
+        )
+        app_settings.style_skill_enabled = (
+            1 if bool(app_payload.get("style_skill_enabled", False)) else 0
+        )
+        app_settings.style_skill_content = str(
+            app_payload.get("style_skill_content") or app_settings.style_skill_content or ""
         )
 
     if removed_ids:
