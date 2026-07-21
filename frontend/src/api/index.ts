@@ -203,9 +203,10 @@ export async function postSSE(
             onEvent(evt)
             if (eventName === 'done') return
             if (eventName === 'error') {
-              // 立即抛出，让 chat.ts 不用等到 stream 结束就能弹窗处理
-              const msg = (evt as any).data?.message || 'SSE错误'
-              throw new Error(msg)
+              // Bug #31：错误事件已交付 onEvent（useChatStream 会映射为设计好的
+              // 提示文案并写入 streamErrorRef，流结束后统一抛出）。这里直接结束
+              // 读取，不再用原始 data.message 抛错覆盖前端文案。
+              return
             }
           }
           if (done) break

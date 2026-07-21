@@ -683,7 +683,7 @@
 
 ---
 
-## Bug #31：SSE `error` 事件时 `api/index.ts` 直接用 `data.message` 抛 Error，覆盖前端 `handleStreamError` 设计的提示文案
+## Bug #31：SSE `error` 事件时 `api/index.ts` 直接用 `data.message` 抛 Error，覆盖前端 `handleStreamError` 设计的提示文案 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`frontend/src/composables/useChatStream.ts:165-185, 189-202`；`frontend/src/api/index.ts:194-202`
 
@@ -694,6 +694,12 @@
 **证据**：`useChatStream.ts:184` 设置 `streamErrorRef.value = handleStreamError(...)`；`api/index.ts:199-200` 抛出 `new Error(msg)`；`useChatStream.ts:370` 的 `if (streamError) throw new Error(streamError)` 在 `postSSE` 已抛出的情况下不会到达。
 
 **主循环一眼赞同**：成立（中危）。属错误处理 UX 不一致。
+
+**修复记录**（fix/core-experience-bugs 分支）：
+- `api/index.ts` 收到 `event: error` 时不再 `throw new Error(data.message)`，改为交付 `onEvent` 后直接 `return` 结束读取——错误文案统一由 `useChatStream` 的 `handleStreamError` 映射（如 STREAM_BODY_POLLUTED 的拦截提示），流结束后经既有的 `if (streamError) throw` 抛出，startStory/sendStream 两路径对称生效。
+- 全文仅 `startChatStream` / `sendMessageStream` 两个 postSSE 调用方，均走 useChatStream，无其他依赖旧抛错行为的调用方。
+- draft 分支语义不变：error+draft 事件由 onEvent 标记 draftPersisted，postSSE 正常返回后走既有的 partial 错误分支。
+- 测试：`api/index.spec.ts` 新增"error 事件交付 onEvent 且 resolve 不抛出"用例；原"releaseLock"用例改用未知事件类型触发解析抛错（行为已变，error 事件不再抛错）。
 
 ---
 
