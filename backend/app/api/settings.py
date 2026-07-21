@@ -138,6 +138,8 @@ def update_settings(payload: schemas.UserSettingsUpdate, db: Session = Depends(g
         data["show_background_image"] = 1 if data["show_background_image"] else 0
     if "memory_inject_count" in data:
         data["memory_inject_count"] = max(0, min(100, int(data["memory_inject_count"])))
+    if "context_length" in data and data["context_length"] is not None:
+        data["context_length"] = max(1, min(200, int(data["context_length"])))
 
     for k, v in data.items():
         setattr(s, k, v)

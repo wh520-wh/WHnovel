@@ -86,7 +86,11 @@ def _query_dialogue_history(db: Session, archive_id: int, limit: int) -> list[mo
     排除非对话消息：流式失败草稿(is_draft=1)、状态播报(is_state_broadcast=1)、
     空内容消息(纯图片 lone-assistant / 异常空)。单一条件 content!='' 同时排除这三类。
     返回最旧在前。
+
+    limit 越界（负数/极大值，如存量脏数据）时钳制到 [1, 200]，
+    避免负数 limit 在 SQLite 下退化为全量历史塞进 prompt。
     """
+    limit = max(1, min(200, int(limit)))
     history = (
         db.query(models.ChatMessage)
         .filter(

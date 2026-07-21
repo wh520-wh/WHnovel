@@ -461,7 +461,7 @@
 
 ---
 
-## Bug #17：`update_settings` 对 `context_length` 无上下界，可设为负数或极大值
+## Bug #17：`update_settings` 对 `context_length` 无上下界，可设为负数或极大值 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`backend/app/api/settings.py:139-143`；`backend/app/api/chat_stream.py:199-200`；`backend/app/api/chat_storage.py:97`
 
@@ -472,6 +472,12 @@
 **证据**：`settings.py:139-143` `memory_inject_count` 有 `max(0, min(100, int(...)))` 钳制，`context_length` 同一行被 `setattr` 跳过；`chat_stream.py:199` `or 10` 兜底；`chat_storage.py:97` `_query_dialogue_history` 用 `count` 参数取 `-1` 条等同于 `all()`。
 
 **主循环一眼赞同**：成立（中危）。前端 UI 有数字输入框 + 范围提示可限制，但后端无最后防线。修复 trivial——加 `max(1, min(200, int(...)))`。
+
+**修复记录**（fix/core-experience-bugs 分支，TDD：先红后绿）：
+- 写入侧：`settings.py` `update_settings` 对 `context_length` 加 `max(1, min(200, int(...)))` 钳制（None 显式提交时跳过，沿用 `or 10` 兜底）。
+- 读取侧：`_query_dialogue_history`（`chat_storage.py`）入口钳制 limit 到 [1, 200]——单点覆盖流式/非流式两条正文路径，防存量脏数据（已落库的负数/极大值）把全量历史塞进 prompt。
+- 测试：`test_settings_context_length.py`（2 用例：端点钳制 -5→1 / 99999→200 / 18→18；查询函数负数 limit 不再退化为全量、极大值不报错）。
+- 范围外未动：`chat_stream.py:199` / `chat_storage.py:445-446` 的 `or 10` 兜底保持原样（钳制在查询函数单点生效）。
 
 ---
 
