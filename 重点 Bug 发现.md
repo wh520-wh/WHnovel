@@ -556,7 +556,7 @@
 
 ---
 
-## Bug #23：`update_model` / `update_app_settings` 等不失效 `CHAR_CACHE_KEY`，角色/故事更新后角色缓存 600s 内 stale
+## Bug #23：`update_model` / `update_app_settings` 等不失效 `CHAR_CACHE_KEY`，角色/故事更新后角色缓存 600s 内 stale ❌ 经复核不成立（2026-07-21，fix/core-experience-bugs 分支；防护自首个公开提交已存在，已补回归测试锁定）
 
 **位置**：
 - `backend/app/api/admin.py:141-142`（update_model 仅删 `MODEL_CACHE_KEY`）
@@ -570,6 +570,13 @@
 **证据**：`chat_storage.py:229` `CHAR_CACHE_KEY`；`:238-241` 缓存命中分支；`admin.py:141-142, 165-166` 仅删 `MODEL_CACHE_KEY`。`stories.py` 与 archives 端点全函数无 `redis.delete(CHAR_CACHE_KEY.format(...))`。
 
 **主循环一眼赞同**：成立（中危）。属真实缓存一致性 bug，触发容易（每次编辑角色即触发）。修复 trivial——加 `redis.delete(CHAR_CACHE_KEY.format(story_id=story.id))`。
+
+**复核记录**（2026-07-21，fix/core-experience-bugs 分支）：**不成立，原证据有误**。
+- 角色增/改/删端点（`stories.py:121/136/148`）自首个公开提交 `e190b70` 起即调用 `_invalidate_char_cache(story_id)`（`stories.py:24-27`），该函数正是 `redis.delete(CHAR_CACHE_KEY.format(story_id=...))`。原"证据"称"stories.py 与 archives 端点全函数无失效逻辑"系 finder 与怀疑者漏看 `stories.py:16,24-27`（stories.py 内有自己的 `CHAR_CACHE_KEY` 副本与失效 helper）。
+- `archives.py` 全文不触碰 `Character` 模型（grep 零命中），无需失效。
+- `admin.py` 的 update_model/delete_model 只改模型配置，与角色缓存内容无关，不需要失效 `CHAR_CACHE_KEY`；`update_story` 改的是故事字段，角色缓存只存角色字典，同样无需失效。
+- 全仓 `Character` 写路径仅剩 `seed_data.py`（初始化新故事，无缓存可 stale）。
+- 处置：不改业务代码；新增 `test_char_cache_invalidation.py`（2 用例：更新/删除角色后缓存键被删除、重读返回新值）锁定既有防护，防未来回归。
 
 ---
 
