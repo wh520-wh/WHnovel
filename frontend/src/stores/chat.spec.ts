@@ -205,6 +205,94 @@ describe('chat store', () => {
     expect(store.currentOptions).toEqual(['继续追问'])
   })
 
+  it('writes refreshed archive list into store after stream tail (Bug #25)', async () => {
+    apiMocks.getArchives.mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          story_id: 1,
+          name: '会话A',
+          state_data: {},
+          story_state: {},
+          memory_log: [],
+          created_at: '2026-04-16T00:00:00Z',
+          updated_at: '2026-04-16T01:00:00Z',
+        },
+      ],
+    })
+    apiMocks.generateStoryOptions.mockResolvedValue({ data: { options: [] } })
+
+    const store = useChatStore()
+    store.currentArchive = { id: 1, story_id: 1 } as any
+
+    apiMocks.sendMessageStream.mockImplementation(
+      async (_archiveId: number, _text: string, onEvent: any) => {
+        onEvent({
+          event: 'tail',
+          data: {
+            archive_id: 1,
+            reply_text: 'AI 回复',
+            character_state: {},
+            story_state: {},
+            memory_update: [],
+            plot_label: null,
+            highlight_terms: [],
+          },
+        })
+      },
+    )
+
+    await store.sendStream('你好')
+
+    expect(apiMocks.getArchives).toHaveBeenCalledWith(1)
+    expect((store as any).archives).toHaveLength(1)
+    expect((store as any).archives[0].name).toBe('会话A')
+  })
+
+  it('does not overwrite currentArchive when user switches archive during tail refresh (Bug #26)', async () => {
+    apiMocks.getArchives.mockResolvedValue({ data: [] })
+    apiMocks.generateStoryOptions.mockResolvedValue({ data: { options: [] } })
+
+    const store = useChatStore()
+    store.currentArchive = { id: 1, story_id: 1 } as any
+
+    let resolveArchive: (value: unknown) => void = () => {}
+    apiMocks.getArchive.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveArchive = resolve
+        }),
+    )
+    apiMocks.sendMessageStream.mockImplementation(
+      async (_archiveId: number, _text: string, onEvent: any) => {
+        onEvent({
+          event: 'tail',
+          data: {
+            // 后端换档：tail 携带的 archive_id 与发起流的存档不同
+            archive_id: 2,
+            reply_text: 'AI 回复',
+            character_state: {},
+            story_state: {},
+            memory_update: [],
+            plot_label: null,
+            highlight_terms: [],
+          },
+        })
+      },
+    )
+
+    const sendPromise = store.sendStream('你好')
+    // 等 tail 处理进入 getArchive(2) 的等待窗口
+    await vi.waitFor(() => expect(apiMocks.getArchive).toHaveBeenCalledWith(2))
+    // 用户在此窗口内切到存档 3
+    store.currentArchive = { id: 3, story_id: 1 } as any
+    resolveArchive({ data: { id: 2, story_id: 1, name: '新分支' } })
+    await sendPromise
+
+    // 迟到的 tail 存档响应不得覆盖用户已切换的存档
+    expect(store.currentArchive?.id).toBe(3)
+  })
+
   it('deleteMessages reverts messages on API failure', async () => {
     const store = useChatStore()
     // 模拟 API 抛错

@@ -608,7 +608,7 @@
 
 ---
 
-## Bug #25：`applyTailToStoreState` 调用 `await getArchives(...)` 但结果完全未使用，存档侧栏与实际数据不一致
+## Bug #25：`applyTailToStoreState` 调用 `await getArchives(...)` 但结果完全未使用，存档侧栏与实际数据不一致 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`frontend/src/composables/useChatStream.ts:78-95`（esp. :89-91）
 
@@ -620,9 +620,13 @@
 
 **主循环一眼赞同**：成立（中危）。属真实功能缺失——注释承诺的行为与实际不符。
 
+**修复记录**（fix/core-experience-bugs 分支，与 #26 同 commit，TDD：先红后绿）：
+- `useChatStream` 新增注入依赖 `onRefreshArchives: (storyId: number) => Promise<void>`，`chat.ts` 接线传入真正写回 `archives.value` 的 `fetchArchives`；`applyTailToStoreState` 里丢弃响应的 `await getArchives(...)` 空操作替换为 `await onRefreshArchives(...)`，模块不再导入 `getArchives`。
+- 测试：`chat.spec.ts` 新增"tail 后 getArchives 结果被写入 store.archives 侧栏列表"用例；12 个 store 用例全绿 + vue-tsc 过。
+
 ---
 
-## Bug #26：`applyTailToStoreState` 无 abort / archiveId 校验，与 `loadArchive` / `clearChat` 交叉时窗口内状态错乱
+## Bug #26：`applyTailToStoreState` 无 abort / archiveId 校验，与 `loadArchive` / `clearChat` 交叉时窗口内状态错乱 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`frontend/src/composables/useChatStream.ts:78-95`（`applyTailToStoreState`）；`frontend/src/stores/chat.ts:216-252`（`loadArchive`）/ `:311-337`（`clearChat`）/ `:186-214`（`startNewArchive`）
 
@@ -633,6 +637,11 @@
 **证据**：调用链 `chat.ts:388 sendStream → useChatStream.ts:382 applyTailToStoreState → :86 await getArchive(无 signal)`。并发路径：`loadArchive`（`chat.ts:216`）无 `sending` 守卫（:218 仅 abortStream）覆盖 `currentArchive/messages`；随后 `useChatStream.ts:87` 赋值落地覆盖回来。
 
 **主循环一眼赞同**：成立（重大）。与 Bug #25 同函数，但本条是"竞态破坏"角度而非"功能未实现"。合并报告。
+
+**修复记录**（fix/core-experience-bugs 分支，与 #25 同 commit，TDD：先红后绿）：
+- `await getArchive(finalArchiveId)` 之后、写入 `currentArchive.value` 之前，重新校验 `currentArchive.value?.id === archiveId`（本流所属存档）；不一致说明 await 窗口内用户已切档/清空，直接放弃写入与后续刷新。
+- 裸 `catch {}` 吞错改为 `catch (e) { console.warn('存档信息刷新失败', e) }`，保留 non-fatal 语义但可诊断。
+- 测试：`chat.spec.ts` 新增"tail 携带不同 archive_id、getArchive 等待窗口内用户切到存档 3，迟到响应不得覆盖 currentArchive"竞态用例（修复前红、修复后绿）。
 
 ---
 

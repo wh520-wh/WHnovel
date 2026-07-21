@@ -176,6 +176,7 @@ export const useChatStore = defineStore('chat', () => {
     autoGenerateOptions: optionsModule.autoGenerateOptions,
     onApplyTail: applyTailToAssistant,
     onAutoGenerateOptions: (archiveId) => optionsModule.autoGenerateOptionsAsync(archiveId),
+    onRefreshArchives: (storyId) => fetchArchives(storyId),
     onBeginOptionLock: (option) => optionsModule.beginOptionLock(option),
     onFinishOptionLock: (s) => optionsModule.finishOptionLock(s),
     onClearOptions: () => optionsModule.dismissCurrentOptions(),

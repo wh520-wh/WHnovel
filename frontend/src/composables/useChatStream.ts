@@ -1,4 +1,4 @@
-import { startChatStream, sendMessageStream, getArchive, getArchives } from '../api'
+import { startChatStream, sendMessageStream, getArchive } from '../api'
 import type { ChatStreamEvent, ChatStreamTailData } from '../types/sse'
 import type { ChatMsg, Archive } from '../stores/chat'
 import { sanitizeAiDisplayText, stripTrailingOptionBlock } from '../utils/text'
@@ -34,6 +34,7 @@ export function useChatStream(params: {
   autoGenerateOptions: { value: boolean }
   onApplyTail: (messageId: string | number, tail: ChatStreamTailData) => void
   onAutoGenerateOptions: (archiveId: number) => void
+  onRefreshArchives: (storyId: number) => Promise<void>
   onBeginOptionLock: (option: string) => boolean
   onFinishOptionLock: (success: boolean) => void
   onClearOptions: () => void
@@ -51,6 +52,7 @@ export function useChatStream(params: {
     autoGenerateOptions,
     onApplyTail,
     onAutoGenerateOptions,
+    onRefreshArchives,
     onBeginOptionLock,
     onFinishOptionLock,
     onClearOptions,
@@ -86,13 +88,17 @@ export function useChatStream(params: {
     try {
       if (finalArchiveId !== archiveId) {
         const { data: archive } = await getArchive(finalArchiveId)
+        // Bug #26：await 窗口内用户可能已切档/清空会话，迟到的响应不得覆盖当前存档
+        if (currentArchive.value?.id !== archiveId) return
         currentArchive.value = archive
       }
       if (currentArchive.value) {
-        await getArchives(currentArchive.value.story_id)
+        // Bug #25：刷新结果必须写回侧栏存档列表，而非丢弃响应的空操作
+        await onRefreshArchives(currentArchive.value.story_id)
       }
-    } catch {
+    } catch (e) {
       // archive refresh failed; state was already updated above, non-fatal
+      console.warn('存档信息刷新失败', e)
     }
   }
 
