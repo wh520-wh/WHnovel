@@ -7,6 +7,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 _BASE_CONFIG = ConfigDict(protected_namespaces=())
 
+# 合法图片尺寸——写入校验（本文件 Literal）与消费侧防线（image_generation）
+# 共用此单一事实源；改动时需同步下方 Literal。
+VALID_IMAGE_SIZES = ("1K", "2K", "3K")
+
 
 # ---- Story ----
 class StoryBase(BaseModel):
@@ -303,7 +307,7 @@ class AppSettingsUpdate(BaseModel):
     state_broadcast_prompt: str | None = None
     enable_image_generation: bool | None = None
     default_image_model_id: int | None = None
-    image_size: str | None = None
+    image_size: Literal["1K", "2K", "3K"] | None = None  # 与 VALID_IMAGE_SIZES 同步
     image_watermark: bool | None = None
     default_image_style: str | None = None
     style_skill_enabled: int | None = None

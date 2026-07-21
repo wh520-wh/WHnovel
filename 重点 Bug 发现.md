@@ -486,7 +486,7 @@
 
 ---
 
-## Bug #18：`update_app_settings` 对 `image_size` 不做任何校验，可写任意值，下游所有图片生成 500
+## Bug #18：`update_app_settings` 对 `image_size` 不做任何校验，可写任意值，下游所有图片生成 500 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`backend/app/api/admin.py:384-427`；`backend/app/api/image_generation.py:36-37`
 
@@ -497,6 +497,14 @@
 **证据**：`admin.py:384-427` update_app_settings 全函数；`image_generation.py:36-37` `_IMAGE_SIZES` 校验；`schemas.py` `AppSettingsUpdate` 无 Literal。`update_app_settings` 对 `default_image_model_id` 等其他字段也无校验，是同类问题。
 
 **主循环一眼赞同**：成立（重大）。Bug #3（零认证）放大本条严重性——任意访客可设坏 image_size 让全站图片生成瘫痪。修复：加 Literal 校验 + 消费点兜底。
+
+**修复记录**（fix/core-experience-bugs 分支，TDD：先红后绿；治本：单一事实源）：
+- **设计判断**：合法尺寸集合只定义在最后一道消费点（`image_generation._IMAGE_SIZES`），写入路径（schema/admin）完全不知情——校验知识错位导致非法值只能以 500 的形式被发现。治本是单一事实源 + 写读两侧各一道防线。
+- 写入侧：`schemas.py` 新增 `VALID_IMAGE_SIZES` 单一事实源，`AppSettingsUpdate.image_size` 改 `Literal["1K","2K","3K"] | None`（Pydantic 422，非法值不再落库）。
+- 读取侧：`image_generation.resolve_image_size()` 对存量脏数据（空串/非法值/None）回退 `"2K"`；`stories.py` 5 处与 `admin.py` 2 处读取点统一接入（原先 `or "2K"` 只兜空串、3 处连空串都不兜）。
+- `image_generation._IMAGE_SIZES` 改为引用 `VALID_IMAGE_SIZES`，末道 raise 防线保留。
+- 范围外：`config_backup.py` 的 image_size 导出/导入归 #6 处理。
+- 测试：`test_app_settings_image_size.py`（3 用例：非法值 422 且不落库、合法值正常、resolve 兜底矩阵）。相关 31 用例全绿 + ruff 过。
 
 ---
 

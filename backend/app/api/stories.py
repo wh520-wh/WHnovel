@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..database import get_db
 from ..redis_client import get_redis
-from .image_generation import generate_background_image, generate_cover_image
+from .image_generation import generate_background_image, generate_cover_image, resolve_image_size
 from .story_generate import generate_story_with_cover
 
 router = APIRouter(prefix="/api/stories", tags=["stories"])
@@ -182,7 +182,7 @@ def ai_generate_story(
 
     # 2. 获取 AppSettings 图片相关配置（size/watermark/style 仍从全局设置读取）
     app_settings = db.query(models.AppSettings).first()
-    image_size = app_settings.image_size if app_settings else "2K"
+    image_size = resolve_image_size(app_settings.image_size if app_settings else None)
     image_watermark = bool(app_settings and app_settings.image_watermark)
 
     # 3. 解析封面图模型
@@ -288,7 +288,7 @@ def ai_generate_cover(
             world_setting=payload.world_setting,
             title=payload.title,
             story_id=0,
-            size=app_settings.image_size or "2K",
+            size=resolve_image_size(app_settings.image_size),
             watermark=bool(app_settings.image_watermark),
             style=payload.image_style or "",
         )
@@ -336,7 +336,7 @@ def regenerate_cover(
             world_setting=story.world_setting,
             title=story.title,
             story_id=story_id,
-            size=app_settings.image_size or "2K",
+            size=resolve_image_size(app_settings.image_size),
             watermark=bool(app_settings.image_watermark),
             style=story.image_style or "",
         )
@@ -373,7 +373,7 @@ def generate_cover_for_story(
         raise HTTPException(503, "指定的图片模型不可用")
 
     app_settings = db.query(models.AppSettings).first()
-    image_size = app_settings.image_size if app_settings else "2K"
+    image_size = resolve_image_size(app_settings.image_size if app_settings else None)
     image_watermark = bool(app_settings and app_settings.image_watermark)
     style = story.image_style or (app_settings.default_image_style if app_settings else "")
 
@@ -419,7 +419,7 @@ def generate_background_for_story(
         raise HTTPException(503, "指定的图片模型不可用")
 
     app_settings = db.query(models.AppSettings).first()
-    image_size = app_settings.image_size if app_settings else "2K"
+    image_size = resolve_image_size(app_settings.image_size if app_settings else None)
     image_watermark = bool(app_settings and app_settings.image_watermark)
     style = story.image_style or (app_settings.default_image_style if app_settings else "")
 

@@ -19,6 +19,7 @@ from ..crypto import decrypt_safe, encrypt
 from ..database import get_db
 from ..prompts.defaults import infer_prompt_source
 from ..redis_client import get_redis
+from .image_generation import resolve_image_size
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 logger = logging.getLogger(__name__)
@@ -335,7 +336,7 @@ def _to_app_settings_out(s: models.AppSettings) -> schemas.AppSettingsOut:
         state_broadcast_prompt=s.state_broadcast_prompt or "",
         enable_image_generation=bool(s.enable_image_generation),
         default_image_model_id=s.default_image_model_id,
-        image_size=s.image_size or "2K",
+        image_size=resolve_image_size(s.image_size),
         image_watermark=bool(s.image_watermark),
         default_image_style=s.default_image_style or "唯美、氛围感强，适合作为小说封面",
         style_skill_enabled=s.style_skill_enabled or 0,
@@ -366,7 +367,7 @@ def get_app_settings(db: Session = Depends(get_db)):
             "state_broadcast_prompt": s.state_broadcast_prompt or "",
             "enable_image_generation": bool(s.enable_image_generation),
             "default_image_model_id": s.default_image_model_id,
-            "image_size": s.image_size or "2K",
+            "image_size": resolve_image_size(s.image_size),
             "image_watermark": bool(s.image_watermark),
             "default_image_style": s.default_image_style or "唯美、氛围感强，适合作为小说封面",
             "style_skill_enabled": s.style_skill_enabled or 0,

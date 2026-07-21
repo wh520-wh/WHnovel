@@ -11,9 +11,15 @@ import httpx
 
 from ..crypto import decrypt
 from ..prompts.image_gen import _build_background_prompt, _build_cover_prompt
+from ..schemas import VALID_IMAGE_SIZES
 
 STATIC_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images"
-_IMAGE_SIZES = ("1K", "2K", "3K")
+_IMAGE_SIZES = VALID_IMAGE_SIZES
+
+
+def resolve_image_size(value: str | None) -> str:
+    """读取侧兜底：存量脏数据（空串/非法值/None）回退 "2K"，不再让下游 500。"""
+    return value if value in VALID_IMAGE_SIZES else "2K"
 
 
 def _call_image_api(
