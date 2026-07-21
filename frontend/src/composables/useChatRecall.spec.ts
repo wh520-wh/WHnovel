@@ -1,10 +1,15 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import { useChatRecall } from './useChatRecall'
+import { deleteLastAiMessage } from '../api'
 
 vi.mock('../api', () => ({
   deleteLastAiMessage: vi.fn(async () => {}),
 }))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 function makeMsg(
   overrides: Partial<{
@@ -61,6 +66,9 @@ describe('useChatRecall', () => {
       currentState,
       currentStoryState,
       currentMemoryLog,
+      streaming: ref(false),
+      sending: ref(false),
+      awaitingTail: ref(false),
       onFinishOptionLock: vi.fn(),
       onClearOptions: vi.fn(),
       onClearHighlightTerms: vi.fn(),
@@ -92,6 +100,9 @@ describe('useChatRecall', () => {
       currentState,
       currentStoryState,
       currentMemoryLog,
+      streaming: ref(false),
+      sending: ref(false),
+      awaitingTail: ref(false),
       onFinishOptionLock: vi.fn(),
       onClearOptions: vi.fn(),
       onClearHighlightTerms: vi.fn(),
@@ -103,5 +114,52 @@ describe('useChatRecall', () => {
     expect(currentState.value).toEqual({})
     expect(currentStoryState.value).toEqual({})
     expect(currentMemoryLog.value).toEqual([])
+  })
+
+  it('blocks recall while streaming / sending / awaitingTail (Bug #29)', async () => {
+    const messages = ref([
+      makeMsg({ id: 1, role: 'user', persisted: true }),
+      makeMsg({ id: 'a1', role: 'assistant', persisted: true }),
+    ])
+    const currentArchive = ref({ id: 1 } as any)
+    const streaming = ref(true)
+    const sending = ref(false)
+    const awaitingTail = ref(false)
+
+    const recall = useChatRecall({
+      messages,
+      currentArchive,
+      currentState: ref({}),
+      currentStoryState: ref({}),
+      currentMemoryLog: ref([]),
+      streaming,
+      sending,
+      awaitingTail,
+      onFinishOptionLock: vi.fn(),
+      onClearOptions: vi.fn(),
+      onClearHighlightTerms: vi.fn(),
+    })
+
+    // 流式进行中：入口与函数双守卫
+    expect(recall.canRecallLastRound.value).toBe(false)
+    expect(await recall.recallLastRound()).toEqual([])
+
+    // awaitingTail 窗口（text_end 已到、tail 未到）同样禁止
+    streaming.value = false
+    awaitingTail.value = true
+    expect(recall.canRecallLastRound.value).toBe(false)
+    expect(await recall.recallLastRound()).toEqual([])
+
+    // sending 窗口同样禁止
+    awaitingTail.value = false
+    sending.value = true
+    expect(recall.canRecallLastRound.value).toBe(false)
+    expect(await recall.recallLastRound()).toEqual([])
+
+    // 全部解除后恢复可用
+    sending.value = false
+    expect(recall.canRecallLastRound.value).toBe(true)
+
+    expect(deleteLastAiMessage).not.toHaveBeenCalled()
   })
 })

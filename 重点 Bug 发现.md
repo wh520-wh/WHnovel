@@ -656,7 +656,7 @@
 
 ---
 
-## Bug #29：`recallLastRound` 未检查 `streaming` / `sending` / `awaitingTail`，可在 `awaitingTail` 窗口误删正在生成的消息
+## Bug #29：`recallLastRound` 未检查 `streaming` / `sending` / `awaitingTail`，可在 `awaitingTail` 窗口误删正在生成的消息 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`frontend/src/composables/useChatRecall.ts:47-60`；`frontend/src/stores/chat.ts:432`
 
@@ -667,6 +667,12 @@
 **证据**：`useChatRecall.ts:47-60` 判断条件只有 `currentArchive.value`、`recallInProgress.value` 和 `isMessagePersisted(lastAiMsg)`；`chat.ts:432` 直接返回 `recallModule.recallLastRound`。与 Bug #7（recall 回滚不彻底，已修复）的写入侧不同——本条是触发侧的竞态。
 
 **主循环一眼赞同**：成立（中危）。Bug #7 修了写入侧，本条是触发侧，属 Bug #7 修复未覆盖的相邻问题。
+
+**修复记录**（fix/core-experience-bugs 分支，TDD：先红后绿）：
+- **设计判断**：`useChatRecall` 根本接收不到流式状态——守卫无处安放，只能裸露。属"缺输入"而非"缺分支"，治本是把流式状态作为一等依赖注入。
+- `useChatRecall` 新增 `streaming` / `sending` / `awaitingTail` 三个依赖；抽出 `isStreamActive()` 单一守卫，`recallLastRound`（函数体防线）与 `canRecallLastRound`（入口防线，StoryPlay 菜单项随之在流式期间自动置灰）共用。
+- `chat.ts` 接线补三个 uiModule ref；两个既有 spec 实例化同步补参数。
+- 测试：`useChatRecall.spec.ts` 新增"streaming/awaitingTail/sending 三窗口均阻断 + 解除后恢复可用 + API 零调用"用例；12 个相关用例全绿 + vue-tsc 过。
 
 ---
 

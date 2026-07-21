@@ -151,6 +151,9 @@ export const useChatStore = defineStore('chat', () => {
     currentState,
     currentStoryState,
     currentMemoryLog,
+    streaming: uiModule.streaming,
+    sending: uiModule.sending,
+    awaitingTail: uiModule.awaitingTail as unknown as { value: boolean },
     onFinishOptionLock: (s) => optionsModule.finishOptionLock(s),
     onClearOptions: () => optionsModule.dismissCurrentOptions(),
     onClearHighlightTerms: () => {

@@ -8,6 +8,9 @@ export function useChatRecall(params: {
   currentState: { value: Record<string, any> }
   currentStoryState: { value: Record<string, any> }
   currentMemoryLog: { value: string[] }
+  streaming: { value: boolean }
+  sending: { value: boolean }
+  awaitingTail: { value: boolean }
   onFinishOptionLock: (success: boolean) => void
   onClearOptions: () => void
   onClearHighlightTerms: () => void
@@ -18,11 +21,20 @@ export function useChatRecall(params: {
     currentState,
     currentStoryState,
     currentMemoryLog,
+    streaming,
+    sending,
+    awaitingTail,
     onFinishOptionLock,
     onClearOptions,
     onClearHighlightTerms,
   } = params
   const recallInProgress = ref(false)
+
+  // Bug #29：流式进行中（含 awaitingTail 窗口）撤回会删掉正在生成/刚生成的消息，
+  // 导致消息列表、选项锁、状态不一致——入口与函数体共用同一守卫
+  function isStreamActive(): boolean {
+    return streaming.value || sending.value || awaitingTail.value
+  }
 
   function isMessagePersisted(message: ChatMsg | undefined): boolean {
     if (!message) return false
@@ -47,6 +59,10 @@ export function useChatRecall(params: {
   async function recallLastRound(): Promise<(string | number)[]> {
     if (!currentArchive.value) return []
     if (recallInProgress.value) return []
+    if (isStreamActive()) {
+      console.warn('[recallLastRound] 流式生成进行中，跳过撤回')
+      return []
+    }
     recallInProgress.value = true
     let markedIds: (string | number)[] = []
     try {
@@ -106,6 +122,7 @@ export function useChatRecall(params: {
 
   const canRecallLastRound = computed(() => {
     if (!currentArchive.value) return false
+    if (isStreamActive()) return false
     const lastAiIdx = getLastAssistantIndex()
     if (lastAiIdx === -1) return false
     return isMessagePersisted(messages.value[lastAiIdx])
