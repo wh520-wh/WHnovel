@@ -409,7 +409,7 @@
 
 ---
 
-## Bug #13：流式期间不持行锁，撤回/批量删除/状态播报写入与 `_persist_exchange` 交叉覆盖，造成状态/记忆损坏
+## Bug #13：流式期间不持行锁，撤回/批量删除/状态播报写入与 `_persist_exchange` 交叉覆盖，造成状态/记忆损坏 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支，治本：统一锁模型）
 
 **位置**：
 - `backend/app/api/chat_router.py:507-576` `delete_last_ai_message`（仅 with_for_update，未获取 stream_lock）
@@ -425,6 +425,13 @@
 **证据**：`chat_router.py:507-576` delete_last_ai_message 只 `with_for_update()`（:510）；`:579-591` bulk_delete 无锁；`:594-664` state_broadcast 无锁；流式 `chat_stream.py:218-405` 不持 archive 行锁；`_persist_exchange`（`chat_storage.py:346+`）读 archive 字段后 commit。Bug #7（recall 回滚不彻底，已修复）属本类的子集。
 
 **主循环一眼赞同**：成立（重大）。Bug #7 已修一类路径，但 delete/bulk/state_broadcast 三类写入仍是裸的；前端任意时序操作都可能触发。
+
+**修复记录**（2026-07-21，fix/core-experience-bugs 分支，治本：统一锁模型，TDD：先红后绿）：
+- **方案选择**：不打"各端点各自加行锁"的补丁，而是把三个写入端点统一接入与 `/send-stream` `/send` 相同的 `_acquire_stream_generation_lock`（per-archive，Redis → threading 降级，**非阻塞**，冲突立即 409"该会话正在生成回复，请稍后重试"）。非阻塞语义保证无死锁（无锁等待即无 AB-BA），且与既有并发冲突处理模式一致。前端 #29 已挡撤回入口，本修复关闭的是后端裸路径（其它客户端/竞态窗口）。
+- **实现**：`delete_last_ai_message` / `generate_state_broadcast` 端点函数改为薄包装（取锁后调用抽出的 `_delete_last_ai_message` / `_generate_state_broadcast` 私有实现），`bulk_delete_messages_endpoint` 直接整体包入 `with`；锁均在任何 DB 写事务之前获取，锁顺序与流式路径一致（先 per-archive 锁、后 DB）。
+- **死锁与兼容性审计**：锁工厂 `lock.acquire(blocking=False)` / Redis SET NX 均无等待；`with_for_update` 在 SQLite 无行锁语义；#7 的 `pre_*` 回滚逻辑在锁内执行，行为不变（test_recall_rollback / test_recall_delete / test_bulk_delete 共 25 用例未改动全绿）。
+- **测试**：`test_chat_stream_concurrency_lock.py` 新增"锁持有期间三端点均 409、锁释放后恢复正常（404 而非 409）"用例（修复前红——端点无视锁直接走到业务逻辑）；文件 8 用例全绿。
+- **遗留（Minor，未修）**：Redis 模式下 stream 锁 `ttl=60`（`chat_stream.py:104`）短于最长流式时长（~360s），锁可能中途过期使互斥窗口提前失效（该缺陷先于本修复存在，同样影响流式-vs-流式互斥）。默认无 Redis 部署走 threading 锁无 TTL 问题。调整 TTL 涉及"流卡死后的锁恢复窗口"权衡，建议独立评估，不在本 commit 范围。
 
 ---
 

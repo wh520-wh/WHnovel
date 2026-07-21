@@ -506,6 +506,14 @@ def get_story_nodes(archive_id: int, db: Session = Depends(get_db)):
 
 @router.delete("/messages/{archive_id}/last-ai")
 def delete_last_ai_message(archive_id: int, db: Session = Depends(get_db)):
+    # Bug #13：写入端点与流式生成统一 per-archive 锁（非阻塞，冲突即 409）。
+    # 否则流式 _persist_exchange 会用生成开始时读到的旧 archive 快照，
+    # 覆盖本端点刚回滚的 state/story/memory，造成状态/记忆损坏。
+    with _acquire_stream_generation_lock(archive_id):
+        return _delete_last_ai_message(db, archive_id)
+
+
+def _delete_last_ai_message(db: Session, archive_id: int):
     archive = (
         db.query(models.Archive).filter(models.Archive.id == archive_id).with_for_update().first()
     )
@@ -580,19 +588,29 @@ def delete_last_ai_message(archive_id: int, db: Session = Depends(get_db)):
 def bulk_delete_messages_endpoint(
     archive_id: int, body: schemas.BulkDeleteRequest, db: Session = Depends(get_db)
 ):
-    archive = db.query(models.Archive).filter(models.Archive.id == archive_id).first()
-    if not archive:
-        raise HTTPException(404, "会话不存在")
+    # Bug #13：与流式生成统一 per-archive 锁（见 delete_last_ai_message 注释）
+    with _acquire_stream_generation_lock(archive_id):
+        archive = db.query(models.Archive).filter(models.Archive.id == archive_id).first()
+        if not archive:
+            raise HTTPException(404, "会话不存在")
 
-    if not body.message_ids:
-        return schemas.BulkDeleteResponse(deleted=0)
+        if not body.message_ids:
+            return schemas.BulkDeleteResponse(deleted=0)
 
-    deleted = bulk_delete_messages(db, archive_id, body.message_ids)
-    return schemas.BulkDeleteResponse(deleted=deleted)
+        deleted = bulk_delete_messages(db, archive_id, body.message_ids)
+        return schemas.BulkDeleteResponse(deleted=deleted)
 
 
 @router.post("/state-broadcast", response_model=schemas.StateBroadcastOut)
 def generate_state_broadcast(payload: schemas.StateBroadcastIn, db: Session = Depends(get_db)):
+    # Bug #13：与流式生成统一 per-archive 锁（见 delete_last_ai_message 注释）。
+    # 本端点自身也是长 LLM 调用，持锁期间同会话的流式/写入请求会 409，
+    # 保证读取 archive 状态与追加播报消息不与流式持久化交叉。
+    with _acquire_stream_generation_lock(payload.archive_id):
+        return _generate_state_broadcast(db, payload)
+
+
+def _generate_state_broadcast(db: Session, payload: schemas.StateBroadcastIn):
     archive = db.query(models.Archive).filter(models.Archive.id == payload.archive_id).first()
     if not archive:
         raise HTTPException(404, "会话不存在")

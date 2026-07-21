@@ -219,6 +219,39 @@ def test_stream_endpoint_holds_lock_while_body_iterator_is_active(monkeypatch):
     t1.join(timeout=2)
 
 
+def test_write_endpoints_rejected_while_stream_lock_held():
+    """Bug #13：流式锁持有期间，撤回/批量删除/状态播报三个写入端点必须 409，
+    不得与流式的 _persist_exchange 并发写同一 archive。"""
+    archive_id = 55553
+    _stream_generation_locks.pop(archive_id, None)
+
+    from app.api import chat_router
+
+    mock_db = MagicMock()
+
+    with _acquire_stream_generation_lock(archive_id):
+        with pytest.raises(HTTPException) as exc:
+            chat_router.delete_last_ai_message(archive_id, mock_db)
+        assert exc.value.status_code == 409
+
+        with pytest.raises(HTTPException) as exc:
+            chat_router.bulk_delete_messages_endpoint(
+                archive_id, MagicMock(message_ids=[1, 2]), mock_db
+            )
+        assert exc.value.status_code == 409
+
+        with pytest.raises(HTTPException) as exc:
+            chat_router.generate_state_broadcast(MagicMock(archive_id=archive_id), mock_db)
+        assert exc.value.status_code == 409
+
+    # 锁释放后（流式结束），写入端点恢复可用——走到 DB 查询而非 409
+    mock_db.query.return_value.filter.return_value.with_for_update.return_value.first.return_value = None
+    mock_db.query.return_value.filter.return_value.first.return_value = None
+    with pytest.raises(HTTPException) as exc:
+        chat_router.delete_last_ai_message(archive_id, mock_db)
+    assert exc.value.status_code == 404  # 会话不存在，而非 409
+
+
 def test_image_lock_blocks_concurrent_requests():
     """Second concurrent image gen request for same archive should be rejected."""
     archive_id = 77772
