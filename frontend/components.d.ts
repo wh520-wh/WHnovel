@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     ArchiveList: typeof import('./src/components/ArchiveList.vue')['default']
+    ArchiveMemoryPanel: typeof import('./src/components/ArchiveMemoryPanel.vue')['default']
     BubbleMenu: typeof import('./src/components/BubbleMenu.vue')['default']
     ChatComposer: typeof import('./src/components/ChatComposer.vue')['default']
     ChatMessage: typeof import('./src/components/ChatMessage.vue')['default']
@@ -42,7 +43,6 @@ declare module 'vue' {
     ElTabs: typeof import('element-plus/es')['ElTabs']
     ElTag: typeof import('element-plus/es')['ElTag']
     LogDialog: typeof import('./src/components/LogDialog.vue')['default']
-    ArchiveMemoryPanel: typeof import('./src/components/ArchiveMemoryPanel.vue')['default']
     ModelSelect: typeof import('./src/components/ModelSelect.vue')['default']
     PillNav: typeof import('./src/components/PillNav.vue')['default']
     QuickOptions: typeof import('./src/components/QuickOptions.vue')['default']

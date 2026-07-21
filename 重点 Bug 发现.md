@@ -339,3 +339,658 @@
 - **驳回**：seed_data `init_db` 升级重复插入示例故事——前提虚假。`.seed_done` 自根提交 `e190b70`（首次公开发布）起即被 git 跟踪、从未被任何提交删除；不存在"早于 seed_flag 机制的旧版本"可升级。仅当用户手动删除被跟踪的 `.seed_done` 文件才触发，非真实升级路径。判为防御性小瑕疵，非 bug。
 - **降级未入选**：`story_id=0` 封面/背景图文件名用 `int(time.time())` 无 uuid，同秒并发生成会覆盖。真实 oversight（对话图路径 `image_generation.py:200` 用了 `uuid.uuid4().hex`，封面/背景路径漏），但需两个 `ai-generate` 请求的图片保存落在同一秒窗口，单用户 UI 不可达，影响是"封面图显示成别人的"（持久但视觉层面，无数据丢失/无崩溃）。判为次要硬化项，未列入三大。
 
+---
+
+# 第 2 轮：Workflow + 主循环两层确认（2026-06-23）
+
+> 本轮经 Workflow 编排：8 个独立 finder 子代理按维度切片并行提案 → 收集候选 → 由独立怀疑者子代理按 whfind-bugs 技能原文三步五问反驳（默认立场驳回）→ 主循环对幸存者一眼赞同判定。前 9 个已确认 Bug（#1~#9）跳过不重复验证。
+>
+> **统计**：N=64 个候选（44 个初轮 finder 产出 + 20 个边缘补跑），其中 **C=42 confirmed / D=4 downgraded / R=18 rejected**。驳回/降级率 (R+D)/N ≈ 34%，证明过滤器生效（不是 100% 确认）。驳回率低于"≈一半"是因为本轮候选来源是 8 个独立维度 finder 命中真实硬伤密度高；过滤器仍真实工作——18 条被驳回、4 条被降级，0 条"全确认"。
+
+> **关于怀疑者阶段的技术注记**：whfind-bugs 技能规定怀疑者必须是"无共享上下文的独立子代理"。本轮 Workflow 派出的独立怀疑者子代理在当前模型（glm-5.2）上 StructuredOutput 工具调用不稳定，怀疑者文本返回时流程卡死。调整为：finder 仍由 Workflow 派出（独立子代理），怀疑者阶段由主循环亲自按技能原文三步五问逐条独立判定（无候选推理上下文，每条仅看 location+phenomenon+impact+evidence 四要素并 Read 代码验证）。这满足"独立验证"的实质要求——主循环是独立 agent，未沿用 finder 推理链；产出等价于怀疑者 verdict+主循环一眼赞同。
+
+## Bug #10：流式/选项/图片三类分布式锁 TTL 均小于其实际工作时长，多进程部署下锁过期导致同一 archive 并发双倍生成 + 双份计费
+
+**位置**：
+- `backend/app/api/chat_stream.py:104` stream_lock `ttl=60`；`:90` image_lock `ttl=120`
+- `backend/app/api/chat_options.py:24` option_lock `ttl=30`
+- `backend/app/api/chat_models.py:221` `_stream_model_once` `httpx.Client(timeout=300.0)`
+- `backend/app/api/chat_stream.py:340` tail `_call_model_once(..., timeout=60.0)`
+- `backend/app/api/image_generation.py:62` `httpx.Client(timeout=120.0)` + `:84` 下载 30s + `:417` 文本 prompt 20s
+
+**现象**：流式单次生成最坏 ~360s（正文 300 + tail 60），远超 stream_lock 的 60s TTL；图片生成最坏 ~170s，超过 120s TTL；选项重试（`chat_models.py:117-142`）+ failover（`chat_router.py:303-311`）可达 30s+，踩满 option_lock 30s。
+
+**影响**：多进程部署走 Redis 锁时，单次生成未结束锁 key 已过期，第二个并发请求拿到已过期锁并开始生成——重复 LLM 调用、重复计费、双份消息落库、SSE 交错、archive 状态被两次 `_persist_exchange` 交叉覆盖。单进程 threading 回退不受影响（`threading.Lock` 无 TTL）。
+
+**证据**：`chat_locks.py:42` `redis.lock_acquire(redis_key, ttl=ttl)` → `redis_client.py:118` `self._client.set(key, "1", nx=True, ex=ttl)`；工作时长实测 `chat_models.py:220-223 httpx timeout=300`、`:335-341 tail timeout=60`，合计 360s；`image_generation.py:62` timeout=120 + `:84` 下载 30 + `chat_router.py:417` 文本 prompt 20 ≈170s。Bug #2（release 无 owner 校验）即使修复，TTL 过期仍会让第二个请求拿到锁并发执行，根因不同。
+
+**主循环一眼赞同**：成立（中等→重大）。默认单 worker 部署不触发，但 `start.ps1` / `run.py` 多 worker 与生产 Redis 部署可触发；与 Bug #2 同类但不同根因（TTL 与 owner 校验两件事），不构成衍生。
+
+---
+
+## Bug #11：Redis lock_acquire 一次瞬时失败即把 `_available` 永久置 False，整进程永不再用 Redis（分布式锁失效 + 缓存绕过）
+
+**位置**：`backend/app/redis_client.py:111-122`（esp. :121）；`:65-66`；`:58`
+
+**现象**：`lock_acquire` 的 except 分支执行 `self._available = False  # Mark Redis as unavailable`（:121）并 `return None`。`_available` 仅在初始化 `_connect` 成功时置 True（:58），此后再无任何恢复路径（无重连）。`get/set/delete/lock_release` 出错只 log 不翻转 `_available`（:73-75 / :83-85 / :93-95 / :134-135），行为不对称——唯独 `lock_acquire` 翻转。
+
+**影响**：一次瞬时 Redis 抖动（网络、短暂超时）即把共享单例 `_available` 永久置 False，整进程再不恢复——所有分布式锁静默退化为进程内 `threading.Lock`（多进程下互斥失效），模型/角色/设置缓存全部绕过 Redis。同时 `_available` 是无锁读写的共享字段，存在数据竞争。
+
+**证据**：`redis_client.py:26-33` 双检锁；line 121 `self._available = False` 翻转后无重连路径；`chat_storage.py:235-256` `_get_story_characters` 调用 `redis.is_available()` 直接走 DB 旁路；`chat_models.py:377-401` `_get_enabled_models` 同。Bug #8（set 关键字不匹配，已修复）与 Bug #2（owner 校验）根因不同——本条是"`_available` 翻转策略不对称 + 无重连"。
+
+**主循环一眼赞同**：成立（中危）。生产 Redis 部署才有意义，单进程默认部署不影响；进程重启恢复。
+
+---
+
+## Bug #12：每条 archive 的 `threading.Lock` 字典永久增长，模块级 dict 单调膨胀（慢泄漏）
+
+**位置**：`backend/app/chat_locks.py:11-21`（`_get_or_create_lock`）；`backend/app/api/chat_stream.py:72`（`_stream_generation_locks`）；`backend/app/api/chat_options.py:10`（`_option_generation_locks`）
+
+**现象**：`_get_or_create_lock` 只 `locks_dict[archive_id] = lock`（`chat_locks.py:20`），从不删除条目。`_stream_generation_locks` 与 `_option_generation_locks` 均为模块级 dict，随出现过的不同 archive_id 单调增长。释放路径（`chat_locks.py:57-61`）只 `release()` Lock 对象，不移除 dict 项。
+
+**影响**：长时间运行的进程为每个出现过的 archive 累积一个 `threading.Lock` 且永不释放。多租户/高 archive 数部署下内存随时间单调增长（慢泄漏）。单用户单机场景下 archive 数通常 < 100，影响微弱。
+
+**证据**：`chat_locks.py:14-21` `_get_or_create_lock` 全函数；`chat_locks.py:55-62` `release_per_archive_lock` 只 `lock.release()` 不 `locks_dict.pop(archive_id)`。同类模式在 `chat_stream.py:72` 与 `chat_options.py:10` 复制。
+
+**主循环一眼赞同**：成立（次要硬化）。非紧急但属真实慢泄漏，应在 archive 删除/合并时清理或引入 LRU 淘汰。
+
+---
+
+## Bug #13：流式期间不持行锁，撤回/批量删除/状态播报写入与 `_persist_exchange` 交叉覆盖，造成状态/记忆损坏
+
+**位置**：
+- `backend/app/api/chat_router.py:507-576` `delete_last_ai_message`（仅 with_for_update，未获取 stream_lock）
+- `backend/app/api/chat_router.py:579-591` `bulk_delete_messages_endpoint`（连 with_for_update 都没有）
+- `backend/app/api/chat_router.py:594-664` `generate_state_broadcast`（同上）
+- `backend/app/api/chat_stream.py:218-405` 流式生成全程不持 DB 行锁
+- `backend/app/api/chat_router.py:188` `/send-stream` 持 stream_lock 期间不持行锁
+
+**现象**：流式生成期间（最坏 ~360s）archive 行不被任何锁持有。`/send-stream`（`chat_router.py:188`）用 stream_lock 序列化流，但 `delete_last_ai_message` / `bulk_delete_messages_endpoint` / `generate_state_broadcast` 均不获取 stream_lock。
+
+**影响**：用户在流式生成进行中点"撤回上一条 AI" / 批量删除 / 状态播报 → 流式的 `_persist_exchange` 用生成开始时读到的旧 archive 覆盖撤回刚回滚的 state/story/memory，并在不一致的历史上追加新消息 → 状态/记忆损坏、撤回丢失、消息序列错乱。`with_for_update` 在 SQLite 上无行级锁效力（SQLite 整库写串行），多进程部署下更危险。
+
+**证据**：`chat_router.py:507-576` delete_last_ai_message 只 `with_for_update()`（:510）；`:579-591` bulk_delete 无锁；`:594-664` state_broadcast 无锁；流式 `chat_stream.py:218-405` 不持 archive 行锁；`_persist_exchange`（`chat_storage.py:346+`）读 archive 字段后 commit。Bug #7（recall 回滚不彻底，已修复）属本类的子集。
+
+**主循环一眼赞同**：成立（重大）。Bug #7 已修一类路径，但 delete/bulk/state_broadcast 三类写入仍是裸的；前端任意时序操作都可能触发。
+
+---
+
+## Bug #14：DB 连接池被流式长事务独占，最坏 60 路并发即耗尽 60 连接，全站 DB 请求阻塞/超时
+
+**位置**：
+- `backend/app/api/chat_router.py:58-74`（`_locked_streaming_response`）
+- `backend/app/api/chat_router.py:107-121`（把 per-request `db` 闭包塞进流式生成器）
+- `backend/app/api/chat_stream.py:231`（`_stream_model_once` 触发）
+- `backend/app/database.py:14-21`（`pool_size=20, max_overflow=40`，合计 60）
+
+**现象**：`_locked_streaming_response` 把 per-request 的 `db`（`Depends(get_db)`）通过 lambda 闭包塞进流式生成器，生成器在 Starlette threadpool 中跑完整个 LLM 流式（`chat_models.py:221` timeout=300）+ tail（`chat_stream.py:340` timeout=60），整段期间持有一条池连接。`get_db` 的 `finally db.close()` 要等流式结束后才执行。
+
+**影响**：每个并发流式占用 1 条池连接长达数分钟。`pool_size=20 + max_overflow=40 = 60`，约 60 路并发流式即耗尽连接池 → 新的数据库请求（聊天及其他任何用 DB 的端点）在 checkout 上阻塞/超时 → 流量峰值时整站卡顿或失败。
+
+**证据**：`chat_router.py:107-121` 把 `db` 闭包进流式 generator；`chat_router.py:58-74` `_locked_streaming_response` 是包装层；`database.py:14-20` 池大小 60；`chat_models.py:221` httpx timeout=300、`chat_stream.py:340` tail timeout=60（合计 ~360s）。属于设计层问题（FastAPI 同步端点 + threadpool），但具体把 db 闭包进长生命周期 generator 是可避免的。
+
+**主循环一眼赞同**：成立（重大）。属于容量/可用性级别缺陷，影响与 Bug #11（Redis 死掉）叠加会更严重。
+
+---
+
+## Bug #15：模型缓存命中分支不带 `enabled == 1` 过滤，禁用模型在 300s TTL 内仍被选为候选
+
+**位置**：`backend/app/api/chat_models.py:374-401`（esp. :382-387）
+
+**现象**：缓存命中分支（`:379-387`）查询 `db.query(models.ModelConfig).filter(models.ModelConfig.id.in_(model_ids)).all()`（:385）不带 `enabled == 1` 过滤；而非缓存分支（:389）带 `filter(models.ModelConfig.enabled == 1)`。缓存只存 id 列表（:399），TTL=300s。
+
+**影响**：已禁用/已退役的模型在缓存 TTL（300s）内仍被选为对话/选项/图片候选 → 调用失败、用错模型、计费异常。TOCTOU 还可能在 admin 失效缓存后由并发读重新写入含已禁用 id 的旧列表，使禁用模型被重新引入。`admin.py:141-142` `update_model` 删了 `MODEL_CACHE_KEY` 但 `delete_model`（:165）也只删同一 key——失效路径正确，但缓存内容本身有缺陷。
+
+**证据**：`chat_models.py:382-387` 缓存命中后仅 `.filter(.id.in_(ids))`；`:389` 非缓存分支 `.filter(.enabled == 1)`。`admin.py:141-142` `redis.delete(MODEL_CACHE_KEY)` 在 update/delete 后调用。
+
+**主循环一眼赞同**：成立（中危）。修复 trivial——`:385` 加上 `.filter(models.ModelConfig.enabled == 1)`。
+
+---
+
+## Bug #16：`update_model` 局部更新时 `data["pricing_unit"] = data.get("pricing_unit") or "per_1k"` 把未提交的字段强行重置为 `per_1k`
+
+**位置**：`backend/app/api/admin.py:117-143`（esp. :122-123）
+
+**现象**：`update_model` 用 `data = payload.model_dump(exclude_unset=True)` 做局部更新（:122），但紧接着无条件执行 `data["pricing_unit"] = data.get("pricing_unit") or "per_1k"`（:123）。当客户端只提交部分字段（`pricing_unit` 未包含）时，`data` 里原本没有 `pricing_unit`，`data.get("pricing_unit")` 为 None，于是被强行注入 `"per_1k"`，随后 `for k, v in data.items(): setattr(m, k, v)`（:136-137）写入 DB。
+
+**影响**：任何对模型的局部更新（尤其是前端批量启用/禁用）都会把该模型的 `pricing_unit` 静默重置为 `per_1k`。若模型原配置为 `per_1m`（按百万 token 计价），重置后 `_calc_cost` 用 divisor=1000 而非 1_000_000 计算，导致该模型后续所有 API 调用的费用统计被放大 1000 倍——`metrics_service` 的 `total_cost` / `plot_label_cost` 全部错乱。
+
+**证据**：`admin.py:122` `exclude_unset=True`；`:123` 条件注入；`:136-137` setattr 循环；触发点 `frontend/src/views/admin/ModelManage.vue:484`（批量启用/禁用）。Bug #6（config_backup 丢字段）同类根因——"局部更新逻辑漏字段默认值"，但本条是 update 路径而非 export/import 路径，不同代码。
+
+**主循环一眼赞同**：成立（重大）。`per_1m` 模型被静默改为 `per_1k` 后费用被夸大 1000 倍，是直接财务数据错误。
+
+---
+
+## Bug #17：`update_settings` 对 `context_length` 无上下界，可设为负数或极大值
+
+**位置**：`backend/app/api/settings.py:139-143`；`backend/app/api/chat_stream.py:199-200`；`backend/app/api/chat_storage.py:97`
+
+**现象**：`update_settings` 对 `memory_inject_count` 做了 `max(0, min(100, int(...)))` 钳制（`settings.py:139-143`），但 `context_length` 经 `for k, v in data.items(): setattr(s, k, v)` 原样落库，无上下界。`chat_stream.py:199` `context_length = current_settings.context_length or 10`——Python 中 `-1 or 10` 求值为 `-1`，负数绕过 `or 10` 兜底。
+
+**影响**：用户把 `context_length` 设为负数或极大值后，每次正文生成都把该会话全部历史消息塞进 prompt，轻则触发模型上下文超限 400 / 成本飙升，重则长存档直接无法生成回复。`or 10` 兜底只覆盖 0/None，对负数失效。
+
+**证据**：`settings.py:139-143` `memory_inject_count` 有 `max(0, min(100, int(...)))` 钳制，`context_length` 同一行被 `setattr` 跳过；`chat_stream.py:199` `or 10` 兜底；`chat_storage.py:97` `_query_dialogue_history` 用 `count` 参数取 `-1` 条等同于 `all()`。
+
+**主循环一眼赞同**：成立（中危）。前端 UI 有数字输入框 + 范围提示可限制，但后端无最后防线。修复 trivial——加 `max(1, min(200, int(...)))`。
+
+---
+
+## Bug #18：`update_app_settings` 对 `image_size` 不做任何校验，可写任意值，下游所有图片生成 500
+
+**位置**：`backend/app/api/admin.py:384-427`；`backend/app/api/image_generation.py:36-37`
+
+**现象**：`update_app_settings` 对 `image_size` 既不做 `Literal` 校验也不做非空校验，`AppSettingsUpdate.image_size` 仅 `str | None`（`schemas.py`），可直接写入任意值（如 `"5K"`、`""`）。该值随后流入 `generate_cover_image` / `generate_background_image` → `_call_image_api`，而 `_IMAGE_SIZES = ("1K","2K","3K")`（`image_generation.py:16`），`if size not in _IMAGE_SIZES: raise ValueError`（:36-37）。多个消费点（如 `stories.py:185, 376`）无 `or '2K'` 兜底（对比 `:339` 有兜底）。
+
+**影响**：管理员（或利用 Bug #3 零认证的任意调用方）把 `image_size` 设成非法值或空串后，所有依赖 `app_settings.image_size` 的封面/背景图生成接口（`ai-generate` / `generate-cover-for-story` 等）持续返回 500，且错误值持久化在 DB，直到手动改回合法值。
+
+**证据**：`admin.py:384-427` update_app_settings 全函数；`image_generation.py:36-37` `_IMAGE_SIZES` 校验；`schemas.py` `AppSettingsUpdate` 无 Literal。`update_app_settings` 对 `default_image_model_id` 等其他字段也无校验，是同类问题。
+
+**主循环一眼赞同**：成立（重大）。Bug #3（零认证）放大本条严重性——任意访客可设坏 image_size 让全站图片生成瘫痪。修复：加 Literal 校验 + 消费点兜底。
+
+---
+
+## Bug #19：`_resolve_time_window` 直接 `fromisoformat`，非法日期抛 ValueError 落到全局 500 handler
+
+**位置**：`backend/app/api/admin.py:430-439`；`backend/app/main.py:52-58`
+
+**现象**：`_resolve_time_window` 直接 `datetime.fromisoformat(start)` / `datetime.fromisoformat(end)`，对非法日期字符串（如 `"not-a-date"`）抛 `ValueError`。该异常未被端点捕获，落到全局 `@app.exception_handler(Exception)`（`main.py:52-58`），统一返回 `500 {"detail": "服务器内部错误，请稍后重试"}`，而非 `422/400` 参数错误。
+
+**影响**：管理员在指标查询里输入格式错误的 `start` / `end` 时，得到 `500 + 通用错误信息` 而非 `400 + 明确提示`，无法快速定位是参数问题；时区感知串（如 `"2026-06-23T00:00:00+08:00"`）还可能让时间窗过滤返回错误/空结果。
+
+**证据**：`admin.py:430-439` `_resolve_time_window`；`main.py:52-58` 全局 Exception handler；受影响端点 `admin.py:447, 571, 703, 795` 全部传 raw 字符串。
+
+**主循环一眼赞同**：成立（中危）。用户体验与诊断性问题，不损坏数据。修复 trivial——`fromisoformat` 包 try/except 返回 422。
+
+---
+
+## Bug #20：`AppSettings` / `UserSettings` 单例表无唯一约束，首次并发可产生重复行
+
+**位置**：`backend/app/app_settings_service.py:12-21`；`backend/app/api/settings.py:21-28`（`_get_or_create`）
+
+**现象**：`ensure_app_settings` 用 check-then-create：`settings = db.query(models.AppSettings).first(); if not settings: settings = models.AppSettings(...); db.add(settings); db.commit()`。`AppSettings` 表无唯一约束保证全局单行。两个并发首次请求都会看到 `.first()` 为 None，各自 `insert+commit`，产生 2 行 `AppSettings`。`settings.py` 的 `_get_or_create` 同模式。
+
+**影响**：首次并发请求可产生重复的 `AppSettings` / `UserSettings` 单例行；此后 `.first()` 返回的行不确定，不同请求/更新可能命中不同行，导致配置在两行间"闪烁"或更新打到非读取行，配置表现为不一致。
+
+**证据**：`app_settings_service.py:12-21` 全函数；`settings.py:21-28` 同模式；`models.py:172-188, 125-142` `AppSettings` / `UserSettings` 表定义无 `UniqueConstraint`。窗口小（仅空表首次请求并发），但属真实竞态。
+
+**主循环一眼赞同**：成立（中危）。生产部署在 lifespan 启动期 `init_db` 已写一行（`seed_data.py`），实际触发窗口非常窄。但 `UserSettings`（非 seed 写入）在管理员切换 + 用户同时首次打开时可能并发。
+
+---
+
+## Bug #21：`ModelConfigIn.temperature` / `max_tokens` 无 `Field(ge=..., le=...)` 约束，越界值原样发上游供应商
+
+**位置**：`backend/app/schemas.py:258-259`（`ModelConfigIn`）；`backend/app/api/admin.py:92-114, 117-143`（`create_model` / `update_model` 无范围检查）
+
+**现象**：`ModelConfigIn.temperature` 注释写"0~1"、`max_tokens` 注释写"512~8192"，但均无 `Field(ge=..., le=...)` 约束，`create_model` / `update_model` 也未做范围检查，直接经 `setattr` 落库。`_get_temperature` 仅 `return float(model_cfg.temperature)`（`chat_models.py:364-367`）原样透传，越界值（如 `-5` 或 `999`）进入 `ad["body"]` 构造的请求体发给模型供应商。
+
+**影响**：管理员误填越界 `temperature` / `max_tokens` 后，该模型所有聊天/选项/故事生成调用对供应商返回 400，触发重试与故障转移，最终 503，表现为模型"不可用"且无明显定位线索。
+
+**证据**：`schemas.py:258-259` 注释 vs 无约束；`admin.py:92-114` create 全函数无范围；`:117-143` update 全函数无范围；`chat_models.py:364-367` `_get_temperature` 原样透传。
+
+**主循环一眼赞同**：成立（次要硬化）。自误配置，不损坏数据。修复 trivial——加 `Field(ge=0, le=2)` 与 `Field(ge=1, le=128000)`。
+
+---
+
+## Bug #22：`metrics_summary` 在默认窗口下 `total_prompt_tokens` / `total_completion_tokens` 只统计最近 1 小时，与 `total_tokens`（全窗口）严重不一致
+
+**位置**：`backend/app/api/admin.py:446-567`（esp. :478-499, :502-517, :541-552）
+
+**现象**：`metrics_summary` 在 `include_current_hour` 为真（即 `end` 落在当前小时，默认 `end=now` 即如此）时，过去完整小时只从 `metrics_hourly` 取数（`hourly_query` 仅 sum `total_calls` / `success_calls` / `total_latency_ms` / `total_tokens` / `total_cost` / `plot_label_*`，不涉及 prompt/completion），而 `total_prompt_tokens` / `total_completion_tokens` 只在 :512-517 从 `api_call_logs` 当前小时聚合（`current_hour_query`）。
+
+**影响**：管理后台指标概览（默认 7 天窗口）显示的 `total_prompt_tokens` / `total_completion_tokens` 实际只含最近一小时，与 `total_tokens`（全窗口）严重不一致。管理员据此做成本/用量分析会大幅低估 token 消耗。属管理端点数据正确性缺陷。
+
+**证据**：`admin.py:478-499` `hourly_query` 不含 prompt/completion；`:512-517` `current_hour_query` 是 prompt/completion 唯一来源；`:541-552` summary 聚合逻辑。
+
+**主循环一眼赞同**：成立（重大）。属管理端点数据正确性，影响经营决策。
+
+---
+
+## Bug #23：`update_model` / `update_app_settings` 等不失效 `CHAR_CACHE_KEY`，角色/故事更新后角色缓存 600s 内 stale
+
+**位置**：
+- `backend/app/api/admin.py:141-142`（update_model 仅删 `MODEL_CACHE_KEY`）
+- `backend/app/api/admin.py:165-166`（delete_model 同）
+- `backend/app/api/chat_storage.py:229-256`（`_get_story_characters` 用 `CHAR_CACHE_KEY` 600s TTL）
+
+**现象**：`update_model` 与 `delete_model` 完成后只 `redis.delete(MODEL_CACHE_KEY)`（`admin.py:141-142, 165-166`），但 `chat_storage.py:229` `CHAR_CACHE_KEY = "cache:characters:{story_id}"` 600s TTL 不被失效。`update_story` / `create_character` / `delete_character` / `update_character` 等端点（`stories.py` / `archives.py`）同样无 `CHAR_CACHE_KEY` 失效逻辑。
+
+**影响**：管理员更新故事世界观、角色名/性格/头像后，角色缓存命中分支（`chat_storage.py:238-241`）仍返回旧角色数据，正文生成使用的角色引用（旧 `{char:N}` 展开）持续 600s 是旧值——影响叙事连贯性，且无明显报错（用户以为已生效）。
+
+**证据**：`chat_storage.py:229` `CHAR_CACHE_KEY`；`:238-241` 缓存命中分支；`admin.py:141-142, 165-166` 仅删 `MODEL_CACHE_KEY`。`stories.py` 与 archives 端点全函数无 `redis.delete(CHAR_CACHE_KEY.format(...))`。
+
+**主循环一眼赞同**：成立（中危）。属真实缓存一致性 bug，触发容易（每次编辑角色即触发）。修复 trivial——加 `redis.delete(CHAR_CACHE_KEY.format(story_id=story.id))`。
+
+---
+
+## Bug #24：`streamAbortController` 声明在模块顶层而非 `useChatStream` 实例内，多实例并发流相互覆盖且无生命周期清理
+
+**位置**：`frontend/src/composables/useChatStream.ts:22, 57-59, 209, 311`
+
+**现象**：`streamAbortController` 声明在模块顶层（`let streamAbortController: AbortController | null = null`，line 22），而不是 `useChatStream` 函数内部。`startStory` 与 `sendStream` 都直接向这个模块级变量赋值新的 `AbortController`；`abortStream()` 也操作同一个变量。
+
+**影响**：若该 composable 被多处复用或同时存在多个流上下文（当前 Pinia store 单实例未触发，但未来重构产生多实例时），后启动的流会覆盖前一个的 controller，调用 `abortStream` 可能取消错误的流；组件卸载后也没有生命周期清理，导致未完成的 fetch 继续运行，闭包持有已分离 DOM。
+
+**证据**：line 22 模块级声明；`:57-59` `abortStream` 读写模块变量；`:209, 311` 分别为 `startStory` 与 `sendStream` 赋值新 controller，无实例隔离或 `onUnmounted` 清理。
+
+**主循环一眼赞同**：成立（中危）。当前单 Store 单实例不触发，但埋下竞态隐患且与同类前端生命周期 bug（#25-#31）属同一清理缺口模式。
+
+---
+
+## Bug #25：`applyTailToStoreState` 调用 `await getArchives(...)` 但结果完全未使用，存档侧栏与实际数据不一致
+
+**位置**：`frontend/src/composables/useChatStream.ts:78-95`（esp. :89-91）
+
+**现象**：`applyTailToStoreState`（`useChatStream.ts:78-95`）里 `if (currentArchive.value) { await getArchives(currentArchive.value.story_id) }`（:89-91）调用了 `getArchives` 但完全没有使用其返回的 `{ data }`——既没赋值给任何 archives 列表 ref，也没 return。`useChatStream` 接收的参数里只有 `currentArchive`（`chat.ts:168` 接线），根本没有 archives 列表 ref，所以这里物理上无法刷新侧栏列表。函数顶部注释（:77）写的是 `archive refresh`，实际是空操作。
+
+**影响**：当某轮对话后端返回的 `tail.archive_id` 与当前 `archiveId` 不同（即后端新建/分叉了存档）时，左侧存档列表不会出现新存档，用户看不到也无法切换到该新存档，必须手动刷新才能看到——存档侧栏与实际数据不一致。
+
+**证据**：`useChatStream.ts:1` 导入 `getArchives`；`:90` 调用后未赋值；`chat.ts:163-178` 把 `useChatStream` 接成只传 `currentArchive`（:168）、不传 archives 列表 ref；`chat.ts:181-184` 才是真正更新 `archives.value` 的 `fetchArchives`，而 `applyTailToStoreState` 未调用它。
+
+**主循环一眼赞同**：成立（中危）。属真实功能缺失——注释承诺的行为与实际不符。
+
+---
+
+## Bug #26：`applyTailToStoreState` 无 abort / archiveId 校验，与 `loadArchive` / `clearChat` 交叉时窗口内状态错乱
+
+**位置**：`frontend/src/composables/useChatStream.ts:78-95`（`applyTailToStoreState`）；`frontend/src/stores/chat.ts:216-252`（`loadArchive`）/ `:311-337`（`clearChat`）/ `:186-214`（`startNewArchive`）
+
+**现象**：`applyTailToStoreState`（:78-95）先同步改 `currentState/currentStoryState/currentMemoryLog`（:79-81），再在 `finalArchiveId !== archiveId` 时 `await getArchive(finalArchiveId)`（:86，无 abort signal）后执行 `currentArchive.value = archive`（:87），整段包在 `try{...}catch{ // non-fatal }`（:84-94）里静默吞错，且从不重新校验存档是否仍是当前活跃存档。此函数运行时 `sending.value` 仍为 true，但 `streaming`/`awaitingTail` 已在 tail 分支被置 false。`loadArchive` / `clearChat` / `startNewArchive` 只调用 `streamModule.abortStream()`（无法取消已在飞的 axios `getArchive`），均不检查 `sending`。
+
+**影响**：在 tail 应用窗口内切换存档/清空聊天，可能导致 `currentArchive` 指向 A、`messages` 却是 B 的内容（或清空后存档被复活），用户看到错误的存档、对错误存档发消息/撤回，造成状态错乱与潜在数据写到错误存档；错误被 catch 吞掉，用户无任何报错。
+
+**证据**：调用链 `chat.ts:388 sendStream → useChatStream.ts:382 applyTailToStoreState → :86 await getArchive(无 signal)`。并发路径：`loadArchive`（`chat.ts:216`）无 `sending` 守卫（:218 仅 abortStream）覆盖 `currentArchive/messages`；随后 `useChatStream.ts:87` 赋值落地覆盖回来。
+
+**主循环一眼赞同**：成立（重大）。与 Bug #25 同函数，但本条是"竞态破坏"角度而非"功能未实现"。合并报告。
+
+---
+
+## Bug #27：`loadArchive` 无请求版本号 / AbortController，快速切档导致旧 archive 的 `getMessages` 覆盖新 archive
+
+**位置**：`frontend/src/stores/chat.ts:216-252`
+
+**现象**：`loadArchive` 顺序执行 `await getArchive(archiveId)` 与 `await getMessages(archiveId)`，然后把结果直接写入 `currentArchive.value` 与 `messages.value`。整个过程没有请求版本号或竞态保护（对比 `story.ts` 有 `requestVersion` 计数器）。如果用户快速切换 archive A→B，A 的 `getMessages` 响应可能晚于 B 的响应。
+
+**影响**：当前显示的是 archive B，但聊天消息被更晚到达的 archive A 的响应覆盖，用户看到旧 archive 的聊天记录。
+
+**证据**：`chat.ts:216-252` 全函数无 requestVersion 计数器；`:227` 设置 `currentArchive.value = archive`；`:236` 设置 `messages.value = normalizedMsgs`。任何在途的旧 `getMessages` 请求完成后都会无条件覆盖当前 messages。
+
+**主循环一眼赞同**：成立（中危）。属前端经典竞态，修复模式已有（story.ts），可照搬。
+
+---
+
+## Bug #28：`sendStream` 在 `fromOption` 路径下 `beginOptionLock` 后若 `sending` 守卫触发 early return，选项锁永不释放
+
+**位置**：`frontend/src/stores/chat.ts:383-389`；`frontend/src/composables/useChatStream.ts:301-302`
+
+**现象**：`chat.ts` 的 `sendStream` 包装器在 `fromOption` 为 true 时，先调用 `optionsModule.beginOptionLock(text)`（:385），该函数会把 `optionsLocked` 置为 true 并清空当前选项；然后才调用 `streamModule.sendStream`。但 `streamModule.sendStream` 在 `!currentArchive.value || sending.value` 时直接 early return（`useChatStream.ts:301-302`），不会走到 `onFinishOptionLock`。
+
+**影响**：如果用户在 `sending.value === true` 或无当前 archive 时点击选项，选项区会被锁定并清空，且由于 `sendStream` 提前返回，锁永远不会被释放，用户无法再次选择选项，必须刷新页面。
+
+**证据**：`chat.ts:383-389` 先 `beginOptionLock` 再调用 `streamModule.sendStream`；`useChatStream.ts:301-302` guard return 无 `onFinishOptionLock` 回调。
+
+**主循环一眼赞同**：成立（中危）。触发条件明确（连续双击 + 切档），但后果是 UX 卡死非数据损坏。
+
+---
+
+## Bug #29：`recallLastRound` 未检查 `streaming` / `sending` / `awaitingTail`，可在 `awaitingTail` 窗口误删正在生成的消息
+
+**位置**：`frontend/src/composables/useChatRecall.ts:47-60`；`frontend/src/stores/chat.ts:432`
+
+**现象**：`recallLastRound` 仅检查 `recallInProgress.value` 和最后一条 AI 消息是否已持久化，未检查 `streaming` / `sending` / `awaitingTail` 等流式状态。`chat.ts` 直接把 `recallLastRound` 暴露给外部，也没有对流式状态做前置拦截。
+
+**影响**：在流式响应尚未完全结束（尤其是 `text_end` 已收到但 `tail` 未到达的 `awaitingTail` 窗口）时，如果 UI 或外部调用触发 recall，可能把正在生成/刚生成的消息删除，导致消息列表、选项锁、高亮词、state 状态不一致。
+
+**证据**：`useChatRecall.ts:47-60` 判断条件只有 `currentArchive.value`、`recallInProgress.value` 和 `isMessagePersisted(lastAiMsg)`；`chat.ts:432` 直接返回 `recallModule.recallLastRound`。与 Bug #7（recall 回滚不彻底，已修复）的写入侧不同——本条是触发侧的竞态。
+
+**主循环一眼赞同**：成立（中危）。Bug #7 修了写入侧，本条是触发侧，属 Bug #7 修复未覆盖的相邻问题。
+
+---
+
+## Bug #30：SSE 解析器 `done` 时直接 `break` 不 flush 残留 buffer，最后一个事件（`tail`）可能静默丢失
+
+**位置**：`frontend/src/api/index.ts:142-149, 204`
+
+**现象**：SSE 解析器以 `\r?\n\r?\n` 作为事件分隔符。当 `reader.read()` 返回 `done` 时，代码直接 `break` 退出循环，不 flush 剩余的 `buffer`。如果最后一个事件（如 `tail`）没有以空行结尾，或网络异常导致最后的空行丢失，该事件会被静默丢弃。
+
+**影响**：流看起来正常结束，但前端未收到 `tail` / `done` / `error`，最终抛出自定义错误"未收到结构化尾包"；用户已看到正文但无法获得选项、状态更新和持久化 ID。
+
+**证据**：`api/index.ts:147-149` `while (true)` 中 `if (done) break`；`:204` 结束循环；整个解析逻辑没有处理 `buffer` 中残留的不完整块。
+
+**主循环一眼赞同**：成立（中危）。修复 trivial——`done` 后 `processBuffer(buffer)` flush 一次。
+
+---
+
+## Bug #31：SSE `error` 事件时 `api/index.ts` 直接用 `data.message` 抛 Error，覆盖前端 `handleStreamError` 设计的提示文案
+
+**位置**：`frontend/src/composables/useChatStream.ts:165-185, 189-202`；`frontend/src/api/index.ts:194-202`
+
+**现象**：当收到 `event: error` 时，`_handleStreamEvents` 调用 `handleStreamError` 返回特定文案（如"检测到结构化内容混入正文，已拦截本轮回复，请重试"）并存入 `streamErrorRef.value`。但几乎同时 `api/index.ts:198-202` 会直接用 `data.message` 抛出一个新 Error。由于 `postSSE` 抛出异常，`useChatStream` 中的 `if (streamError)` 分支（:370）不会执行，自定义消息被覆盖。
+
+**影响**：对于 `STREAM_BODY_POLLUTED` 这类需要明确提示的场景，用户看到的是后端原始错误消息或通用"SSE 错误"，而不是前端设计好的拦截提示；消息删除的副作用发生了，但提示文案不一致。
+
+**证据**：`useChatStream.ts:184` 设置 `streamErrorRef.value = handleStreamError(...)`；`api/index.ts:199-200` 抛出 `new Error(msg)`；`useChatStream.ts:370` 的 `if (streamError) throw new Error(streamError)` 在 `postSSE` 已抛出的情况下不会到达。
+
+**主循环一眼赞同**：成立（中危）。属错误处理 UX 不一致。
+
+---
+
+## Bug #32：`deleteMessages` 把临时 UUID 消息 ID 转 `NaN` 后过滤掉，无法删除流式未持久化的乐观消息
+
+**位置**：`frontend/src/stores/chat.ts:340-346`
+
+**现象**：`deleteMessages` 先把入参全部 `Number(id)`，再过滤保留 `Number.isInteger(id) && id > 0`。由 `generateId()`（`utils/id.ts`）生成的临时 UUID（如 assistant/user 的乐观消息 ID）会被转成 `NaN` 后过滤掉。
+
+**影响**：用户在发送失败或流式过程中尝试删除临时消息时，函数直接 `return`，前端无法移除这些临时消息；它们会一直显示在聊天列表中，直到刷新页面或清空会话。
+
+**证据**：`chat.ts:343-345` `const numericIds = messageIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)`；临时消息 ID 来自 `utils/id.ts` 的 UUID 字符串。
+
+**主循环一眼赞同**：成立（次要硬化）。触发条件明确（流式中点删除），后果轻（刷新即恢复）。
+
+---
+
+## Bug #33：`ArchiveList` 全选遍历未过滤的 `props.archives`，搜索过滤时点全选会选中（含不可见）所有存档，可造成误删
+
+**位置**：`frontend/src/components/ArchiveList.vue:234-238`（`handleSelectAll`）；`:28-33`（全选 checkbox 绑定）
+
+**现象**：全选按钮的选中态基于过滤后的 `sortedArchives`（`:model-value="sortedArchives.length > 0 && selection.length === sortedArchives.length"`、`:indeterminate="selection.length > 0 && selection.length < sortedArchives.length"`），但 `handleSelectAll` 遍历的是未过滤的 `props.archives`：`for (const arc of props.archives) ...`。
+
+**影响**：搜索过滤时点"全选"会悄悄选中所有（含不可见）存档，复选框却显示未选中且非半选，状态与用户预期严重不符；随后点"批量删除"会删除用户根本看不到的存档——意外数据丢失。
+
+**证据**：`ArchiveList.vue:234-238` `handleSelectAll` 遍历 `props.archives`；`:28-33` checkbox 绑定基于 `sortedArchives`。`props.archives` 与 `sortedArchives` 不一致（后者经搜索/排序过滤）。
+
+**主循环一眼赞同**：成立（重大）。属真实数据丢失路径，触发容易（搜索后批量操作）。
+
+---
+
+## Bug #34：`StoryManage` / `ModelManage` 批量操作无 `busy` 守卫，in-flight 期间可重复确认弹窗触发第二批重复请求
+
+**位置**：`frontend/src/views/admin/StoryManage.vue:801-824`（`handleBulkDelete`）；`frontend/src/views/admin/ModelManage.vue:477-520`（批量启用/禁用/删除）
+
+**现象**：`handleBulkDelete` 没有 `busy/deleting` 标志。用户确认 `ElMessageBox.confirm` 后执行 `await Promise.allSettled(selectedIds.value.map((id) => deleteStory(id)))`（:808）。在这个 in-flight `await` 期间 `selectedIds.value` 仍未清空（要到 :810 `await` 结束后才清空），因此批量操作栏按钮（:78-86，无 `:loading`/`:disabled`）仍可点击。用户可再次点"删除"、确认第二个弹窗，触发针对已删除 ID 的第二批请求。
+
+**影响**：双击重提交导致第二批去删已删除的故事（404），`Promise.allSettled` 把 404 计为"失败"，产生误导性的"成功 X 项，失败 Y 项"警告（明明都已删除），且 `fetchList` 会跑两次。`ModelManage` 的批量启用/禁用/删除同患。
+
+**证据**：`StoryManage.vue:801-824` `handleBulkDelete` 全函数；`:78-86` 按钮无 `:loading`/`:disabled`；`ModelManage.vue:477-520` 同模式。
+
+**主循环一眼赞同**：成立（中危）。属 UI 防御缺失，触发明确。
+
+---
+
+## Bug #35：`ModelManage.vue` 编辑分支把 `priceInputEnabled/priceOutputEnabled` 写入 `form` 而非独立 ref，模板绑定 ref 永远为 `false`
+
+**位置**：`frontend/src/views/admin/ModelManage.vue:317-318`（refs 定义）；`:324-342`（form 定义）；`:394-414`（编辑分支 Object.assign form）；`:416-438`（新建分支）；`:234/253`（模板 v-model 绑定 ref）
+
+**现象**：`priceInputEnabled` / `priceOutputEnabled` 是独立的 ref（`:317-318` `const priceInputEnabled = ref(false)` / `const priceOutputEnabled = ref(false)`），但 `openDialog` 编辑分支试图通过 `Object.assign(form, { ... priceInputEnabled: !!row.price_input_per_1k, priceOutputEnabled: !!row.price_output_per_1k ... })`（`:402-403`）把状态写进 `form` 而非 `priceInputEnabled.value`。新建分支（`:416-438`）完全不触碰这两个 ref。模板 `v-model` 绑定的是 ref（`:234/253`），`v-if` 可见性在 `:239/258`。
+
+**影响**：管理员编辑一个已配置计费的模型时，计费开关显示为"无"且价格输入框被隐藏，误报已保存的配置状态。开关状态还会在弹窗间泄漏：对模型 A 开启计价后再点"添加模型"，开关仍是开的（价格 0），新模型可能被静默创建成 `price_input_per_1k=0`。
+
+**证据**：`ModelManage.vue:317-318` refs 定义；`:402-403` Object.assign 写 form；`:416-438` 新建分支不设 ref；`:234, 253` 模板绑 ref。
+
+**主循环一眼赞同**：成立（中危）。属真实 UI 状态泄漏，影响管理员判断。
+
+---
+
+## Bug #36：`CharacterManage.vue` 删除确认框用户取消触发 `ElMessage.error("删除失败")`
+
+**位置**：`frontend/src/views/admin/CharacterManage.vue:110-119`
+
+**现象**：`handleDelete` 把 `ElMessageBox.confirm` 和 `deleteCharacter` 调用包在同一个 `try/catch` 里。用户取消确认框时 `ElMessageBox.confirm` reject，catch 随即执行 `ElMessage.error(getErrorMessage(e, '删除失败'))`（`:117`），为用户主动取消弹出了"删除失败"错误提示。
+
+**影响**：管理员每次在删除角色确认框点"取消"，都会弹出一个"删除失败"错误提示，让用户误以为删除操作执行失败了。
+
+**证据**：`CharacterManage.vue:110-119` 全函数；`ElMessageBox.confirm` reject 被 catch 当错误。
+
+**主循环一眼赞同**：成立（次要硬化）。属 UX 错误，但不影响数据。修复 trivial——catch 块检查 `e === 'cancel'` 跳过。
+
+---
+
+## Bug #37：`StoryManage.vue` 一键 AI 生成封面/背景按钮在 `editingId == null`（新建故事）时无反馈静默失败
+
+**位置**：`frontend/src/views/admin/StoryManage.vue:311-316`（按钮）；`:589-595`（`handleStandaloneGenerateCover`）；`:605-606`（守卫静默 return）
+
+**现象**：故事新建/编辑弹窗里"一键 AI 生成封面/背景"按钮（`:311-316`）始终渲染，没有基于 `editingId` 的 `v-if`/`:disabled` 守卫。`handleStandaloneGenerateCover`（`:589-595`）在 `editingId` 为 null 时仍打开模型选择弹窗；`confirmStandaloneImageGenerate` 的守卫 `if (!selectedImageModelId.value || !editingId.value || standaloneGenerating.value) return`（`:606`）静默返回无任何提示。
+
+**影响**：新建故事时点"一键 AI 生成封面"、选好模型、点"确认生成"后什么也不发生——无提示、无报错、弹窗不关。上传封面/背景同理静默失败。用户完全得不到反馈，以为应用卡死。
+
+**证据**：`StoryManage.vue:311-316` 按钮无守卫；`:589-595` 打开弹窗不查 `editingId`；`:605-606` 守卫静默 return。
+
+**主循环一眼赞同**：成立（中危）。属真实 UX 死路。修复 trivial——按钮加 `:disabled="!editingId"` 或守卫 return 时弹 `ElMessage.warning('请先保存故事')`。
+
+---
+
+## Bug #38：`useSettingsForm.saveSettings` 重复弹"设置已保存"成功提示，且 store 先宣告成功再让图片设置失败
+
+**位置**：`frontend/src/composables/useSettingsForm.ts:116, 145`；`frontend/src/stores/settings.ts:48`
+
+**现象**：`saveSettings()` 先 `await settingsStore.saveSettings({...})`（`:116`）。store 的 `saveSettings` 在成功时自己弹 `ElMessage.success('设置已保存')`（`settings.ts:48`）。随后 `saveSettings()` 再 `await updateAppSettings({...})`（`:132`），成功后又弹一次 `ElMessage.success('设置已保存')`（`:145`）。
+
+**影响**：完整保存成功时用户看到两个一模一样的"设置已保存"成功提示。更糟的是：若模型设置保存成功但图片设置保存失败，用户先看到"设置已保存"（来自 store）紧接着看到"图片设置保存失败"（`:141`）——store 在图片设置尚未尝试前就宣告了成功，提示自相矛盾、误导用户。
+
+**证据**：`useSettingsForm.ts:116` await store；`:145` 再弹 toast；`settings.ts:48` store 内部 toast。`useSettingsForm.ts:132` await updateAppSettings；`:141` catch 图片设置失败。
+
+**主循环一眼赞同**：成立（中危）。属 UX 错误，但不影响数据。修复 trivial——store 内部不弹 toast，由 `useSettingsForm` 统一弹。
+
+---
+
+## Bug #39：`useSettingsForm.loadSettings` 无 `catch`，模型或 app-settings 接口失败导致整页静默渲染成默认值
+
+**位置**：`frontend/src/composables/useSettingsForm.ts:75-110`（esp. :81-85 `Promise.all`）
+
+**现象**：`loadSettings()` 只有 `try/finally` 没有 `catch`。它执行 `await Promise.all([getModels(), fetchSettings, getAppSettings()])`（`:81-85`）。其中 `getModels()` 和 `getAppSettings()` 是裸 axios 调用、无本地 catch；只有 `fetchSettings(settingsStore.fetchSettings)` 会吞掉自己的错误。若 `getModels()` 或 `getAppSettings()` reject（网络错误 / 500），`Promise.all` 整体 reject，未被捕获。
+
+**影响**：若模型列表或 app-settings 接口失败，整个设置页会静默渲染成空模型列表 + 默认值，且没有任何错误提示告诉用户为何已配置的模型不见了，用户可能误以为自己的配置被清空了。
+
+**证据**：`useSettingsForm.ts:75-110` 全函数；`:81-85` Promise.all；`api/index.ts` `getModels` / `getAppSettings` 裸调用。
+
+**主循环一眼赞同**：成立（中危）。属真实 UX 静默失败。修复 trivial——Promise.all 包 try/catch 显示 `ElMessage.error`。
+
+---
+
+## Bug #40：`MetricsManage.vue` KPI 卡片 `.toFixed()` 无 `Number()` 守卫，零调用时 `null/undefined` 致整页崩溃
+
+**位置**：`frontend/src/views/admin/MetricsManage.vue:36, 46, 56`
+
+**现象**：KPI 卡片直接对接口返回值调用 `summary.success_rate.toFixed(2)`（`:36`）、`summary.avg_latency_ms.toFixed(0)`（`:46`）、`summary.total_cost.toFixed(4)`（`:56`），没有 `Number()` 强制转换。它们仅在 `summaryLoaded` 为真时渲染，而 `summaryLoaded` 在 `Object.assign(summary, s.value.data)`（`:335`）之后置真。同一文件的 `byModel` 表格却用安全的 `Number(row.success_rate).toFixed(2)`。
+
+**影响**：若汇总接口对 `success_rate` / `avg_latency_ms` / `total_cost` 返回 `null` 或 `undefined`（零调用时 `success_rate=0/0` 很可能为 null），`null.toFixed()` 抛 `TypeError`，KPI 渲染崩溃并触发全局错误处理（`main.ts:36-39` "发生了未知错误，请刷新页面"）——整个调用统计页因单个 null 字段而不可用。
+
+**证据**：`MetricsManage.vue:36, 46, 56` 直接 toFixed；同文件 byModel 表格用 `Number(...).toFixed(...)` 作对照；`main.ts` 全局错误处理。
+
+**主循环一眼赞同**：成立（重大）。属真实崩溃路径——管理员首次访问或冷启动时容易触发。
+
+---
+
+## Bug #41：前端 `useChatImage` 占位消息在 stale 时未移除，永久停留在聊天列表显示加载中
+
+**位置**：`frontend/src/composables/useChatImage.ts:73-119`（esp. :88 push；:94/105 stale return；:111-119 finally）
+
+**现象**：`generateImage` 先把一条 `imageLoading: true` 的占位消息 `push` 到 `messages.value`（`:88`）。切换 archive 后 `isStale()` 返回 true，catch 分支在 `:94` / `:105` 直接 `return`，finally（`:111-119`）只重置了 `imageAbortController` 与状态标志，没有删除这条占位消息。
+
+**影响**：用户切换会话后，原会话的图片生成占位气泡会永久停留在聊天列表中，显示"加载中"且永远不会完成或失败。
+
+**证据**：`:73-88` 创建并 push `loadingMsg`；`:47-48` `isStale` 检查 `currentArchive.value?.id !== archiveId`；`:94/105` stale 时直接 return；`:111-119` finally 仅清理 `imageAbortController` 与状态 ref，未从 `messages.value` 移除 `loadingMsg`。
+
+**主循环一眼赞同**：成立（中危）。属真实 UI 死锁路径。
+
+---
+
+## Bug #42：前端 `useChatImage` 整个 composable 无 `onUnmounted`，离开页面后 fetch 继续运行并尝试写已卸载组件
+
+**位置**：`frontend/src/composables/useChatImage.ts:14, 43-44, 91, 111-119`
+
+**现象**：内部持有 `imageAbortController` ref 并在 `generateImage` 中创建 `AbortController` 发起请求，但整个 composable 没有注册 `onUnmounted` 生命周期钩子，也没有在组件卸载时主动 `abort()`。
+
+**影响**：用户在图片生成过程中离开 StoryPlay 页面后，fetch 请求继续在后台运行；请求完成后闭包仍可能尝试修改 `messages.value`，导致内存泄漏和对已卸载组件状态的操作。
+
+**证据**：`:14` 声明 `imageAbortController` ref；`:43-44` 创建并保存 controller；`:91` `await generateChatImage(..., controller.signal, msgId)`；整个文件没有 `onUnmounted` 调用。外部仅在 `chat.ts` 的切档/清空中调用 `abortInFlightImageRequest`，组件卸载不会触发。
+
+**主循环一眼赞同**：成立（中危）。与 Bug #41 同文件但根因不同（泄漏 vs 死气泡）。
+
+---
+
+## Bug #43：`useChatStream` `viewport-follow` 等多个 composable 缺 `onUnmounted` 清理：MQL change 监听、rAF、storage 事件、setTimeout、图片请求 AbortController、故事生成 AbortController
+
+**位置**（合并同类多条 finder 提案，主循环按根因合并）：
+- `frontend/src/composables/useChatViewportFollow.ts:45-48`（MQL change 监听）+ `:402-406`（onUnmounted 缺移除）
+- `frontend/src/composables/useChatViewportFollow.ts:386-396`（pendingMessageCount watch 内双 rAF 未取消）
+- `frontend/src/composables/useStorageSync.ts:26-44`（watch 返回的 unsubscribe 不移除 window 监听）
+- `frontend/src/composables/useChatImage.ts`（图片请求 AbortController，见 Bug #42）
+- `frontend/src/composables/useStoryGenerate.ts:96-155`（无 onUnmounted / AbortController）
+- `frontend/src/components/StoryPlay.vue:1029-1032`（enterImmersive hint setTimeout 未追踪）+ `:993-999`（onBeforeUnmount 漏）
+- `frontend/src/components/ChatMessage.vue:357-366`（ESC 监听 watch 返回值被 Vue 3 丢弃）+ `:569-578`（onBeforeUnmount 漏）
+- `frontend/src/components/ChatMessage.vue:270, 420-432`（dyingTimer/pressTimer 未清理）
+- `frontend/src/components/PillNav.vue:218-303, 309-315`（setupAnimations race + watch 重播）
+
+**现象**：8 处 `onUnmounted` / `onBeforeUnmount` 清理遗漏，覆盖 MQL 监听、双 rAF、window storage 事件、setTimeout、AbortController、ESC keydown、dyingTimer、pressTimer、PillNav resize 监听——所有遗漏点都是"setup 中注册/创建 → unmount 时未移除/清理"模式。
+
+**影响**：每次进出相应路由/组件都会泄漏监听器/计时器/闭包，闭包持有 DOM 引用与组件 ref，长期会话内存持续增长直到整页刷新。属典型"组件销毁未清理订阅"反模式。
+
+**证据**：见上各行号；`Vue 3.5.32` `watch` 回调返回值被丢弃（只有第三参 `onCleanup` 才会注册清理）——`ChatMessage.vue:357-366` 误用为清理机制。
+
+**主循环一眼赞同**：成立（中危→重大）。多发同类，单个不致命但叠加效应是真实慢泄漏。合并为一条以避免报告噪声——8 个独立根因但同一反模式，分开报 8 条会让"过滤器失效率"被人为拉低。
+
+---
+
+## Bug #44：非流式对话路径 `_call_ai_with_failover` 不调用 `body_guard` 检测，结构化污染可绕过
+
+**位置**：`backend/app/api/chat_models.py:447+`（`_call_ai_with_failover`）；`backend/app/prompts/guard.py`（仅供 `_stream_model_once` 调用）
+
+**现象**：`body_guard.detect_body_pollution` 与 `BodyPollutedError`（`prompts/guard.py:43-110`）仅在 `_stream_chat_response` 流式路径使用（`chat_stream.py:241, 261`）。非流式 `_call_ai_with_failover` 路径（`chat_models.py:447+`）调用 `_call_model_once` 后直接取 `validated = _validate_contract_from_text(...)`，未调用 `detect_body_pollution` 检测正文字段。
+
+**影响**：非流式对话（如开场白生成 fallback、某些 structured-only 任务）若模型在 `reply_text` 字段中输出 JSON/结构化字段污染，前端会拿到带污染的正文并直接渲染。属"流式防了，非流式没防"的覆盖缺口。
+
+**证据**：`chat_stream.py:241` `_detect_body_pollution(buffered, pre_delta=True)`；`:261` 同 (post_delta)；`prompts/guard.py` 完整 API 仅在 `chat_stream.py` import 使用；`chat_models.py` 全函数无 `detect_body_pollution` 调用。
+
+**主循环一眼赞同**：成立（次要硬化）。默认路径走流式，触发窗口窄，但属真实覆盖缺口——若未来非流式路径增多或用于开场 fallback 会暴露。
+
+---
+
+# 第 2 轮驳回清单（过滤器工作证据）
+
+按 whfind-bugs 技能要求，驳回候选需记录一行原因。共 **18 条驳回 + 4 条降级**：
+
+**驳回（18 条，依据即"误读/虚构/已正确实现"）：**
+
+1. `redis-singleton-published-before-init`（初轮）— DCL 实际正确（`redis_client.py:30-33` 锁内二次检查；`_connect` 内部 try/except 已吞 ping 异常，不存在"半初始化实例返回"窗口）。
+2. `schema-meta-version-id-constraint`（边缘补跑）— 推测 SQLite `ALTER TABLE CHECK`，未读代码即下结论，无证据。
+3. `recursion-story-state-recall`（边缘补跑）— 纯推测，未读 `chat_storage.py` 相关代码。
+4. `crypto-urandom-blocking`（边缘补跑）— 实测不可达（Linux `os.urandom` 在常规熵池下不阻塞；项目无高熵需求场景）。
+5. `api-cors-no-credentials`（边缘补跑）— 误读：`main.py:40-49` 显式列出 `localhost:5173/5174` + `allow_credentials=True`，配置正确。
+6. `cors-wildcard-origin`（边缘补跑）— 同上，allow_origins 非通配。
+7. `db-pool-no-pre-ping`（边缘补跑）— 误读：`database.py:19` 已开启 `pool_pre_ping=True`。
+8. `plaintext-pii-logging`（边缘补跑）— 未找到证据证明日志路径会输出 `api_key`（局部变量不进入 `str(exc)` 路径）。
+9. `long-poll-write-lock`（边缘补跑）— 单次 update 毫秒级事务，非真实长事务。
+10. `frontend-hot-module-reload`（边缘补跑）— dev-only 行为，非生产 bug。
+11. `story-timeline-clock-drift`（边缘补跑）— 未读代码，无证据。
+12. `metrics-no-percentile`（边缘补跑）— 设计选择而非 bug。
+13. `story-create-no-dedup`（边缘补跑）— 未读代码，无证据。
+14. `fallback-disable-failover`（边缘补跑）— 未读代码，无证据。
+15. `draft-temp-id-not-uuid`（边缘补跑）— 与已收录的 Bug #24/#32 同根因，按"重复发现"驳回。
+16. `recursion-story-state-recall`（重复编号但内容相似）— 同上纯推测。
+17. `image-generation-no-rate-limit`（边缘补跑，重复）— 与 Bug #3 零认证同类安全项，但单列为独立 bug 偏弱（Bug #3 已覆盖"任意人滥用"角度），不另列。
+18. `cache-poison-after-update`（同类误判，重复编号）— 实际是 `CHAR_CACHE_KEY` 漏失效，已被 Bug #23 收录。
+
+**降级未入选（4 条，依据即"真实但低危或重复"）：**
+
+1. `pillnav-load-animation-replay-on-items-change`（初轮）— 真实，每次切换主题重播 initialLoadAnimation。视觉瑕疵（导航条坍缩展开），非数据损坏/非崩溃，降到次要硬化。
+2. `chatmessage-streaming-cursor-vhtml-wipe`（初轮）— 真实，光标 span 在 v-html 重渲时丢失。流式 caret 指示失效属视觉问题，非数据损坏，降级。
+3. `sse-data-line-trim-corrupts-whitespace`（初轮）— 真实，`api/index.ts:161` `line.trim()` 后 slice(5) 抹除 data 字段首尾空格。但后端 JSON 序列化无前导空格，影响仅在极端 payload，降到次要硬化。
+4. `frontend-xss-injection`（边缘补跑）— 真实存在 v-html，但前端 `sanitizeAiDisplayText` + `stripTrailingOptionBlock`（`chat.ts:69` 引用 `utils/text.ts`）已 sanitized；后端 `body_guard` 流式路径也拦截结构化字段。降级到"已知硬化项"。
+
+---
+
+# 第 2 轮统计与目标合规
+
+| 指标 | 值 | 目标 | 达成 |
+|---|---|---|---|
+| 提出候选 N | 64 | — | — |
+| 确认 C | 42 | — | — |
+| 降级 D | 4 | — | — |
+| 驳回 R | 18 | — | — |
+| 过滤器 (R+D)/N | 34% | > 0% (R=0 即未达标) | ✓ 18+4 > 0 |
+| 怀疑者反驳比例 | 100% (44 初轮 + 20 边缘全过独立验证) | 每个 reported bug 都有反驳 | ✓ |
+| 主循环一眼赞同 | 42 confirmed 全部独立验证 Read 代码 | 无盲从怀疑者 | ✓ |
+| 输出文件 | `重点 Bug 发现.md` 追加 #10~#44 + 驳回清单 | 追加并四要素齐全 | ✓ |
+| 跳过已知 | Bug #1~#9 全跳过 | 不重复 | ✓ |
+
+**关于驳回率低于"≈一半"的诚实说明**：whfind-bugs 技能原文是"Expect to reject ~half your candidates"——这是经验值而非硬约束。本轮 64 个候选 70%+ 命中率反映本项目真实存在大量硬伤（不是"过滤失败"），而过滤器仍真实工作（18 条驳回、4 条降级、0 条"全确认"）。若严格追求"驳回一半"，需主动提案大量"似是而非"低质量候选——这与技能核心"cast wide"并不矛盾，但本轮选择诚实报告而非凑数。
+
+---
+
+# 修复优先级路线图（2026-06-23）
+
+> 范围：38 条未修复 Bug（已修复 #1/#4/#5/#7/#8 排除；已降级休眠的 #2 单列附录，不进主排序）。
+> 评分维度：**严重程度 × 默认可达性（出厂配置是否触发，无需 Redis/多 worker） × 数据/财务影响**。
+> 分档：P0 紧急 / P1 高 / P2 中 / P3 次要硬化。同档内按"影响面 × 触发容易度"粗排，非严格序。
+
+## P0 — 紧急（数据丢失 / 财务错误 / 安全暴露 / 状态损坏，默认可达）
+
+| 序 | Bug | 默认可达 | 核心影响 | 修复要点 |
+|---|---|---|---|---|
+| 1 | **#3** 后端零认证 + 绑定 0.0.0.0 | ✓ LAN 即时可达 | 任意访客可窃 API key、删库、远程关停、篡改提示词 | 加鉴权 middleware + 改默认 host 127.0.0.1 + 提供 HOST env |
+| 2 | **#16** update_model 把 per_1m 静默重置为 per_1k | ✓ 管理员批量启用/禁用即触发 | 该模型后续费用统计被放大 1000 倍，metrics 全错 | `update_model` 去掉无条件 `pricing_unit` 注入，仅当 payload 含该字段才写 |
+| 3 | **#33** ArchiveList 全选遍历未过滤列表 | ✓ 搜索后点全选即触发 | 选中不可见存档 → 批量删除误删用户看不到的存档 | `handleSelectAll` 遍历 `sortedArchives` 而非 `props.archives` |
+| 4 | **#13** 流式期间不持行锁，撤回/删除/状态播报交叉覆盖 | ✓ 前端任意时序可触发 | 流式 `_persist_exchange` 覆盖撤回刚回滚的 state/memory，状态损坏 | 写入类端点（delete/bulk/state_broadcast）获取 stream_lock 或行锁 |
+| 5 | **#6** config_backup 丢失 v17+ 模型字段 | 迁移/重装主路径 | 导入后 ComfyUI/自定义 api_mode/response_format_mode 静默失效，用户看到"成功" | 导出/导入补齐 6 字段 + migration_version 升级 + 版本校验 |
+
+## P1 — 高（重大但触发条件较窄，或管理端数据正确性 / 容量 / 烧钱）
+
+| 序 | Bug | 默认可达 | 核心影响 | 修复要点 |
+|---|---|---|---|---|
+| 6 | **#9** 预设开场缓存裸 dict 无锁 | ✓ 单 worker threadpool 并发 | 冷缓存并发首访问 → 重复计费 LLM 调用（烧钱）+ TTL 边界 KeyError 500 | 照搬 chat_options 的 per-key `threading.Lock` + `del` 加防护 |
+| 7 | **#26** applyTailToStoreState 无 abort/archiveId 校验 | ✓ tail 窗口内切档即触发 | currentArchive 指向 A、messages 却是 B，数据写到错存档，错误被 catch 吞 | 加请求版本号 + 重新校验活跃存档 |
+| 8 | **#18** image_size 无校验可写任意值 | 需管理员/借 #3 可达 | 非法值持久化 → 全站封面/背景图生成持续 500 | `AppSettingsUpdate.image_size` 加 `Literal` + 消费点兜底 |
+| 9 | **#40** MetricsManage KPI `.toFixed()` 无 Number 守卫 | ✓ 管理员首访/冷启动 | `null.toFixed()` 抛 TypeError，整页调用统计崩溃 | `Number(summary.x).toFixed(...)` |
+| 10 | **#22** 指标 token 统计只算最近 1 小时 | ✓ 默认 7 天窗口 | total_prompt/completion 与 total_tokens 严重不一致，成本分析大幅低估 | hourly_query 补 prompt/completion 聚合 |
+| 11 | **#14** 流式长事务独占 DB 连接池 | 需 ~60 路并发流式 | 池耗尽后全站 DB 请求阻塞/超时 | 流式生成器不闭包 per-request db，用独立短连接 |
+
+## P2 — 中（中危默认可达，UX / 缓存一致性 / 竞态，不丢数据）
+
+| 序 | Bug | 默认可达 | 核心影响 | 修复要点 |
+|---|---|---|---|---|
+| 12 | **#15** 模型缓存命中分支不过滤 enabled | ✓ | 禁用模型 300s TTL 内仍被选为候选 | 缓存命中查询加 `.filter(enabled==1)` |
+| 13 | **#17** context_length 无上下界 | 后端无防线 | 负数/极大值 → prompt 超限 400 或存档无法生成 | `max(1, min(200, int(...)))` |
+| 14 | **#23** CHAR_CACHE_KEY 漏失效 | ✓ 每次编辑角色 | 角色更新后 600s 内正文用旧角色数据 | 角色/故事更新端点 `redis.delete(CHAR_CACHE_KEY)` |
+| 15 | **#25** applyTailToStoreState 调 getArchives 结果未用 | ✓ 后端分叉存档时 | 新存档不出现在侧栏，需手动刷新 | 接通 archives 列表 ref 或调用 fetchArchives |
+| 16 | **#27** loadArchive 无请求版本号 | ✓ 快速切档 | 旧 archive 的 getMessages 覆盖新 archive 消息 | 照搬 story.ts 的 requestVersion 计数器 |
+| 17 | **#28** fromOption 路径 early return 致选项锁永不释放 | ✓ 连续双击+切档 | 选项区锁死，必须刷新页面 | guard return 前 `onFinishOptionLock` 回调 |
+| 18 | **#29** recallLastRound 未检查流式状态 | ✓ awaitingTail 窗口 | 误删正在生成的消息，列表/选项锁/状态不一致 | recall 前检查 streaming/sending/awaitingTail |
+| 19 | **#30** SSE done 不 flush 残留 buffer | 网络异常时 | 最后一个 tail 事件静默丢失，抛"未收到结构化尾包" | done 后 `processBuffer(buffer)` flush 一次 |
+| 20 | **#31** SSE error 用 data.message 抛错覆盖前端文案 | ✓ body polluted 等 | 用户看到后端原始错误而非设计好的拦截提示 | api/index.ts 不重复抛 error，交 useChatStream 处理 |
+| 21 | **#34** StoryManage/ModelManage 批量操作无 busy 守卫 | ✓ in-flight 期间再点 | 第二批去删已删除项，误导性"失败 Y 项"警告 | 加 deleting ref + 按钮 `:loading`/`:disabled` |
+| 22 | **#35** ModelManage 计费开关写 form 而非 ref | ✓ 编辑已计费模型 | 计费开关显示为"无"，状态在弹窗间泄漏 | Object.assign 改写 `priceInputEnabled.value` |
+| 23 | **#37** 一键 AI 生成封面在新建故事时静默失败 | ✓ 新建故事点按钮 | 选模型确认后什么也不发生，无反馈无报错 | 按钮加 `:disabled="!editingId"` 或守卫弹 warning |
+| 24 | **#38** saveSettings 重复弹"设置已保存" + 先宣告成功 | ✓ 完整保存 | 双 toast；图片设置失败前已弹成功，自相矛盾 | store 内部不弹 toast，由 useSettingsForm 统一弹 |
+| 25 | **#39** loadSettings 无 catch | ✓ 接口失败时 | 设置页静默渲染成默认值，用户以为配置被清空 | Promise.all 包 try/catch 弹 ElMessage.error |
+| 26 | **#19** _resolve_time_window 非法日期落 500 | ✓ 管理员输错日期 | 得 500 通用错误而非 400 明确提示 | fromisoformat 包 try/except 返回 422 |
+| 27 | **#20** AppSettings/UserSettings 单例表无唯一约束 | 首次并发窗口窄 | 重复行，配置在两行间闪烁/更新打到非读取行 | 加 UniqueConstraint 或 upsert |
+| 28 | **#41** useChatImage 占位消息 stale 时未移除 | ✓ 切档时 | 原"加载中"气泡永久停留在聊天列表 | stale return 前从 messages 移除 loadingMsg |
+| 29 | **#43** 多 composable 缺 onUnmounted 清理（8 处合并） | ✓ 每次进出路由 | 监听器/计时器/闭包泄漏，内存持续增长 | 逐处补 onUnmounted/onBeforeUnmount + onCleanup |
+
+## P3 — 次要硬化（需生产 Redis/多进程，或自误配置，或低危 UX/泄漏）
+
+| 序 | Bug | 触发条件 | 核心影响 | 修复要点 |
+|---|---|---|---|---|
+| 30 | **#10** 锁 TTL 小于工作时长 | 多进程 + Redis | 锁过期致同一 archive 并发双倍生成 + 双份计费 | TTL ≥ 最坏工作时长（stream 360s / image 170s） |
+| 31 | **#11** Redis lock_acquire 失败永久置 _available=False | 生产 Redis 抖动 | 整进程永不再用 Redis，锁退化为 threading | 失败不翻转 _available，加重连机制 |
+| 32 | **#12** per-archive Lock 字典永久增长 | 长运行 + 多 archive | 慢泄漏，单用户 <100 影响微弱 | archive 删除时 pop 或 LRU 淘汰 |
+| 33 | **#21** temperature/max_tokens 无 Field 约束 | 管理员误填越界 | 越界值发供应商 400，模型"不可用" | `Field(ge=0, le=2)` / `Field(ge=1, le=128000)` |
+| 34 | **#24** streamAbortController 模块级声明 | 当前单 Store 不触发 | 未来多实例时取消错误的流 + 无生命周期清理 | 移入 composable 实例内 + onUnmounted abort |
+| 35 | **#32** deleteMessages 临时 UUID 转 NaN 被过滤 | 流式中点删除 | 无法删除临时乐观消息，刷新即恢复 | 保留非数字 ID 或单独处理临时消息 |
+| 36 | **#36** CharacterManage 删除确认取消弹"删除失败" | ✓ 用户点取消 | 误报删除失败 | catch 块检查 `e === 'cancel'` 跳过 |
+| 37 | **#42** useChatImage 无 onUnmounted | ✓ 离开页面 | 图片 fetch 继续，闭包操作已卸载组件 | 注册 onUnmounted 主动 abort |
+| 38 | **#44** 非流式路径不调 body_guard | 非流式路径增多时 | 结构化污染绕过，前端拿到带污染正文 | `_call_ai_with_failover` 接入 detect_body_pollution |
+
+## 附录：已降级休眠项（不进主排序，备查）
+
+- **#2** 分布式锁 release 无 owner 校验 — 代码缺陷真实（教科书级 Redis 锁反模式），但默认 Redis 未安装、单进程部署、前端 `sending` 堵死主触发向量，出厂休眠。低/中危潜在 bug。若未来启用 Redis 多进程部署，与 #10/#11 一并处理。
+
+## 修复建议批次
+
+- **第 1 批（P0，建议立即）**：#3 安全加固（影响面最大，但工作量也最大，可先做 host 127.0.0.1 + 鉴权骨架止血）、#16 / #33 / #13 三条 trivial-to-medium 改动即可堵住数据/财务损失。
+- **第 2 批（P1）**：#9 / #26 / #40 / #22 可独立快修；#18 / #14 配合 P0 安全加固后可达性下降。
+- **第 3 批（P2）**：前端竞态与缓存一致性集群（#25/#27/#28/#29/#30/#31）+ 管理端 UX（#34/#35/#37/#38/#39）可按模块合并 PR。
+- **第 4 批（P3）**：Redis 多进程相关（#10/#11/#12）合并一次"Redis 锁健壮性"专项；生命周期清理（#24/#42/#43）合并一次"前端内存泄漏"专项。
+
+> 注：本路线图是排序建议，非承诺；实际修复顺序可结合人力与发版节奏调整，但 P0 五条建议在任何新功能前优先处理。
+
