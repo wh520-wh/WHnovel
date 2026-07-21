@@ -34,6 +34,7 @@ export function useChatStream(params: {
   autoGenerateOptions: { value: boolean }
   onApplyTail: (messageId: string | number, tail: ChatStreamTailData) => void
   onAutoGenerateOptions: (archiveId: number) => void
+  onBeginOptionLock: (option: string) => boolean
   onFinishOptionLock: (success: boolean) => void
   onClearOptions: () => void
 }) {
@@ -50,6 +51,7 @@ export function useChatStream(params: {
     autoGenerateOptions,
     onApplyTail,
     onAutoGenerateOptions,
+    onBeginOptionLock,
     onFinishOptionLock,
     onClearOptions,
   } = params
@@ -300,6 +302,10 @@ export function useChatStream(params: {
 
   async function sendStream(text: string, options: { fromOption?: boolean } = {}) {
     if (!currentArchive.value || sending.value) return
+    // Bug #28 治本：选项锁生命周期收口到本函数——guard 之后才取锁，
+    // 此后任何退出（成功/失败/异常）都由下方 finally 的 onFinishOptionLock 覆盖，
+    // 不存在"锁已取、流未发"的泄漏窗口
+    if (options.fromOption && !onBeginOptionLock(text)) return
 
     if (!options.fromOption) {
       onClearOptions()

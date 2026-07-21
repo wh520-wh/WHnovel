@@ -636,7 +636,7 @@
 
 ---
 
-## Bug #28：`sendStream` 在 `fromOption` 路径下 `beginOptionLock` 后若 `sending` 守卫触发 early return，选项锁永不释放
+## Bug #28：`sendStream` 在 `fromOption` 路径下 `beginOptionLock` 后若 `sending` 守卫触发 early return，选项锁永不释放 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支，治本重构）
 
 **位置**：`frontend/src/stores/chat.ts:383-389`；`frontend/src/composables/useChatStream.ts:301-302`
 
@@ -647,6 +647,12 @@
 **证据**：`chat.ts:383-389` 先 `beginOptionLock` 再调用 `streamModule.sendStream`；`useChatStream.ts:301-302` guard return 无 `onFinishOptionLock` 回调。
 
 **主循环一眼赞同**：成立（中危）。触发条件明确（连续双击 + 切档），但后果是 UX 卡死非数据损坏。
+
+**修复记录**（fix/core-experience-bugs 分支，**治本重构**而非补丁）：
+- **设计判断**：原设计把选项锁生命周期拆在两个模块——`chat.ts` 包装器取锁、`useChatStream.sendStream` 释放锁——跨模块的所有权分裂必然产生"锁已取、流未发"的泄漏窗口（本 bug）。在 guard 里补释放只是补丁，下一个 early return 路径还会复发。
+- **治本案**：锁的获取移入 `useChatStream.sendStream` 且放在 guard **之后**（`useChatStream` 新增 `onBeginOptionLock` 依赖注入）；此后函数内任何退出都被既有 `finally { if (!succeeded) onFinishOptionLock(false) }` 与成功路径 `onFinishOptionLock(true)` 覆盖，结构上不存在泄漏窗口。`chat.ts` 包装器删除，`sendStream: streamModule.sendStream` 直接透出。
+- UX/行为零变化：guard 命中时锁根本不会被取（原补丁案是"取后释放"）；begin 失败（选项已锁/不在列表）同样直接返回。
+- 测试：`chat.spec.ts` 新增"already sending 时点选项不取锁、选项区完好"用例（先红后绿）；既有 26 个相关用例（含选项锁成功/中止/快照恢复流）全绿作行为不变证据；vue-tsc 类型检查过。
 
 ---
 

@@ -173,6 +173,7 @@ export const useChatStore = defineStore('chat', () => {
     autoGenerateOptions: optionsModule.autoGenerateOptions,
     onApplyTail: applyTailToAssistant,
     onAutoGenerateOptions: (archiveId) => optionsModule.autoGenerateOptionsAsync(archiveId),
+    onBeginOptionLock: (option) => optionsModule.beginOptionLock(option),
     onFinishOptionLock: (s) => optionsModule.finishOptionLock(s),
     onClearOptions: () => optionsModule.dismissCurrentOptions(),
   })
@@ -379,15 +380,7 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  // --- sendStream wrapper (handles beginOptionLock before stream) ---
-  async function sendStream(text: string, options: { fromOption?: boolean } = {}) {
-    if (options.fromOption) {
-      const locked = optionsModule.beginOptionLock(text)
-      if (!locked) return
-    }
-    return streamModule.sendStream(text, options)
-  }
-
+  // --- sendStream：选项锁生命周期已收口进 streamModule.sendStream（Bug #28），直接透出 ---
   return {
     // messages (shared ref)
     messages,
@@ -438,7 +431,7 @@ export const useChatStore = defineStore('chat', () => {
     generateImage: imageModule.generateImage,
     // stream
     startStory: streamModule.startStory,
-    sendStream,
+    sendStream: streamModule.sendStream,
     abortStream: streamModule.abortStream,
     generateStateBroadcast,
     // highlight

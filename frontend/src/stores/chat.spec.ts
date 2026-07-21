@@ -280,6 +280,22 @@ describe('chat store', () => {
     expect(lastMessage.content).toBe('State broadcast message')
     expect(lastMessage.isStateBroadcast).toBe(true)
   })
+
+  it('does not take option lock when option send early-returns while already sending (Bug #28)', async () => {
+    apiMocks.getArchives.mockResolvedValue({ data: [] })
+
+    const store = useChatStore()
+    store.currentArchive = { id: 1, story_id: 1 } as any
+    store.currentOptions = ['观察四周', '直接追问']
+    ;(store as any).sending = true // 模拟另一路流式正在进行，sendStream 将 early return
+
+    await store.sendStream('直接追问', { fromOption: true })
+
+    // 治本案：guard 命中时锁根本不会被取，选项区不可能锁死
+    expect(store.optionsLocked).toBe(false)
+    expect(store.lockedOption).toBe('')
+    expect(store.currentOptions).toEqual(['观察四周', '直接追问'])
+  })
 })
 
 describe('normalizeIncomingMessage', () => {
