@@ -1,5 +1,6 @@
 /* ============================================================
    whAInoel 设计系统变量 - Nocturne Teal 主题
+   本文件只保留变量赋值；组件级主题规则统一放在 global.css
    ============================================================ */
 
 /* ---- 暗色主题 ---- */
@@ -85,6 +86,11 @@
   --el-disabled-text-color: #587377;
   --el-disabled-border-color: #214047;
   --el-color-primary: #14b8a6;
+
+  /* 菜单 / 表格差异变量（供 global.css 通用规则消费） */
+  --menu-active-color: #ffffff;
+  --table-header-bg: #1e2236;
+  --table-row-hover-bg: #242a42;
 }
 
 /* ---- 亮色主题 ---- */
@@ -170,6 +176,12 @@
   --admin-main-bg: rgba(246, 251, 250, 0.85);
   --admin-card-bg: rgba(255, 255, 255, 0.75);
   --admin-input-bg: rgba(255, 255, 255, 0.6);
+
+  /* 菜单 / 表格差异变量 */
+  --menu-bg: transparent;
+  --table-bg: var(--bg-card);
+  --table-header-bg: var(--bg-secondary);
+  --table-row-hover-bg: var(--bg-hover);
 }
 
 /* ---- 设计系统：间距比例尺 (8pt) ---- */
@@ -259,16 +271,6 @@
   );
   --chat-bg-overlay: rgba(246, 251, 250, 0.55);
   --chat-bg-overlay-mobile: rgba(246, 251, 250, 0.65);
-}
-
-/* ---- 亮色主题 AI 气泡：纯白 + 轻微浮起阴影 ---- */
-[data-theme='light'] .chat-message.assistant .msg-bubble {
-  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.05);
-}
-
-/* ---- Enigma 主题：状态播报数值用琥珀色描色（风味 delta） ---- */
-[data-theme='enigma'] .chat-message .state-broadcast-table .sb-val {
-  color: var(--warning-color);
 }
 
 /* ---- Enigma 风格主题 (第三主题) ---- */
@@ -369,67 +371,10 @@
   --admin-main-bg: rgba(8, 8, 15, 0.6);
   --admin-card-bg: rgba(8, 8, 15, 0.8);
   --admin-input-bg: rgba(8, 8, 15, 0.8);
-}
 
-/* ---- Claude 主题聊天消息 ---- */
-[data-theme='enigma'] .chat-message.user .msg-bubble {
-  background: linear-gradient(135deg, #0f766e, #0ea5a4);
-  box-shadow: 0 2px 12px rgba(14, 165, 164, 0.32);
-}
-
-[data-theme='enigma'] .chat-message.assistant .msg-bubble {
-  background: #1e1e28;
-  border: 1px solid #2a2a35;
-}
-
-/* ---- Claude 主题按钮 ---- */
-[data-theme='enigma'] .send-btn {
-  background: linear-gradient(135deg, #0f766e, #0ea5a4);
-  box-shadow: 0 4px 14px rgba(14, 165, 164, 0.36);
-}
-
-[data-theme='enigma'] .send-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0ea5a4, #5eead4);
-  box-shadow: 0 4px 20px rgba(14, 165, 164, 0.48);
-}
-
-/* ---- Claude 主题输入框 ---- */
-[data-theme='enigma'] .bottom-input {
-  background: #111116;
-  border-color: #2a2a35;
-}
-
-[data-theme='enigma'] .bottom-input:focus {
-  border-color: #0ea5a4;
-  box-shadow:
-    0 0 0 3px rgba(14, 165, 164, 0.2),
-    var(--shadow-sm);
-}
-
-/* ---- Claude 主题标签 ---- */
-[data-theme='enigma'] .card-tags .el-tag {
-  background: rgba(14, 165, 164, 0.15);
-  border-color: rgba(14, 165, 164, 0.35);
-  color: #5eead4;
-}
-
-/* ---- Claude 主题分类筛选 ---- */
-[data-theme='enigma'] .filter-pill.active {
-  background: linear-gradient(135deg, #0f766e, #0ea5a4);
-  box-shadow: 0 4px 14px rgba(14, 165, 164, 0.35);
-}
-
-/* ---- Claude 主题故事卡片悬停 ---- */
-[data-theme='enigma'] .story-card:hover {
-  box-shadow:
-    var(--shadow-lg),
-    0 0 0 1px rgba(14, 165, 164, 0.3);
-  border-color: rgba(14, 165, 164, 0.5);
-}
-
-/* ---- Claude 主题侧边栏 ---- */
-[data-theme='enigma'] .left-panel {
-  border-right-color: #2a2a35;
+  /* 表格差异变量 */
+  --table-header-bg: var(--bg-elevated);
+  --table-row-hover-bg: var(--bg-hover);
 }
 
 /* ---- 新 Claude 主题（Anthropic 官方美学） ---- */
@@ -535,6 +480,10 @@
   --admin-main-bg: rgba(15, 15, 13, 0.65);
   --admin-card-bg: rgba(15, 15, 13, 0.8);
   --admin-input-bg: rgba(15, 15, 13, 0.8);
+
+  /* 表格差异变量 */
+  --table-header-bg: var(--bg-elevated);
+  --table-row-hover-bg: var(--bg-hover);
 }
 
 /* 系统偏好亮色 → Claude·Day（羊皮纸） */
@@ -633,72 +582,9 @@
     --admin-main-bg: rgba(245, 244, 237, 0.85);
     --admin-card-bg: rgba(255, 255, 255, 0.85);
     --admin-input-bg: rgba(255, 255, 255, 0.7);
+
+    /* 表格差异变量 */
+    --table-header-bg: var(--bg-elevated);
+    --table-row-hover-bg: var(--bg-hover);
   }
-}
-
-/* ---- 新 Claude 主题聊天消息 ---- */
-[data-theme='claude'] .chat-message.user .msg-bubble {
-  background: var(--user-bubble);
-  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent-color) 35%, transparent);
-  line-height: var(--line-height-prose);
-}
-
-[data-theme='claude'] .chat-message.assistant .msg-bubble {
-  background: var(--ai-bubble);
-  border: 1px solid var(--border-color);
-  line-height: var(--line-height-prose);
-}
-
-/* ---- 新 Claude 主题发送按钮 ---- */
-[data-theme='claude'] .send-btn {
-  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
-  box-shadow: var(--shadow-md);
-}
-
-[data-theme='claude'] .send-btn:hover:not(:disabled) {
-  box-shadow: 0 4px 20px var(--accent-glow);
-}
-
-/* ---- 新 Claude 主题输入框 ---- */
-[data-theme='claude'] .bottom-input {
-  background: var(--bg-input);
-  border-color: var(--border-color);
-}
-
-[data-theme='claude'] .bottom-input:focus {
-  border-color: var(--accent-color);
-  box-shadow:
-    0 0 0 3px var(--accent-glow),
-    var(--shadow-sm);
-}
-
-/* ---- 新 Claude 主题标签 ---- */
-[data-theme='claude'] .card-tags .el-tag {
-  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
-  border-color: color-mix(in srgb, var(--accent-color) 30%, transparent);
-  color: var(--accent-color);
-}
-
-/* ---- 新 Claude 主题分类筛选 ---- */
-[data-theme='claude'] .filter-pill.active {
-  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
-  box-shadow: var(--shadow-md);
-}
-
-/* ---- 新 Claude 主题故事卡片悬停 ---- */
-[data-theme='claude'] .story-card:hover {
-  box-shadow:
-    var(--shadow-lg),
-    0 0 0 1px color-mix(in srgb, var(--accent-color) 30%, transparent);
-  border-color: color-mix(in srgb, var(--accent-color) 50%, transparent);
-}
-
-/* ---- 新 Claude 主题侧边栏 ---- */
-[data-theme='claude'] .left-panel {
-  border-right-color: var(--border-color);
-}
-
-/* ---- 新 Claude 主题角色名衬线 ---- */
-[data-theme='claude'] .char-name {
-  font-family: var(--heading);
 }
