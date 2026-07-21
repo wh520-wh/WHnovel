@@ -217,7 +217,12 @@ export const useChatStore = defineStore('chat', () => {
     return data
   }
 
+  // Bug #27：请求版本号防快速切档竞态——模式对齐 story.ts requestVersion。
+  // 每次 loadArchive 递增；await 后版本不一致即视为过期响应，丢弃不应用。
+  let loadArchiveVersion = 0
+
   async function loadArchive(archiveId: number) {
+    const myVersion = ++loadArchiveVersion
     try {
       streamModule.abortStream()
     } catch {
@@ -228,12 +233,14 @@ export const useChatStore = defineStore('chat', () => {
       imageModule.abortInFlightImageRequest()
     }
     const { data: archive } = await getArchive(archiveId)
+    if (myVersion !== loadArchiveVersion) return null // 已有更新的切档请求，丢弃过期响应
     archiveModule.currentArchive.value = archive
     currentState.value = archive.state_data || {}
     currentStoryState.value = archive.story_state || {}
     currentMemoryLog.value = archive.memory_log || []
 
     const { data: msgs } = await getMessages(archiveId)
+    if (myVersion !== loadArchiveVersion) return null // 同上：旧 archive 的消息不得覆盖新 archive
     const normalizedMsgs = (Array.isArray(msgs) ? msgs : []).map((m) =>
       normalizeIncomingMessage(m as Record<string, unknown>),
     )

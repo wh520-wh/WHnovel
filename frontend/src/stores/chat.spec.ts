@@ -296,6 +296,55 @@ describe('chat store', () => {
     expect(store.lockedOption).toBe('')
     expect(store.currentOptions).toEqual(['观察四周', '直接追问'])
   })
+
+  it('ignores stale loadArchive responses when switching archives quickly (Bug #27)', async () => {
+    const archiveA = {
+      id: 1,
+      story_id: 1,
+      name: 'A',
+      state_data: {},
+      story_state: {},
+      memory_log: [],
+      created_at: '2026-04-16T00:00:00Z',
+      updated_at: '2026-04-16T00:00:00Z',
+    }
+    const archiveB = { ...archiveA, id: 2, name: 'B' }
+    const msgA = {
+      id: 101,
+      archive_id: 1,
+      role: 'assistant',
+      content: 'A 的消息',
+      state_snapshot: {},
+      story_state: {},
+      options: [],
+      memory_update: [],
+      created_at: '2026-04-16T00:00:00Z',
+    }
+    const msgB = { ...msgA, id: 201, archive_id: 2, content: 'B 的消息' }
+
+    // getMessages(A) 故意晚于 getMessages(B) 返回，模拟快速切档时的响应乱序
+    let resolveA: (v: any) => void = () => {}
+    apiMocks.getArchive.mockImplementation(async (id: number) => ({
+      data: id === 1 ? archiveA : archiveB,
+    }))
+    apiMocks.getMessages.mockImplementation(
+      (id: number) =>
+        new Promise((resolve) => {
+          if (id === 1) resolveA = resolve
+          else resolve({ data: [msgB] })
+        }),
+    )
+
+    const store = useChatStore()
+    const p1 = store.loadArchive(1)
+    const p2 = store.loadArchive(2)
+    await p2 // B 先完整落地
+    resolveA({ data: [msgA] }) // A 的迟到响应
+    await p1
+
+    expect(store.currentArchive?.id).toBe(2)
+    expect(store.messages.map((m) => m.content)).toEqual(['B 的消息'])
+  })
 })
 
 describe('normalizeIncomingMessage', () => {

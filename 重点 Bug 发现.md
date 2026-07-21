@@ -636,7 +636,7 @@
 
 ---
 
-## Bug #27：`loadArchive` 无请求版本号 / AbortController，快速切档导致旧 archive 的 `getMessages` 覆盖新 archive
+## Bug #27：`loadArchive` 无请求版本号 / AbortController，快速切档导致旧 archive 的 `getMessages` 覆盖新 archive ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`frontend/src/stores/chat.ts:216-252`
 
@@ -647,6 +647,11 @@
 **证据**：`chat.ts:216-252` 全函数无 requestVersion 计数器；`:227` 设置 `currentArchive.value = archive`；`:236` 设置 `messages.value = normalizedMsgs`。任何在途的旧 `getMessages` 请求完成后都会无条件覆盖当前 messages。
 
 **主循环一眼赞同**：成立（中危）。属前端经典竞态，修复模式已有（story.ts），可照搬。
+
+**修复记录**（fix/core-experience-bugs 分支，TDD：先红后绿）：
+- `chat.ts` 新增 setup 级 `loadArchiveVersion` 计数器（模式对齐 `story.ts requestVersion`）：`loadArchive` 入口递增，`getArchive` 与 `getMessages` 两个 await 之后各做一次版本校验，过期响应直接丢弃返回 `null`（调用方均不使用返回值）。
+- 测试：`chat.spec.ts` 新增"A 的 getMessages 故意晚于 B 返回，断言最终 currentArchive=B 且 messages 为 B 的内容"竞态用例；10 个 store 用例全绿 + vue-tsc 过。
+- 关联：#25+#26（applyTailToStoreState 竞态）在同机制思路下于下一 commit 处理。
 
 ---
 
