@@ -382,7 +382,9 @@ def _get_enabled_models(
             model_ids = json.loads(cached)
             if model_ids:
                 return (
-                    db.query(models.ModelConfig).filter(models.ModelConfig.id.in_(model_ids)).all()
+                    db.query(models.ModelConfig)
+                    .filter(models.ModelConfig.id.in_(model_ids), models.ModelConfig.enabled == 1)
+                    .all()
                 )
             return []
 

@@ -433,7 +433,7 @@
 
 ---
 
-## Bug #15：模型缓存命中分支不带 `enabled == 1` 过滤，禁用模型在 300s TTL 内仍被选为候选
+## Bug #15：模型缓存命中分支不带 `enabled == 1` 过滤，禁用模型在 300s TTL 内仍被选为候选 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：`backend/app/api/chat_models.py:374-401`（esp. :382-387）
 
@@ -444,6 +444,11 @@
 **证据**：`chat_models.py:382-387` 缓存命中后仅 `.filter(.id.in_(ids))`；`:389` 非缓存分支 `.filter(.enabled == 1)`。`admin.py:141-142` `redis.delete(MODEL_CACHE_KEY)` 在 update/delete 后调用。
 
 **主循环一眼赞同**：成立（中危）。修复 trivial——`:385` 加上 `.filter(models.ModelConfig.enabled == 1)`。
+
+**修复记录**（fix/core-experience-bugs 分支，TDD：先红后绿）：
+- `chat_models.py` `_get_enabled_models` 缓存命中分支补 `models.ModelConfig.enabled == 1` 过滤，与非缓存分支行为对齐。
+- 测试：`test_model_cache_enabled_filter.py`（fake redis 缓存中残留已禁用模型 id，断言命中分支不返回它）。
+- 备注（范围外未动）：缓存命中分支不按 priority 排序（缓存 id 列表本身有序，但 DB `IN` 查询不保证顺序）——属独立观察项，不属 #15 范围，未在本 commit 处理。
 
 ---
 
