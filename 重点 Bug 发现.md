@@ -305,7 +305,7 @@
 
 ---
 
-## Bug #9：预设开场缓存 `chat_cache` 模块级裸 dict 无锁，默认部署下 threadpool 并发可致重复 LLM 调用 + TTL 边界 KeyError 500
+## Bug #9：预设开场缓存 `chat_cache` 模块级裸 dict 无锁，默认部署下 threadpool 并发可致重复 LLM 调用 + TTL 边界 KeyError 500 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
 
 **位置**：
 - `backend/app/api/chat_cache.py:11,19-30,33-50`（无锁缓存）
@@ -331,6 +331,12 @@
 - `run.py:6` `host="0.0.0.0", reload=True`，无 `--workers`，单 worker + threadpool 并发。
 
 **子代理审查结论**：降级但成立（中等）。子代理端到端验证机制（无锁、`del` 无防护、无 single-flight、调用方 sync def → threadpool 并发、generate_fn 是真实计费 LLM 调用），并以"兄弟生成路径全加锁、唯独 preset-openings 漏"作为决定性设计边界证据（非有意）。影响诚实定级为中等：无数据丢失/无崩溃/缓存自愈，真实成本是冷缓存并发窗口内的重复计费 LLM 调用 + TTL 边界瞬时 500。默认部署可达。修复 trivial：照搬 `chat_options` 的 per-key `threading.Lock` 模式 + 给 `del` 加防护。
+
+**修复记录**（fix/core-experience-bugs 分支，TDD：并发测试先红后绿）：
+- `chat_cache.py` 引入 per-story `threading.Lock` + guard（模式对齐 `chat_options`），`get_or_generate` 在锁内 double-check 后再执行 `generate_fn`——single-flight，同故事并发只产生一次计费 LLM 调用，其余等待后读缓存。
+- `_get_cached` 过期删除 `del` → `_cache.pop(story_id, None)`，消除 TTL 边界并发 KeyError 500。
+- 测试：`test_chat_cache.py`（2 用例：4 线程 barrier 同起跑断言 generate_fn 仅调 1 次且恰好 1 个 was_cached=False；8 线程并发过期删除无 KeyError）。
+- 范围外：锁字典无界增长属 #12（P3），不在本轮。
 
 ---
 
