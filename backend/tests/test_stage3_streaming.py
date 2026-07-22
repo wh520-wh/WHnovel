@@ -544,3 +544,31 @@ def test_stream_body_pollution_after_delta_returns_special_error_without_draft(m
 
     messages = client.get(f"/api/chat/messages/{archive['id']}").json()
     assert messages == []
+
+
+def test_start_stream_without_model_returns_sse_error_event():
+    # 未配置任何模型时，准备阶段的 HTTPException 应转成 SSE error 事件，
+    # 而不是以 200 空 Body 静默断流（Bug #46）
+    db = SessionLocal()
+    try:
+        db.query(models.ModelConfig).delete()
+        db.commit()
+    finally:
+        db.close()
+
+    story_id = _first_story_id()
+    archive = _create_archive(story_id)
+
+    resp = client.post(
+        "/api/chat/start-stream",
+        json={
+            "story_id": story_id,
+            "archive_id": archive["id"],
+            "opening_requirement": "雨夜开场",
+        },
+    )
+
+    assert resp.status_code == 200
+    assert "event: error" in resp.text
+    assert "没有可用模型" in resp.text
+    assert "event: done" in resp.text

@@ -9,6 +9,7 @@ import uuid
 from collections.abc import Generator
 from contextlib import contextmanager
 
+from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -177,37 +178,67 @@ def _stream_chat_response(
     first_message: str = "",
     stream_fn=None,
 ) -> Generator[str, None, None]:
-    rounds_without_label = _count_rounds_without_plot_label(db, archive.id)
-    forced_plot_label = rounds_without_label >= MAX_ROUNDS_WITHOUT_PLOT_LABEL
+    # 准备阶段（构建 prompt、解析候选模型）发生在首个 yield 之前。
+    # 此处若直接 raise（典型：未配置模型时 _get_normal_model_candidates 抛 503），
+    # 响应已以 200 开始流式输出，异常只会掐断连接，前端收到空 Body，
+    # 只能报"未收到结构化尾包"而非真实原因。统一转成 SSE error 事件让前端正确提示。
+    try:
+        rounds_without_label = _count_rounds_without_plot_label(db, archive.id)
+        forced_plot_label = rounds_without_label >= MAX_ROUNDS_WITHOUT_PLOT_LABEL
 
-    characters = _get_story_characters(db, story.id)
-    inject_count = _resolve_memory_inject_count(settings.memory_inject_count)
-    memory_section = _build_memory_section(
-        archive.memory_log, inject_count, archive_id=archive.id, escape=False
-    )
-    stream_sections = _build_stream_prompt_sections(
-        story,
-        db,
-        forced_plot_label=forced_plot_label,
-        characters=characters,
-        reply_style=settings.reply_style,
-        memory_section=memory_section,
-    )
-    messages: list[dict] = [{"role": "system", "content": "\n\n".join(stream_sections)}]
-    if include_history:
-        current_settings = _get_or_create_settings(db)
-        context_length = current_settings.context_length or 10
-        history = _query_dialogue_history(db, archive.id, context_length)
-        for item in history:
-            messages.append(
-                {
-                    "role": "assistant" if item.role == "assistant" else "user",
-                    "content": item.content,
-                }
-            )
-    messages.append({"role": "user", "content": _restore_tail_escape(user_content)})
+        characters = _get_story_characters(db, story.id)
+        inject_count = _resolve_memory_inject_count(settings.memory_inject_count)
+        memory_section = _build_memory_section(
+            archive.memory_log, inject_count, archive_id=archive.id, escape=False
+        )
+        stream_sections = _build_stream_prompt_sections(
+            story,
+            db,
+            forced_plot_label=forced_plot_label,
+            characters=characters,
+            reply_style=settings.reply_style,
+            memory_section=memory_section,
+        )
+        messages: list[dict] = [{"role": "system", "content": "\n\n".join(stream_sections)}]
+        if include_history:
+            current_settings = _get_or_create_settings(db)
+            context_length = current_settings.context_length or 10
+            history = _query_dialogue_history(db, archive.id, context_length)
+            for item in history:
+                messages.append(
+                    {
+                        "role": "assistant" if item.role == "assistant" else "user",
+                        "content": item.content,
+                    }
+                )
+        messages.append({"role": "user", "content": _restore_tail_escape(user_content)})
 
-    candidates = _get_normal_model_candidates(db, settings)
+        candidates = _get_normal_model_candidates(db, settings)
+    except HTTPException as exc:
+        yield _sse_event(
+            "error",
+            {
+                "code": f"HTTP_{exc.status_code}",
+                "message": str(exc.detail)[:200],
+                "task": "chat_stream",
+                "draft": False,
+            },
+        )
+        yield _sse_event("done", {"ok": False})
+        return
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("流式聊天准备阶段失败")
+        yield _sse_event(
+            "error",
+            {
+                "code": "STREAM_PREPARATION_FAILED",
+                "message": f"聊天准备失败：{exc}"[:200],
+                "task": "chat_stream",
+                "draft": False,
+            },
+        )
+        yield _sse_event("done", {"ok": False})
+        return
     temperature = _get_temperature(candidates[0] if candidates else None)
     _stream = stream_fn or _stream_model_once
 
