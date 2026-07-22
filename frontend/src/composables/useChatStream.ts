@@ -292,6 +292,12 @@ export function useChatStream(params: {
         onAutoGenerateOptions(archiveId)
       }
     } catch (e) {
+      // Bug #48：纯失败（未收到任何 delta/tail/draft）时移除空的临时 AI 气泡，
+      // 避免聊天列表残留空白气泡需手动刷新
+      if (!tail && !textEnded && !draftPersisted) {
+        const idSet = new Set([tempAssistantId])
+        messages.value = messages.value.filter((m) => !idSet.has(m.id))
+      }
       throw wrapStreamError(e, {
         committed: !!(tail || textEnded || draftPersisted),
         draftPersisted,
@@ -401,6 +407,11 @@ export function useChatStream(params: {
 
       succeeded = true
     } catch (e) {
+      // Bug #48：纯失败时移除空的临时 AI 气泡，避免残留空白气泡（同 startStory）
+      if (!tail && !textEnded && !draftPersisted) {
+        const idSet = new Set([tempAssistantId])
+        messages.value = messages.value.filter((m) => !idSet.has(m.id))
+      }
       throw wrapStreamError(e, {
         committed: !!(tail || textEnded || draftPersisted),
         draftPersisted,

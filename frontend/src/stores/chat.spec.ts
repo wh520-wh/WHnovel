@@ -169,6 +169,36 @@ describe('chat store', () => {
     expect((caught as { partial?: boolean })?.partial).toBe(true)
   })
 
+  it('removes empty assistant bubble on pure stream failure (Bug #48)', async () => {
+    apiMocks.getArchives.mockResolvedValue({ data: [] })
+
+    const store = useChatStore()
+    store.currentArchive = { id: 1, story_id: 1 } as any
+
+    apiMocks.sendMessageStream.mockImplementation(
+      async (_archiveId: number, _text: string, onEvent: any) => {
+        // 纯失败：仅 error 事件，无 delta/tail/draft（如未配置模型 Bug #46 触发）
+        onEvent({
+          event: 'error',
+          data: { code: 'HTTP_503', message: '没有可用模型', task: 'chat_stream', draft: false },
+        })
+      },
+    )
+
+    let caught: unknown = null
+    try {
+      await store.sendStream('测试消息')
+    } catch (e) {
+      caught = e
+    }
+
+    // 空的临时 AI 气泡应被移除，不残留空白气泡；仅保留乐观用户消息
+    expect(store.messages.filter((m: any) => m.role === 'assistant')).toEqual([])
+    expect(store.messages.length).toBe(1)
+    expect(store.messages[0].role).toBe('user')
+    expect(caught).toBeTruthy()
+  })
+
   it('keeps option-lock flow when sending an AI option', async () => {
     apiMocks.getArchives.mockResolvedValue({ data: [] })
 
