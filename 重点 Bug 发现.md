@@ -1001,6 +1001,25 @@
 
 ---
 
+## Bug #48：流式纯失败时聊天列表残留空白 AI 气泡，需手动刷新才消失 ✅ 已修复（2026-07-22，fix/core-experience-bugs 分支）
+
+**位置**：`frontend/src/composables/useChatStream.ts` `startStory`/`sendStream` 的 catch 块；`handleStreamError` 原仅 `STREAM_BODY_POLLUTED` 分支移除 tempAssistant。
+
+**现象**：发送/开场失败且后端未返回任何 `delta`/`tail`/`draft`（如未配置模型 Bug #46、网络断开未收到首字、模型返回空被后端 `STREAM_SCHEMA_INVALID` 拦截 `draft:false`）时，前端 push 的临时 `tempAssistant`（空 content）不被移除，残留为一条空白 AI 气泡，直到用户手动刷新页面才消失。
+
+**影响**：聊天列表出现空白气泡，用户困惑，属"聊天里的 bug"。不卡死（状态已复位可继续发），但体验瑕疵。`STREAM_BODY_POLLUTED` 分支已有移除逻辑，其他 error 路径遗漏。
+
+**证据**：`useChatStream.ts` `handleStreamError` 仅 `code==='STREAM_BODY_POLLUTED'` 时 filter 移除 tempAssistant，其他 error 返回 message 不动；`startStory`/`sendStream` catch 仅 `wrapStreamError` + finally 复位状态，未清理空 tempAssistant。
+
+**修复记录**（2026-07-22，fix/core-experience-bugs 分支，治本：纯失败回滚空占位）：
+- `startStory`/`sendStream` catch 块在 `wrapStreamError` 前加纯失败判断：`!tail && !textEnded && !draftPersisted`（未收到任何 delta/tail/draft）时移除空的 tempAssistant。有 delta（`textEnded`）或草稿（`draftPersisted`）分支不动，保留已显示正文/已持久化草稿。
+- 测试：`chat.spec.ts` 新增 `removes empty assistant bubble on pure stream failure (Bug #48)`，mock 仅 error 事件断言 assistant 气泡被移除、仅剩乐观用户消息；14 用例绿 + vue-tsc 过。
+- 提交：`e12e68b`。
+
+**关联**：与 Bug #41（图片占位 stale 移除）同思路--失败/过期占位消息要主动清理；与 Bug #46 互补--#46 让失败原因可见，#48 让失败不留空壳。
+
+---
+
 # 第 2 轮驳回清单（过滤器工作证据）
 
 按 whfind-bugs 技能要求，驳回候选需记录一行原因。共 **18 条驳回 + 4 条降级**：
