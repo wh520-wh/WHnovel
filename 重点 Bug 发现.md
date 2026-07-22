@@ -1020,6 +1020,25 @@
 
 ---
 
+## Bug #49：存档导入无类型校验，损坏 payload 直接 500 ✅ 已修复（2026-07-22，fix/core-experience-bugs 分支）
+
+**位置**：`backend/app/api/archives.py:120` `import_archive(payload: dict)`（裸 dict 无 schema 校验）。
+
+**现象**：导入存档时若 JSON 里 `messages` 不是列表（字符串/dict/None）、或 messages 项非对象、或 `archive.story_id` 非整数，后端在 `for msg_data in messages_data` 或 `db.query(story_id)` 处抛 `AttributeError`/`DataError`，FastAPI 返 500 通用错误，用户只看到"服务器错误"不知是导入文件坏了。
+
+**影响**：导入损坏文件失败且无明确提示，属健壮性问题。不损坏现有存档（导入失败未 commit），但用户体验差。前端导入入口可达。
+
+**证据**：原 `import_archive` 仅 `if not archive_data` 检查（对空 dict/None），`messages_data = payload.get("messages", [])` 不校验传入类型；`for msg_data in messages_data` 对字符串遍历每个字符 `.get` -> AttributeError -> 500。
+
+**修复记录**（2026-07-22，fix/core-experience-bugs 分支，治本：类型校验前置）：
+- 加 `isinstance` 校验：`archive` 必须为 dict、`messages` 必须为 list、`archive.story_id` 必须为 int、每个 message 项必须为 dict，不合法返 400 明确提示。合法导入路径不变。
+- 测试：新增 `test_archives_import.py` 5 用例（非 list messages / 非 dict 项 / 非 int story_id / 缺 archive / 合法导入仍 200）；5/5 绿 + ruff 过。
+- 提交：`8fb05d9`。
+
+**关联**：与 Bug #46 同思路--把后端静默 500 转成用户可理解的 4xx 提示。
+
+---
+
 # 第 2 轮驳回清单（过滤器工作证据）
 
 按 whfind-bugs 技能要求，驳回候选需记录一行原因。共 **18 条驳回 + 4 条降级**：
