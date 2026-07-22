@@ -963,7 +963,41 @@
 - `StoryPlay.initByStoryId` else 分支：`clearChat()` 移到 `ensureActiveArchive` **之前**，新/旧存档统一先清残留再保证 `currentArchive` 有效，消除"刚设置又被清掉"的顺序错误。
 - 测试：`chat.spec.ts` 新增"clearChat 后 ensureActiveArchive 仍保证 currentArchive 指向有效存档"用例（修复前红、修复后绿）；13 用例全绿 + 前端全量 118 用例绿 + vue-tsc 过。
 
-**遗留（相关但未修）**：后端 `_locked_streaming_response` 的生成器内抛 `HTTPException`（如未配置模型时 `_get_normal_model_candidates` 抛 503）时，响应已以 200 开头，异常使连接空 Body 中断——前端只能报"未收到结构化尾包"而非真实原因"没有可用模型"。建议后续在生成器内捕获 HTTPException 转为 SSE `error` 事件。main 上同样存在。
+**遗留（相关但未修）**：后端 `_locked_streaming_response` 的生成器内抛 `HTTPException`（如未配置模型时 `_get_normal_model_candidates` 抛 503）时，响应已以 200 开头，异常使连接空 Body 中断——前端只能报"未收到结构化尾包"而非真实原因"没有可用模型"。建议后续在生成器内捕获 HTTPException 转为 SSE `error` 事件。main 上同样存在。（✅ 已于 Bug #46 修复，2026-07-22）
+
+---
+
+## Bug #46：流式准备阶段异常以 200 空 Body 静默断流，前端只报"未收到结构化尾包"看不到真因 ✅ 已修复（2026-07-22，fix/core-experience-bugs 分支）
+
+**位置**：`backend/app/api/chat_stream.py` `_stream_chat_response` 准备阶段（首个 `yield` 前）；根因抛出点 `backend/app/api/chat_models.py:436` `_get_normal_model_candidates` `raise HTTPException(503, "没有可用模型，请先在管理后台启用模型")`。系 Bug #45 的遗留项。
+
+**现象**：未配置模型（或准备阶段任意异常）时点「开始聊天」/「发送」，`_stream_chat_response` 在首个 `yield` 前抛 `HTTPException(503)`。此时 `_locked_streaming_response` 已以 `200` + `text/event-stream` 开头，异常使生成器直接退出，连接空 Body 中断。前端 `useChatStream` 收不到 `delta`/`tail`/`done`，只能按"未收到结构化尾包"兜底，看不到真实原因"没有可用模型"。
+
+**影响**：未配模型场景下开场/发送"卡住后报无关错误"，误导用户查网络/刷新而非去配置模型。核心链路体验阻断。TestClient 同步执行测不出（异常被重抛），仅真实 uvicorn 暴露。
+
+**证据**：`chat_router.py:58-74` `_locked_streaming_response` 先 `__enter__` 锁再返回 `StreamingResponse`，200 头已发；原准备阶段无 try/except，`_get_normal_model_candidates` 抛错直穿生成器；前端 `useChatStream.ts:173-193` `error` 事件处理依赖后端 yield error，空 Body 时走不到。实测（2026-07-22 真实后端）：传 `archive_id` curl `/api/chat/start-stream`，修复前空 Body，修复后返回 `event: error` `{"code":"HTTP_503","message":"没有可用模型，请先在管理后台启用模型"}` + `event: done`。
+
+**修复记录**（2026-07-22，fix/core-experience-bugs 分支，治本：让首个 yield 前的异常也走 SSE error 通道）：
+- 准备阶段整体包入 `try/except`：`HTTPException` 转 `code=HTTP_{status}` + `detail` 为 message；其他 `Exception` 记 `logger.exception` 后转 `code=STREAM_PREPARATION_FAILED`。均 `yield error` + `yield done{ok:false}` + `return`，不 raise（避免 GeneratorExit 掐断）。
+- 新增 `from fastapi import HTTPException`。
+- 测试：`test_stage3_streaming.py` 新增 `test_start_stream_without_model_returns_sse_error_event`；11 用例全绿 + ruff 过。
+- 提交：`2f6526a`。
+
+**关联发现**：实测同时暴露准备阶段 `DetachedInstanceError`（见 Bug #47），#46 让其从"静默断流"变为"可见 error"，为 #47 修复铺路。
+
+---
+
+## Bug #47：`_ensure_archive_for_story` 新建 archive 时 `commit` 致 story expire，无 archive_id 输入下生成器访问 story 属性触发 DetachedInstanceError（新发现，低优先级·后端健壮性）
+
+**位置**：`backend/app/api/chat_storage.py:319-328` `_ensure_archive_for_story` 新建 archive 分支 `db.commit()`；`backend/app/api/chat_stream.py` 准备阶段 `_build_stream_prompt_sections(story,...)` 访问 story 非主键属性；`backend/app/database.py:21` `SessionLocal` 默认 `expire_on_commit=True`。
+
+**现象**：`/api/chat/start-stream` **不传 `archive_id`** 且 story **无已有 archive** 时，`_ensure_archive_for_story` 走新建分支 `db.commit()`，story expire；随后生成器访问 story 非主键属性触发 `DetachedInstanceError: Story is not bound to a Session`。#46 修复前静默断流，修复后转成 `STREAM_PREPARATION_FAILED` error（message 为 DetachedInstanceError 原文，不友好）。
+
+**影响**：前端 `useChatStream.startStory` guard 要求 `currentArchive` 非空且必传 `archiveId`（`useChatStream.ts:213/220/236`），故**前端正常使用不触发**。仅后端裸调用（不传 archive_id + story 无 archive）出现。属后端健壮性问题，非用户可达阻断。
+
+**证据**：实测传 `archive_id` 报 `HTTP_503 没有可用模型`（正常），不传 archive_id + 新建 archive 报 `DetachedInstanceError`（异常）。
+
+**建议修法**（未修，低优先级）：① `SessionLocal` 设 `expire_on_commit=False`（最省事，需评估全项目影响）；② 新建 archive 后 `db.refresh(story)` 重新绑定；③ 流式生成器内不依赖路由 `get_db` session，改独立短连接（与 Bug #14 彻底修法一致）。归入"后端健壮性"批次，不进核心阻断优先级。
 
 ---
 
