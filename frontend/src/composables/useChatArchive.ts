@@ -26,7 +26,17 @@ export function useChatArchive() {
       const archive = await startNewArchive(storyId)
       return { archiveId: archive.id, isNew: true }
     }
-    return { archiveId: archives.value[0].id, isNew: false }
+    // 名实相符：已有存档路径也要保证 currentArchive 指向本故事的有效存档。
+    // 否则 clearChat 之后调用方拿到 null，startStory 的 guard 静默 return
+    // （全新故事点"开始聊天"无反应、不发请求的根因）。
+    const first = archives.value[0]
+    if (
+      currentArchive.value?.story_id !== storyId ||
+      !archives.value.some((a) => a.id === currentArchive.value?.id)
+    ) {
+      currentArchive.value = first
+    }
+    return { archiveId: first.id, isNew: false }
   }
 
   async function loadArchive(archiveId: number): Promise<Archive | null> {

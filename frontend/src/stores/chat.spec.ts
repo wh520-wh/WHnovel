@@ -293,6 +293,34 @@ describe('chat store', () => {
     expect(store.currentArchive?.id).toBe(3)
   })
 
+  it('ensureActiveArchive guarantees currentArchive on existing archives even after clearChat', async () => {
+    // 开场发送无反应根因：init 流程 clearChat 把 currentArchive 清成 null 后，
+    // ensureActiveArchive 的"已有存档"分支不重设 → startStory guard 静默 return
+    apiMocks.getArchives.mockResolvedValue({
+      data: [
+        {
+          id: 2,
+          story_id: 1,
+          name: 'A2',
+          state_data: {},
+          story_state: {},
+          memory_log: [],
+          created_at: '2026-04-16T00:00:00Z',
+          updated_at: '2026-04-16T00:00:00Z',
+        },
+      ],
+    })
+
+    const store = useChatStore()
+    store.clearChat()
+
+    const result = await store.ensureActiveArchive(1)
+
+    expect(result.isNew).toBe(false)
+    expect(result.archiveId).toBe(2)
+    expect(store.currentArchive?.id).toBe(2)
+  })
+
   it('deleteMessages reverts messages on API failure', async () => {
     const store = useChatStore()
     // 模拟 API 抛错

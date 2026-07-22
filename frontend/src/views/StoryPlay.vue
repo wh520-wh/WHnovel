@@ -511,13 +511,14 @@ async function initByStoryId(targetStoryId: number, preferredArchiveId?: number 
       await chatStore.ensureActiveArchive(targetStoryId)
     }
   } else {
+    // 新/旧存档统一：先清理上一个故事的残留（clearChat 会把 currentArchive 置 null），
+    // 再由 ensureActiveArchive 保证 currentArchive 有效——顺序不能反，
+    // 否则 isNew 分支会把刚创建设置的 currentArchive 又清掉，开场发送静默失效
+    chatStore.clearChat()
     const result = await chatStore.ensureActiveArchive(targetStoryId)
-    // ensureActiveArchive 对已有存档只设置了 currentArchive，需要再加载消息
+    // ensureActiveArchive 只保证 currentArchive 有效；已有存档需要再加载消息
     if (!result.isNew) {
       await chatStore.loadArchive(result.archiveId)
-    } else {
-      // 新存档：需要清理上一个故事的残留消息
-      chatStore.clearChat()
     }
   }
 

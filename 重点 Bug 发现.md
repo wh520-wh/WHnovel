@@ -948,6 +948,25 @@
 
 ---
 
+## Bug #45：全新故事 isNew 分支 `clearChat()` 清掉刚创建的 `currentArchive`，「开始聊天」点击静默无反应 ✅ 已修复（2026-07-21，fix/core-experience-bugs 分支）
+
+**位置**：`frontend/src/views/StoryPlay.vue` `initByStoryId` else 分支；`frontend/src/composables/useChatArchive.ts:21-30`（`ensureActiveArchive`）；`frontend/src/stores/chat.ts:323-349`（`clearChat`）
+
+**现象**：全新故事（无任何存档）首次进入时：① `ensureActiveArchive` 创建新存档并设置 `currentArchive`（`POST /api/archives` 发出且 200）；② 回到 `initByStoryId` 的 isNew 分支调用 `clearChat()`（意图是"清理上一个故事的残留消息"），但 `clearChat` 把**刚设置的 `currentArchive` 一并置 null**（`chat.ts:331`）；③ 用户点「开始聊天」→ `useChatStream.startStory` 首行 guard `if (!currentArchive.value || sending.value) return` **静默 return**——按钮可点、无请求发出、无错误提示、输入框内容被清。用户感知为"点击发送无反应"。
+
+**影响**：全新故事 100% 无法开始聊天（核心链路断）。main 上长期潜伏未被发现，因为已有存档的故事走 `loadArchive` 分支会重设 `currentArchive`；全新空库/新故事场景必现。同根因还波及：删除当前存档后（`StoryPlay.vue:995/1044`）与 `preferredArchiveId` 加载失败的 catch 路径（`:509-512`）——`clearChat` 后 `ensureActiveArchive` 的"已有存档"分支不重设 `currentArchive`，聊天同样进入死状态。
+
+**证据**：`useChatArchive.ts:25-29` 已有存档分支只 return id、不触碰 `currentArchive`；`chat.ts:331` `clearChat` 置 null；`useChatStream.ts:207` startStory guard 静默 return；后端访问日志只有 `POST /api/archives` 无任何 `/api/chat/start-stream`——证明前端从未发请求。
+
+**修复记录**（2026-07-21，fix/core-experience-bugs 分支，治本：名实相符，TDD：先红后绿）：
+- `useChatArchive.ensureActiveArchive` 的已有存档分支：当 `currentArchive` 为 null / 属于其它故事 / 已不在存档列表中时，重设为列表首个存档——函数名副其实"保证活跃存档存在"，四处调用点（init 两条、删除存档两条）全部自动受益。
+- `StoryPlay.initByStoryId` else 分支：`clearChat()` 移到 `ensureActiveArchive` **之前**，新/旧存档统一先清残留再保证 `currentArchive` 有效，消除"刚设置又被清掉"的顺序错误。
+- 测试：`chat.spec.ts` 新增"clearChat 后 ensureActiveArchive 仍保证 currentArchive 指向有效存档"用例（修复前红、修复后绿）；13 用例全绿 + 前端全量 118 用例绿 + vue-tsc 过。
+
+**遗留（相关但未修）**：后端 `_locked_streaming_response` 的生成器内抛 `HTTPException`（如未配置模型时 `_get_normal_model_candidates` 抛 503）时，响应已以 200 开头，异常使连接空 Body 中断——前端只能报"未收到结构化尾包"而非真实原因"没有可用模型"。建议后续在生成器内捕获 HTTPException 转为 SSE `error` 事件。main 上同样存在。
+
+---
+
 # 第 2 轮驳回清单（过滤器工作证据）
 
 按 whfind-bugs 技能要求，驳回候选需记录一行原因。共 **18 条驳回 + 4 条降级**：
