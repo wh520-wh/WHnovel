@@ -121,10 +121,15 @@ def export_archive(
 def import_archive(payload: dict, db: Session = Depends(get_db)):
     archive_data = payload.get("archive")
     messages_data = payload.get("messages", [])
-    if not archive_data:
-        raise HTTPException(400, "缺少 archive 字段")
-
+    # Bug #49：导入 payload 原为裸 dict 无校验，messages 非 list / 项非 dict / story_id 非整数
+    # 时直接 500。加类型校验返 400 明确提示，合法导入行为不变。
+    if not isinstance(archive_data, dict):
+        raise HTTPException(400, "缺少 archive 字段或格式错误")
+    if not isinstance(messages_data, list):
+        raise HTTPException(400, "messages 字段必须为列表")
     story_id = archive_data.get("story_id")
+    if not isinstance(story_id, int):
+        raise HTTPException(400, "archive.story_id 必须为整数")
     story = db.query(models.Story).filter(models.Story.id == story_id).first()
     if not story:
         raise HTTPException(404, "故事不存在，无法导入存档")
@@ -141,6 +146,8 @@ def import_archive(payload: dict, db: Session = Depends(get_db)):
     db.flush()
 
     for msg_data in messages_data:
+        if not isinstance(msg_data, dict):
+            raise HTTPException(400, "messages 中存在非对象项")
         msg = models.ChatMessage(
             archive_id=archive.id,
             role=msg_data.get("role", "user"),
