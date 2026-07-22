@@ -987,7 +987,7 @@
 
 ---
 
-## Bug #47：`_ensure_archive_for_story` 新建 archive 时 `commit` 致 story expire，无 archive_id 输入下生成器访问 story 属性触发 DetachedInstanceError（新发现，低优先级·后端健壮性）
+## Bug #47：`_ensure_archive_for_story` 新建 archive 时 `commit` 致 story expire，无 archive_id 输入下生成器访问 story 属性触发 DetachedInstanceError ✅ 已修复（2026-07-22，fix/core-experience-bugs 分支）
 
 **位置**：`backend/app/api/chat_storage.py:319-328` `_ensure_archive_for_story` 新建 archive 分支 `db.commit()`；`backend/app/api/chat_stream.py` 准备阶段 `_build_stream_prompt_sections(story,...)` 访问 story 非主键属性；`backend/app/database.py:21` `SessionLocal` 默认 `expire_on_commit=True`。
 
@@ -997,7 +997,13 @@
 
 **证据**：实测传 `archive_id` 报 `HTTP_503 没有可用模型`（正常），不传 archive_id + 新建 archive 报 `DetachedInstanceError`（异常）。
 
-**建议修法**（未修，低优先级）：① `SessionLocal` 设 `expire_on_commit=False`（最省事，需评估全项目影响）；② 新建 archive 后 `db.refresh(story)` 重新绑定；③ 流式生成器内不依赖路由 `get_db` session，改独立短连接（与 Bug #14 彻底修法一致）。归入"后端健壮性"批次，不进核心阻断优先级。
+**修复记录**（2026-07-22，fix/core-experience-bugs 分支，治本：expire_on_commit=False 根治，非打地鼠式 refresh）：
+- 首次尝试 `_ensure_archive_for_story` 新建分支加 `db.refresh(story)`--不彻底：commit 会 expire **所有**对象，story 修好后 `UserSettings` 又 DetachedInstanceError，逐个 refresh 是打地鼠。
+- 改用 `SessionLocal(expire_on_commit=False)`（`database.py`）根治：commit 后对象保持已加载属性，流式生成器迭代时（路由 session 已关闭）直接访问已加载属性，不再触发 refresh/detach。单请求内 commit 后属性即刚写入值，无 stale 风险；跨请求不共享 session。
+- 撤回不彻底的 `db.refresh(story)`。
+- 验证：全量后端测试绿 + ruff 过；真实后端 curl（story 5 无 archive + 不传 archive_id）报 `HTTP_503 没有可用模型`，不再 DetachedInstanceError。
+- 提交：`ca54903`。
+- 注：前端 `startStory` 必传 archiveId 不触发本路径，此修复让后端裸调用也正确报错（配合 Bug #46 准确提示）。
 
 ---
 
