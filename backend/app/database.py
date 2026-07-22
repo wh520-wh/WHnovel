@@ -18,7 +18,10 @@ engine = create_engine(
     max_overflow=40,
     pool_pre_ping=True,
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# expire_on_commit=False：流式响应（StreamingResponse）生成器迭代时路由 session 已关闭，
+# commit 后对象不再 expire，避免生成器访问 story/settings 等属性时 DetachedInstanceError（Bug #47）。
+# 单请求内 commit 后对象属性即为刚写入值，无需 expire 重读；跨请求不共享 session，无 stale 风险。
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
 
 
 class Base(DeclarativeBase):
