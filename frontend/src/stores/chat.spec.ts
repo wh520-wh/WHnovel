@@ -340,6 +340,19 @@ describe('chat store', () => {
         },
       ],
     })
+    // store 层包装会 fire-and-forget 重拉存档以同步 currentNotebook
+    apiMocks.getArchive.mockResolvedValue({
+      data: {
+        id: 2,
+        story_id: 1,
+        name: 'A2',
+        state_data: {},
+        story_state: {},
+        memory_log: [],
+        created_at: '2026-04-16T00:00:00Z',
+        updated_at: '2026-04-16T00:00:00Z',
+      },
+    })
 
     const store = useChatStore()
     store.clearChat()
@@ -349,6 +362,77 @@ describe('chat store', () => {
     expect(result.isNew).toBe(false)
     expect(result.archiveId).toBe(2)
     expect(store.currentArchive?.id).toBe(2)
+  })
+
+  it('clearChat resets currentNotebook to null', () => {
+    const store = useChatStore()
+    store.currentNotebook = {
+      world_line: [{ text: '残留', status: 'active' }],
+      character_line: [],
+      relationship_line: [],
+    } as any
+
+    store.clearChat()
+
+    expect(store.currentNotebook).toBeNull()
+  })
+
+  it('ensureActiveArchive fast path syncs currentNotebook from getArchive', async () => {
+    // 已有存档快速路径只赋值不 fetch，notebook 会残留上一条存档的值；
+    // store 层包装应重拉 getArchive 同步 currentNotebook
+    apiMocks.getArchives.mockResolvedValue({
+      data: [
+        {
+          id: 2,
+          story_id: 1,
+          name: 'A2',
+          state_data: {},
+          story_state: {},
+          memory_log: [],
+          created_at: '2026-04-16T00:00:00Z',
+          updated_at: '2026-04-16T00:00:00Z',
+        },
+      ],
+    })
+    apiMocks.getArchive.mockResolvedValue({
+      data: {
+        id: 2,
+        story_id: 1,
+        name: 'A2',
+        state_data: {},
+        story_state: {},
+        memory_log: [],
+        created_at: '2026-04-16T00:00:00Z',
+        updated_at: '2026-04-16T00:00:00Z',
+        notebook: {
+          world_line: [{ text: '世界线记录', status: 'active' }],
+          character_line: [],
+          relationship_line: [],
+        },
+      },
+    })
+
+    const store = useChatStore()
+    store.clearChat()
+    // 残留上一条存档的笔记本
+    store.currentNotebook = {
+      world_line: [{ text: '上一条存档的残留', status: 'closed' }],
+      character_line: [],
+      relationship_line: [],
+    } as any
+
+    const result = await store.ensureActiveArchive(1)
+
+    expect(result.isNew).toBe(false)
+    expect(result.archiveId).toBe(2)
+    // fire-and-forget 拉取完成后同步
+    await vi.waitFor(() => {
+      expect(store.currentNotebook).toEqual({
+        world_line: [{ text: '世界线记录', status: 'active' }],
+        character_line: [],
+        relationship_line: [],
+      })
+    })
   })
 
   it('deleteMessages reverts messages on API failure', async () => {
@@ -514,5 +598,18 @@ describe('normalizeIncomingMessage', () => {
     )
     expect(result[0].content).toBe('hello')
     expect(result[0].role).toBe('assistant')
+  })
+})
+
+import type { StoryNotebook } from '../types/notebook'
+
+describe('notebook types', () => {
+  it('accepts valid story notebook shape', () => {
+    const nb: StoryNotebook = {
+      world_line: [{ text: '魔教攻入皇城', status: 'active' }],
+      character_line: [],
+      relationship_line: [{ text: '师徒反目', status: 'closed' }],
+    }
+    expect(nb.world_line[0].status).toBe('active')
   })
 })

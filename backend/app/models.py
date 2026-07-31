@@ -66,6 +66,9 @@ class Archive(Base):
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     first_message = Column(Text, default="")  # 首条用户消息预览
+    # 故事笔记本：{"world_line": [{"text": str, "status": "active|closed"}], ...}
+    # 三线：world_line 世界线 / character_line 人物线 / relationship_line 感情线
+    notebook = Column(JSON, nullable=True)
 
     story = relationship("Story", back_populates="archives")
     messages = relationship("ChatMessage", back_populates="archive", cascade="all, delete-orphan")
@@ -108,6 +111,7 @@ class ChatMessage(Base):
     pre_state_data = Column(JSON, default=dict)
     pre_story_state = Column(JSON, default=dict)
     pre_memory_log = Column(JSON, default=list)
+    pre_notebook = Column(JSON, nullable=True)  # 撤回回滚用：本消息写入前 archive.notebook 快照
     options = Column(JSON, default=list)  # AI返回的快捷选项
     memory_update = Column(JSON, default=list)
     image_url = Column(String(500), nullable=True)  # 对话内生成的图片URL

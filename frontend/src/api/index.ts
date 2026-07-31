@@ -494,6 +494,7 @@ export interface ExportedArchive {
     first_message: string
     created_at: string
     updated_at: string
+    notebook?: Record<string, unknown> | null
   }
   messages: Array<{
     id: number

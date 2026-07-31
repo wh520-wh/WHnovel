@@ -38,6 +38,7 @@ def create_archive(payload: schemas.ArchiveCreate, db: Session = Depends(get_db)
         state_data=state_data,
         story_state=story_state,
         memory_log=memory_log,
+        notebook=payload.notebook,
     )
     db.add(archive)
     db.commit()
@@ -101,6 +102,7 @@ def export_archive(
             "state_data": archive.state_data,
             "story_state": archive.story_state,
             "memory_log": archive.memory_log,
+            "notebook": archive.notebook,
             "first_message": archive.first_message,
             "created_at": archive.created_at.isoformat() if archive.created_at else "",
             "updated_at": archive.updated_at.isoformat() if archive.updated_at else "",
@@ -141,6 +143,11 @@ def import_archive(payload: dict, db: Session = Depends(get_db)):
         story_state=archive_data.get("story_state", {"chapter": "第一章", "progress": 0}),
         memory_log=archive_data.get("memory_log", []),
         first_message=archive_data.get("first_message", ""),
+        notebook=(
+            archive_data.get("notebook")
+            if isinstance(archive_data.get("notebook"), dict)
+            else None
+        ),
     )
     db.add(archive)
     db.flush()

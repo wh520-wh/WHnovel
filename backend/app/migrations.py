@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .database import DB_PATH
 
-SCHEMA_VERSION = 28
+SCHEMA_VERSION = 29
 
 
 def _ensure_schema_meta(conn: sqlite3.Connection) -> None:
@@ -459,6 +459,16 @@ def _migrate_to_v28(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_to_v29(conn: sqlite3.Connection) -> None:
+    """v29: archives.notebook（故事笔记本三线）+ chat_messages.pre_notebook（撤回回滚快照）。
+
+    故意不加 NOT NULL/DEFAULT：老行 NULL 表示"尚无笔记本/无快照"，与 Bug #7 的 pre_* 策略一致。
+    """
+    _add_column_if_missing(conn, "archives", "notebook", "notebook JSON")
+    _add_column_if_missing(conn, "chat_messages", "pre_notebook", "pre_notebook JSON")
+    conn.commit()
+
+
 def _backup_db_file(db_path: Path) -> Path | None:
     if not db_path.exists() or db_path.stat().st_size == 0:
         return None
@@ -615,6 +625,9 @@ def run_migrations() -> None:
         if version < 28:
             _migrate_to_v28(conn)
             _set_version(conn, 28)
+        if version < 29:
+            _migrate_to_v29(conn)
+            _set_version(conn, 29)
     except Exception:
         conn.close()
         if backup_path and backup_path.exists():

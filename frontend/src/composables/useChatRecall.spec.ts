@@ -5,6 +5,7 @@ import { deleteLastAiMessage } from '../api'
 
 vi.mock('../api', () => ({
   deleteLastAiMessage: vi.fn(async () => {}),
+  getArchive: vi.fn(async () => ({ data: { notebook: null } })),
 }))
 
 beforeEach(() => {
@@ -66,6 +67,7 @@ describe('useChatRecall', () => {
       currentState,
       currentStoryState,
       currentMemoryLog,
+      currentNotebook: ref<Record<string, unknown> | null>(null),
       streaming: ref(false),
       sending: ref(false),
       awaitingTail: ref(false),
@@ -100,6 +102,7 @@ describe('useChatRecall', () => {
       currentState,
       currentStoryState,
       currentMemoryLog,
+      currentNotebook: ref<Record<string, unknown> | null>(null),
       streaming: ref(false),
       sending: ref(false),
       awaitingTail: ref(false),
@@ -132,6 +135,7 @@ describe('useChatRecall', () => {
       currentState: ref({}),
       currentStoryState: ref({}),
       currentMemoryLog: ref([]),
+      currentNotebook: ref<Record<string, unknown> | null>(null),
       streaming,
       sending,
       awaitingTail,

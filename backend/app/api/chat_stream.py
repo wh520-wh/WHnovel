@@ -68,6 +68,7 @@ from .chat_storage import (
     _query_dialogue_history,
     _resolve_memory_inject_count,
 )
+from .notebook import build_notebook_section
 
 # Concurrency lock for stream generation (per-archive)
 _stream_generation_locks: dict[int, threading.Lock] = {}
@@ -191,6 +192,9 @@ def _stream_chat_response(
         memory_section = _build_memory_section(
             archive.memory_log, inject_count, archive_id=archive.id, escape=False
         )
+        notebook_section = build_notebook_section(archive.notebook)
+        if notebook_section is not None:
+            memory_section = notebook_section  # 笔记本优先注入，替代旧流水账
         stream_sections = _build_stream_prompt_sections(
             story,
             db,
@@ -361,6 +365,7 @@ def _stream_chat_response(
                     prev_story_state=archive.story_state
                     or {"chapter": DEFAULT_CHAPTER, "progress": 0},
                     recent_memory=archive.memory_log or [],
+                    prev_notebook=archive.notebook,
                 )
 
                 tail_content, tail_usage = _call_model_once(
@@ -427,6 +432,7 @@ def _stream_chat_response(
                 )
 
                 tail = validated.model_dump()
+                tail["notebook"] = archive.notebook
                 tail["archive_id"] = archive.id
                 tail["message_id"] = ai_id
                 tail["user_id"] = user_id
@@ -695,6 +701,9 @@ def _generate_chat_response(
     memory_section = _build_memory_section(
         archive.memory_log, inject_count, archive_id=archive.id, escape=True
     )
+    notebook_section = build_notebook_section(archive.notebook)
+    if notebook_section is not None:
+        memory_section = notebook_section
     messages = _build_messages(
         story,
         archive,

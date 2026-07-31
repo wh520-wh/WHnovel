@@ -11,6 +11,9 @@ _TAIL_META_PROMPT = """【当前正文】
 【当前故事状态】
 {prev_story_state}
 
+【故事笔记本当前状态（编号用于关闭引用）】
+{prev_notebook}
+
 【已记忆事件（最近5条，供判断是否重复）】
 {recent_memory}
 
@@ -24,6 +27,12 @@ JSON字段：
 - memory_update: string[]，本轮新发生且影响后续剧情的关键事件（每条独立事件，自然语言短句，30字内）；与已有记忆重复则不记；无新增返回空数组 []；不得编造
 - plot_label: string，剧情标签（4-10字，无重大事件时为空字符串）
 - highlight_terms: string[]，需要高亮的关键词列表
+- notebook_update: object，故事笔记本更新，只包含以下字段：
+  - add_world: string[]，本轮新增的世界线事件（世界正在发生的大事）
+  - add_character: string[]，本轮新增的人物线条目（某个角色的处境/状态变化）
+  - add_relationship: string[]，本轮新增的感情线条目（角色之间关系的变化）
+  - close_world / close_character / close_relationship: string[]，需要标记为"已结束"的条目编号（编号见【故事笔记本当前状态】中的 [W1]/[C2]/[R3] 格式；只引用于本轮输入中出现过的编号，没有则返回空数组 []）
+  - 新增条目每条一句自然语言短句（30字内）；无变化返回空数组 []
 """.strip()
 
 TAIL_SYSTEM_PROMPT = (

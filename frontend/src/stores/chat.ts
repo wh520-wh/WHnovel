@@ -10,6 +10,7 @@ import {
   deleteMessages as apiDeleteMessages,
 } from '../api'
 import type { ChatStreamTailData } from '../types/sse'
+import type { StoryNotebook } from '../types/notebook'
 import {
   normalizePlotLabel,
   sanitizeAiDisplayText,
@@ -55,6 +56,7 @@ export interface Archive {
   created_at: string
   updated_at: string
   first_message?: string
+  notebook?: Record<string, unknown> | null
 }
 
 // Re-export for use by composables
@@ -82,6 +84,7 @@ export const useChatStore = defineStore('chat', () => {
   const currentState = ref<Record<string, any>>({})
   const currentStoryState = ref<Record<string, any>>({})
   const currentMemoryLog = ref<string[]>([])
+  const currentNotebook = ref<StoryNotebook | null>(null)
 
   // --- Composable modules ---
   const optionsModule = useChatOptions()
@@ -142,6 +145,7 @@ export const useChatStore = defineStore('chat', () => {
       }
     }
     markMessagesPersisted([realMessageId])
+    if (tail.notebook) currentNotebook.value = tail.notebook as unknown as StoryNotebook
   }
 
   // --- Recall module ---
@@ -151,6 +155,7 @@ export const useChatStore = defineStore('chat', () => {
     currentState,
     currentStoryState,
     currentMemoryLog,
+    currentNotebook,
     streaming: uiModule.streaming,
     sending: uiModule.sending,
     awaitingTail: uiModule.awaitingTail as unknown as { value: boolean },
@@ -200,6 +205,7 @@ export const useChatStore = defineStore('chat', () => {
     currentState.value = data.state_data || {}
     currentStoryState.value = data.story_state || {}
     currentMemoryLog.value = data.memory_log || []
+    currentNotebook.value = (data.notebook ?? null) as StoryNotebook | null
     messages.value = []
     optionsModule.dismissCurrentOptions()
     optionsModule.optionsLocked.value = false
@@ -239,6 +245,7 @@ export const useChatStore = defineStore('chat', () => {
     currentState.value = archive.state_data || {}
     currentStoryState.value = archive.story_state || {}
     currentMemoryLog.value = archive.memory_log || []
+    currentNotebook.value = (archive.notebook ?? null) as StoryNotebook | null
 
     const { data: msgs } = await getMessages(archiveId)
     if (myVersion !== loadArchiveVersion) return null // 同上：旧 archive 的消息不得覆盖新 archive
@@ -261,6 +268,25 @@ export const useChatStore = defineStore('chat', () => {
     uiModule.generatingStateBroadcast.value = false
     uiModule.recallInProgress.value = false
     return archive
+  }
+
+  // Task 7 审查修复：ensureActiveArchive 的"已有存档"快速路径直接赋值不 fetch，
+  // currentNotebook 会残留上一条存档的笔记本。这里在 store 层包装原实现：
+  // 非新档路径用 getArchive 重拉并同步（fire-and-forget，与 useChatRecall 的撤回同步同模式）。
+  // 不触碰 loadArchive 的 Bug #27 版本号防竞态逻辑，两者互不干扰。
+  async function ensureActiveArchive(
+    storyId: number,
+  ): Promise<{ archiveId: number; isNew: boolean }> {
+    const result = await archiveModule.ensureActiveArchive(storyId)
+    if (!result.isNew) {
+      const archiveId = archiveModule.currentArchive.value?.id
+      if (archiveId) {
+        getArchive(archiveId).then(({ data }) => {
+          currentNotebook.value = (data.notebook ?? null) as StoryNotebook | null
+        })
+      }
+    }
+    return result
   }
 
   // --- Options helpers ---
@@ -332,6 +358,7 @@ export const useChatStore = defineStore('chat', () => {
     currentState.value = {}
     currentStoryState.value = {}
     currentMemoryLog.value = []
+    currentNotebook.value = null
     optionsModule.dismissCurrentOptions()
     optionsModule.optionsLocked.value = false
     optionsModule.generatingOptions.value = false
@@ -400,12 +427,13 @@ export const useChatStore = defineStore('chat', () => {
     currentArchive: archiveModule.currentArchive,
     fetchArchives,
     startNewArchive,
-    ensureActiveArchive: archiveModule.ensureActiveArchive,
+    ensureActiveArchive,
     loadArchive,
     // state
     currentState,
     currentStoryState,
     currentMemoryLog,
+    currentNotebook,
     // options
     currentOptions: optionsModule.currentOptions,
     optionsLocked: optionsModule.optionsLocked,

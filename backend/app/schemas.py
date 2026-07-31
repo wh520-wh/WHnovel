@@ -74,6 +74,7 @@ class ArchiveCreate(ArchiveBase):
     story_state: dict = Field(default_factory=lambda: {"chapter": "第一章", "progress": 0})
     memory_log: list[str] = Field(default_factory=list)
     opening_requirement: str = ""  # 内部字段，用于存储 first_message
+    notebook: dict | None = None
 
 
 class ArchiveOut(ArchiveBase):
@@ -83,6 +84,7 @@ class ArchiveOut(ArchiveBase):
     story_state: dict
     memory_log: list[str]
     first_message: str = ""
+    notebook: dict | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -182,6 +184,7 @@ class ChatResponse(BaseModel):
     memory_update: list[str] = []
     plot_label: str | None = None  # 剧情标签，非流式响应时由AI直接生成
     highlight_terms: list[str] = []  # 需要高亮的关键词列表
+    notebook_update: dict = Field(default_factory=dict)
 
 
 class OptionsGenerateIn(BaseModel):

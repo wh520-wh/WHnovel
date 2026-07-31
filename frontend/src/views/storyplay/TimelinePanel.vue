@@ -1,10 +1,32 @@
 <template>
-  <!-- 桌面端时间线（常驻左侧） -->
+  <!-- 桌面端（常驻左侧） -->
   <aside class="story-timeline" :class="{ 'is-immersive': immersive }">
-    <StoryTimeline :messages="chatStore.messages" @jump="emit('jump', $event)" />
+    <div class="panel-tabs">
+      <button
+        class="panel-tab"
+        :class="{ active: activeTab === 'timeline' }"
+        @click="activeTab = 'timeline'"
+      >
+        剧情时间线
+      </button>
+      <button
+        class="panel-tab"
+        :class="{ active: activeTab === 'notebook' }"
+        @click="activeTab = 'notebook'"
+      >
+        故事笔记本
+      </button>
+    </div>
+    <StoryTimeline
+      v-if="activeTab === 'timeline'"
+      class="panel-body"
+      :messages="chatStore.messages"
+      @jump="emit('jump', $event)"
+    />
+    <StoryNotebook v-else class="panel-body" :notebook="chatStore.currentNotebook" />
   </aside>
 
-  <!-- 手机模式：时间线底部弹出面板 -->
+  <!-- 手机模式：底部弹出面板（头部加双页签） -->
   <Teleport to="body">
     <div
       v-if="mobileVisible"
@@ -14,7 +36,22 @@
       <div class="timeline-mobile-sheet">
         <div class="timeline-mobile-handle" @click="emit('update:mobile-visible', false)"></div>
         <div class="timeline-mobile-header">
-          <span>剧情时间线</span>
+          <div class="panel-tabs">
+            <button
+              class="panel-tab"
+              :class="{ active: activeTab === 'timeline' }"
+              @click="activeTab = 'timeline'"
+            >
+              剧情时间线
+            </button>
+            <button
+              class="panel-tab"
+              :class="{ active: activeTab === 'notebook' }"
+              @click="activeTab = 'notebook'"
+            >
+              故事笔记本
+            </button>
+          </div>
           <button class="timeline-close-btn" @click="emit('update:mobile-visible', false)">
             <svg
               width="18"
@@ -30,17 +67,21 @@
           </button>
         </div>
         <StoryTimeline
+          v-if="activeTab === 'timeline'"
           class="timeline-mobile-body"
           :messages="chatStore.messages"
           @jump="emit('jump', $event)"
         />
+        <StoryNotebook v-else class="timeline-mobile-body" :notebook="chatStore.currentNotebook" />
       </div>
     </div>
   </Teleport>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import StoryTimeline from '../../components/StoryTimeline.vue'
+import StoryNotebook from '../../components/StoryNotebook.vue'
 import { useChatStore } from '../../stores/chat'
 
 defineProps<{
@@ -53,6 +94,7 @@ const emit = defineEmits<{
 }>()
 
 const mobileVisible = defineModel<boolean>('mobileVisible', { default: false })
+const activeTab = ref<'timeline' | 'notebook'>('timeline')
 
 const chatStore = useChatStore()
 </script>
@@ -60,7 +102,9 @@ const chatStore = useChatStore()
 <style scoped>
 .story-timeline {
   border-right: 1px solid var(--border-color);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   scrollbar-width: none;
 }
 
@@ -70,6 +114,39 @@ const chatStore = useChatStore()
 
 .story-timeline.is-immersive {
   opacity: 0.85;
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 8px 4px;
+  flex-shrink: 0;
+}
+.panel-tab {
+  flex: 1;
+  min-height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+}
+.panel-tab:hover {
+  background: var(--bg-hover);
+}
+.panel-tab.active {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .timeline-close-btn {

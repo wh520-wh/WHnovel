@@ -24,6 +24,7 @@ from ..prompts import (
 )
 from ..prompts.chat_tail import TAIL_SYSTEM_PROMPT
 from ..redis_client import get_redis
+from .notebook import apply_notebook_update, format_notebook_for_tail
 
 logger = logging.getLogger(__name__)
 
@@ -467,6 +468,7 @@ def _build_tail_messages(
     prev_character_state: dict,
     prev_story_state: dict,
     recent_memory: list[str],
+    prev_notebook: dict | None = None,
 ) -> list[dict]:
     """构建第二次调用（元数据提取）的 messages。"""
     recent_memory_text = (
@@ -477,6 +479,7 @@ def _build_tail_messages(
         body_text=body_text,
         prev_character_state=json.dumps(prev_character_state, ensure_ascii=False),
         prev_story_state=json.dumps(prev_story_state, ensure_ascii=False),
+        prev_notebook=format_notebook_for_tail(prev_notebook),
         recent_memory=recent_memory_text,
     )
 
@@ -517,11 +520,20 @@ def _persist_exchange(
     pre_story_state = copy.deepcopy(archive.story_state) if archive.story_state else {}
     pre_memory_log = list(archive.memory_log) if archive.memory_log else []
 
+    pre_notebook = (
+        copy.deepcopy(archive.notebook) if archive.notebook is not None else None
+    )
+
     cs_dict = validated.character_state.model_dump()
     ss_dict = validated.story_state.model_dump()
 
     archive.state_data = cs_dict
     archive.story_state = ss_dict
+
+    if validated.notebook_update:
+        archive.notebook = apply_notebook_update(
+            archive.notebook, validated.notebook_update
+        )
     deduped = _dedupe_memory_updates(archive.memory_log or [], validated.memory_update or [])
     new_memory_log = list(archive.memory_log or []) + deduped
     archive.memory_log = new_memory_log[-MAX_MEMORY_LOG:]
@@ -547,6 +559,7 @@ def _persist_exchange(
         pre_state_data=pre_state_data,
         pre_story_state=pre_story_state,
         pre_memory_log=pre_memory_log,
+        pre_notebook=pre_notebook,
     )
     db.add(ai_msg)
     db.flush()

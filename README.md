@@ -39,6 +39,9 @@ Existing AI roleplay tools are either **power-user frontends with no story layer
 - **Story timeline**: click any tag to jump to that beat of the plot; the whole arc stays navigable
 - **AI illustrations**: cover art and in-chat images share one configurable image model
 - **Save system**: create, export to JSON, import, inline rename — your stories are portable
+- **Story notebook** — the AI keeps a three-line story state (world / character / relationship),
+  updating it every turn and reading it before each reply; long stories stay coherent
+  across hundreds of turns
 
 **Chat that feels good**:
 

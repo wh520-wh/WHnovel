@@ -23,6 +23,7 @@ ContractTask = Literal[
     "state_broadcast",
     "story_generate",
     "preset_openings",
+    "notebook_bootstrap",
 ]
 
 TASK_CHAT_RESPONSE: ContractTask = "chat_response"
@@ -30,6 +31,7 @@ TASK_OPTIONS_GENERATE: ContractTask = "options_generate"
 TASK_STATE_BROADCAST: ContractTask = "state_broadcast"
 TASK_STORY_GENERATE: ContractTask = "story_generate"
 TASK_PRESET_OPENINGS: ContractTask = "preset_openings"
+TASK_NOTEBOOK_BOOTSTRAP: ContractTask = "notebook_bootstrap"
 
 
 class _StrictModel(BaseModel):
@@ -49,6 +51,25 @@ class ChatStoryStateContract(_StrictModel):
     current_conflict: str = ""
 
 
+class NotebookUpdateContract(_StrictModel):
+    """一轮 tail 对故事笔记本的更新：add 追加 active 条目，close 按注入编号置 closed。"""
+
+    add_world: list[str] = Field(default_factory=list)
+    add_character: list[str] = Field(default_factory=list)
+    add_relationship: list[str] = Field(default_factory=list)
+    close_world: list[str] = Field(default_factory=list)
+    close_character: list[str] = Field(default_factory=list)
+    close_relationship: list[str] = Field(default_factory=list)
+
+
+class NotebookBootstrapContract(_StrictModel):
+    """旧存档升级：把流水账/剧情状态整理成三线笔记本（每条均为 active 条目）。"""
+
+    world_line: list[str] = Field(default_factory=list)
+    character_line: list[str] = Field(default_factory=list)
+    relationship_line: list[str] = Field(default_factory=list)
+
+
 class ChatResponseContract(_StrictModel):
     reply_text: str = ""
     scene: str = ""
@@ -57,6 +78,9 @@ class ChatResponseContract(_StrictModel):
     memory_update: list[str] = Field(default_factory=list)
     plot_label: str = ""
     highlight_terms: list[str] = Field(default_factory=list)
+    notebook_update: NotebookUpdateContract = Field(
+        default_factory=NotebookUpdateContract
+    )
 
 
 class OptionsGenerateContract(_StrictModel):
@@ -126,6 +150,12 @@ _SPECS: dict[ContractTask, ContractSpec] = {
         schema_name="preset_openings",
         strict_model=PresetOpeningsContract,
         output_rule_prompt=_PRESET_OPENINGS_RULE_PROMPT,
+    ),
+    TASK_NOTEBOOK_BOOTSTRAP: ContractSpec(
+        task=TASK_NOTEBOOK_BOOTSTRAP,
+        schema_name="notebook_bootstrap",
+        strict_model=NotebookBootstrapContract,
+        output_rule_prompt=JSON_RULE_PROMPT,
     ),
 }
 
@@ -276,6 +306,7 @@ def to_public_schema(task: ContractTask, validated: _StrictModel):
             memory_update=item.memory_update,
             plot_label=item.plot_label or None,
             highlight_terms=item.highlight_terms,
+            notebook_update=item.notebook_update.model_dump(),
         )
 
     if task == TASK_OPTIONS_GENERATE:

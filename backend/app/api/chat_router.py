@@ -564,6 +564,7 @@ def _delete_last_ai_message(db: Session, archive_id: int):
     pre_state = last_ai.pre_state_data
     pre_story = last_ai.pre_story_state
     pre_memory = last_ai.pre_memory_log
+    pre_notebook = last_ai.pre_notebook
     if last_remaining_ai is not None:
         # 老数据（pre_*=NULL）→ state/story 从 last_remaining_ai 的输出快照精确回滚
         archive.state_data = (
@@ -575,10 +576,14 @@ def _delete_last_ai_message(db: Session, archive_id: int):
         # memory_log：旧数据（pre_memory=NULL）保留 archive 原值不精确逆推
         if pre_memory is not None:
             archive.memory_log = list(pre_memory)
+        # notebook：老数据（pre_notebook=NULL）保留 archive 原值不精确逆推
+        if pre_notebook is not None:
+            archive.notebook = pre_notebook
     else:
         archive.state_data = pre_state if pre_state is not None else {}
         archive.story_state = pre_story if pre_story is not None else {}
         archive.memory_log = pre_memory if pre_memory is not None else []
+        archive.notebook = pre_notebook if pre_notebook is not None else archive.notebook
 
     db.commit()
     return {"deleted": deleted_count}

@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { deleteLastAiMessage } from '../api'
+import { deleteLastAiMessage, getArchive } from '../api'
 import type { ChatMsg, Archive } from '../stores/chat'
 
 export function useChatRecall(params: {
@@ -8,6 +8,7 @@ export function useChatRecall(params: {
   currentState: { value: Record<string, any> }
   currentStoryState: { value: Record<string, any> }
   currentMemoryLog: { value: string[] }
+  currentNotebook: { value: Record<string, unknown> | null }
   streaming: { value: boolean }
   sending: { value: boolean }
   awaitingTail: { value: boolean }
@@ -21,6 +22,7 @@ export function useChatRecall(params: {
     currentState,
     currentStoryState,
     currentMemoryLog,
+    currentNotebook,
     streaming,
     sending,
     awaitingTail,
@@ -117,6 +119,14 @@ export function useChatRecall(params: {
       currentState.value = {}
       currentStoryState.value = {}
       currentMemoryLog.value = []
+    }
+
+    // 后端撤回已回滚 archive.notebook（pre_notebook 快照），前端重拉同步（fire-and-forget）
+    const archiveId = currentArchive.value?.id
+    if (archiveId) {
+      getArchive(archiveId).then(({ data }) => {
+        currentNotebook.value = data.notebook ?? null
+      })
     }
   }
 

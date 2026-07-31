@@ -36,6 +36,7 @@ export interface ChatStreamTailEvent {
     message_id?: number
     user_id?: number
     model_name?: string
+    notebook?: Record<string, unknown> | null
   }
 }
 
