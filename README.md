@@ -138,6 +138,13 @@ npm run type-check    # TypeScript
 npm run test          # tests
 ```
 
+Quick local check before pushing (lint + format + type + tests, ~30s):
+
+```bash
+python scripts/verify.py            # everything
+python scripts/verify.py --backend  # or just one side
+```
+
 CI runs all checks on every PR.
 
 ## 📁 Structure

@@ -137,6 +137,13 @@ npm run type-check    # TypeScript 类型检查
 npm run test          # 测试
 ```
 
+推送前想快速验证一遍（lint + 格式 + 类型 + 测试，约 30 秒）：
+
+```bash
+python scripts/verify.py            # 全量
+python scripts/verify.py --backend  # 或只跑一边
+```
+
 提 PR 时 CI 自动跑这些检查。
 
 ## 📁 目录结构
