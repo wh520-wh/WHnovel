@@ -1,0 +1,379 @@
+{
+  "research_date": "2026-07-31",
+  "evidence": [
+    {
+      "id": "E1",
+      "competitor": "SillyTavern",
+      "claim": "仓库自述为 'LLM Frontend for Power Users'，截至 2026-07-31 约 31.4k stars、5.9k forks，许可证 AGPL-3.0",
+      "source_url": "https://api.github.com/repos/SillyTavern/SillyTavern",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "API response: description / stargazers_count / license",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E2",
+      "competitor": "SillyTavern",
+      "claim": "官方文档称其定位为本地安装 UI，目标用户是 'savvy AI hobbyists'，并承认把陡峭学习曲线当作乐趣的一部分",
+      "source_url": "https://docs.sillytavern.app/",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "首页介绍段落",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E3",
+      "competitor": "SillyTavern",
+      "claim": "官方文档列出核心功能：OpenAI 兼容 API/KoboldAI/AI Horde 等多后端、角色卡、World Info、群聊、persona、内置 RAG、扩展（立绘/摘要/翻译/出图/TTS/联网搜索）",
+      "source_url": "https://docs.sillytavern.app/",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "首页 Features 列表",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E4",
+      "competitor": "SillyTavern",
+      "claim": "部署方式为本地 Node.js 20+，提供 Windows/Linux/Mac/Android(Termux)/Docker 指南；无官方移动 App、无官方云端版",
+      "source_url": "https://docs.sillytavern.app/",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "首页 Installation 平台列表",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E5",
+      "competitor": "SillyTavern",
+      "claim": "用户 issue #4709 抱怨维护者'过去 1.5 年几乎没有新开发'且删减既有功能（流式下滑动、编辑菜单不可用）",
+      "source_url": "https://github.com/SillyTavern/SillyTavern/issues/4709",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "Issue #4709 标题及正文",
+      "classification": "fact",
+      "confidence": "medium"
+    },
+    {
+      "id": "E6",
+      "competitor": "SillyTavern",
+      "claim": "流式输出是核心功能但存在与后端兼容 bug（issue #2644 Koboldcpp 流式显示旧消息）",
+      "source_url": "https://github.com/SillyTavern/SillyTavern/issues/2644",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "Issue #2644 标题",
+      "classification": "fact",
+      "confidence": "medium"
+    },
+    {
+      "id": "E7",
+      "competitor": "RisuAI",
+      "claim": "仓库描述为 'Make your own story. User-friendly software for LLM roleplaying'，截至 2026-07-31 约 1.6k stars，许可证 GPL-3.0",
+      "source_url": "https://api.github.com/repos/kwaroran/RisuAI",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "API response: description / stargazers_count / license",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E8",
+      "competitor": "RisuAI",
+      "claim": "README 宣称支持 OpenAI/Claude/Gemini/DeepInfra/Ooba/OpenRouter 等多模型及插件扩展，核心功能含情感表情立绘、Lorebook 世界观、群聊、翻译、TTS、长期记忆压缩",
+      "source_url": "https://raw.githubusercontent.com/kwaroran/RisuAI/main/README.md",
+      "source_type": "source_code",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "README features 列表",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E9",
+      "competitor": "RisuAI",
+      "claim": "提供 Docker Compose 自托管（端口 6001）与 Tauri 桌面端 + 网页版，最新发布 v2026.6.215（2026-07-29），开发非常活跃",
+      "source_url": "https://api.github.com/repos/kwaroran/RisuAI/releases/latest",
+      "source_type": "official_release",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "API response: tag_name / published_at；README Docker 段落",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E10",
+      "competitor": "RisuAI",
+      "claim": "用户 issue #1028 报告网页端流式请求在 Ollama 自定义模型下报 'TypeError: Load failed'，请求提供关闭流式的开关",
+      "source_url": "https://github.com/kwaroran/RisuAI/issues/1028",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "Issue #1028 标题与正文摘要",
+      "classification": "fact",
+      "confidence": "medium"
+    },
+    {
+      "id": "E11",
+      "competitor": "Agnai.chat",
+      "claim": "仓库描述为 'AI Agnostic (Multi-user and Multi-bot) Chat with Fictional Characters. Designed with scale in mind.'，截至 2026-07-31 约 765 stars，许可证 AGPL-3.0",
+      "source_url": "https://api.github.com/repos/agnaistic/agnai",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "API response: description / stargazers_count / license",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E12",
+      "competitor": "Agnai.chat",
+      "claim": "自托管需 MongoDB+Redis 才能用完整功能（Docker compose 或 npm -g），技术栈 MongoDB+Redis+SolidJS+TailwindCSS",
+      "source_url": "https://raw.githubusercontent.com/agnaistic/agnai/dev/README.md",
+      "source_type": "source_code",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "README 安装/技术栈段落",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E13",
+      "competitor": "Agnai.chat",
+      "claim": "官方故障排查文档专门收录'离题回复'(Off Topic Responses)话题并归因于温度、上下文耗尽与 Lost Middle 现象——回复质量是常见抱怨",
+      "source_url": "https://agnai.guide/docs/tips-tricks-and-troubleshooting/off-topic-responses.html",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "页面标题及正文",
+      "classification": "fact",
+      "confidence": "medium"
+    },
+    {
+      "id": "E14",
+      "competitor": "AI Dungeon",
+      "claim": "官网首页定位为'免费 AI 文本冒险游戏，玩家创作开放式故事、探索互动世界、引导每一个选择'",
+      "source_url": "https://aidungeon.com",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "首页 hero 标语",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E15",
+      "competitor": "AI Dungeon",
+      "claim": "会员分档为 Free/Champion/Legend/Mythic，上下文上限分别约 4k/8k/16k/32k tokens，付费可扩上下文",
+      "source_url": "https://help.aidungeon.com/faq/what-are-tokens",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "Context Length Limits by Tier 表格",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E16",
+      "competitor": "AI Dungeon",
+      "claim": "官方帮助中心设有记忆系统文档（自动摘要 Auto Summarization + 记忆库 Memory Bank，按档位 25~400 条记忆），说明长线记忆是互动故事的核心能力",
+      "source_url": "https://help.aidungeon.com/faq/the-memory-system",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "All About the Memory System 正文及档位容量表",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E17",
+      "competitor": "AI Dungeon",
+      "claim": "免费模型 Griffin 是 EleutherAI 开源 GPT-J 6B 的部署版本",
+      "source_url": "https://help.aidungeon.com/faq/what-is-griffin",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "What is Griffin? FAQ 正文",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E18",
+      "competitor": "Character.AI",
+      "claim": "c.ai+ 官方订阅价为 $9.99/月 或 $94.99/年，另有首 3 月 $14.99、首年 $59.99 促销",
+      "source_url": "https://support.character.ai/hc/en-us/articles/51248493096987-c-ai-Summer-Flash-Sale-Offer-Terms",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "c.ai+ Summer Flash Sale — Offer Terms 条款正文",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E19",
+      "competitor": "Character.AI",
+      "claim": "2026-05 上线记忆系统升级：Story Memory 剧情记忆（可锁定 Pin）、Facts 自动抓取角色细节、Memory Usage 用量可视化",
+      "source_url": "https://blog.character.ai/memory/",
+      "source_type": "official_release",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "Smarter Memory for Smarter Chats 正文",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E20",
+      "competitor": "Character.AI",
+      "claim": "CEO 官宣 Lorebook（关键词触发的世界设定库）是社区呼声第一的功能，2026-04 上线、首发 c.ai+ 付费档",
+      "source_url": "https://blog.character.ai/pipsqueak2-and-more/",
+      "source_type": "official_release",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "April Update 全文（作者 Karandeep Anand，CEO）",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E21",
+      "competitor": "NovelAI",
+      "claim": "官网定价三档：Tablet $10/月、Scroll $15/月、Opus $25/月，另有 Anlas 按量付费与 30 次免费试生成",
+      "source_url": "https://novelai.net",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "首页 Pricing 区块",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E22",
+      "competitor": "NovelAI",
+      "claim": "官方文档确认 Lorebook 为关键词/正则触发、可 Always On 的补充信息库，并支持 AI 自动生成 lore 条目——'关键词驱动的世界观注入'机制",
+      "source_url": "https://docs.novelai.net/en/text/lorebook",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "Lorebook 文档正文（Entry/Activation/Lorebook Generation 小节）",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E23",
+      "competitor": "NovelAI",
+      "claim": "官方文档提供 Text Adventure 文本冒险模式：用户输入作为指令、AI 推进叙事",
+      "source_url": "https://docs.novelai.net/",
+      "source_type": "official_docs",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "Text Adventure 文档章节",
+      "classification": "fact",
+      "confidence": "medium"
+    },
+    {
+      "id": "E24",
+      "competitor": "NovelAI",
+      "claim": "官方博客发布写作模型 Xialong = 微调智谱 GLM-4.6 的 355B MoE（2026-03-31），仅 Opus 档可用；整体模型策略为'自研+开源底座微调'混合",
+      "source_url": "https://blog.novelai.net/welcome-novelais-newest-writing-model-xialong-ecde7d21d111",
+      "source_type": "official_release",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "Welcome NovelAI's Newest Writing Model: Xialong 正文",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E25",
+      "competitor": "Sudowrite",
+      "claim": "定位为 AI 小说写作搭档（'built just for fiction'），三档订阅 $10/$22/$44 每月，年付最高 50% off",
+      "source_url": "https://www.sudowrite.com/pricing",
+      "source_type": "official_pricing",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "定价页套餐表（Hobby & Student / Professional / Max）",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E26",
+      "competitor": "AINovel",
+      "claim": "中文开源交互式小说项目：灵感驱动生成大纲与章节草稿、'全局线数据库'（世界线/人物线/感情线可读写、影响后续创作）、用户编辑反馈循环；56 stars、无许可证声明",
+      "source_url": "https://github.com/a1594834522-coder/AINovel",
+      "source_type": "source_code",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "README 描述与 Features 节",
+      "classification": "fact",
+      "confidence": "medium"
+    },
+    {
+      "id": "E27",
+      "competitor": "InkOS",
+      "claim": "中文开源 'Story Creation AI Agent'：8.5k stars、AGPL-3.0，含多分支剧情预测（生成 2-5 个平行未来分支对比后再定稿）、37 维一致性检查、角色/物品/关系建模、InkOS Play 互动小说",
+      "source_url": "https://github.com/Narcooo/inkos",
+      "source_type": "source_code",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "仓库侧边栏与 README Features 节",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E28",
+      "competitor": "星野/Talkie",
+      "claim": "MiniMax 官方产品，官网 hero 文案'超逼真的智能体，超有趣的开放剧情'，主打 AI 角色扮演与情感陪伴；功能为角色对话、开放剧情、角色定制；无 Web 版、页面无定价信息",
+      "source_url": "https://www.xingyeai.com/",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "首页 hero 与功能区",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E29",
+      "competitor": "星野/Talkie",
+      "claim": "MiniMax 公司官网导航栏'产品'分类下列出星野并官方链接至 xingyeai.com，确认其为 MiniMax 官方产品",
+      "source_url": "https://www.minimaxi.com/",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "首页导航栏'产品'分类",
+      "classification": "fact",
+      "confidence": "high"
+    },
+    {
+      "id": "E30",
+      "competitor": "DeepStory",
+      "claim": "deepstory.ai 域名当前为创始人个人品牌站（'Founder · ScriptBook · DeepStory AI'），无产品界面/功能列表/定价；此为推断（inference）：'互动叙事平台'定位无法由一手来源验证，该产品已不构成有效竞品，归为 unavailable",
+      "source_url": "https://deepstory.ai/",
+      "source_type": "official_product",
+      "accessed_on": "2026-07-31",
+      "evidence_locator": "首页主标题区与正文段",
+      "classification": "inference",
+      "confidence": "medium"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "R1",
+      "priority": "P0",
+      "statement": "重写 README：以'选一个故事，跟 AI 聊天推进剧情'为唯一定位主线，首屏 5 秒内传达价值；配截图/GIF、竞品对比表、快速开始；目标读者是'想玩互动小说但不想折腾'的人，不是开发者工具用户。",
+      "evidence_ids": ["E14", "E2", "E7", "E28"],
+      "acceptance_signal": "README 首屏含一句定位语 + 至少一张界面截图或 GIF + 一个'为什么不是 SillyTavern/星野'对比表；从 repo 首页打开到理解产品做什么不超过 10 秒。"
+    },
+    {
+      "id": "R2",
+      "priority": "P0",
+      "statement": "把'剧情标签/时间线'升级为可读写的剧情状态数据库（世界线/人物线/感情线，参考 AINovel 的全局线数据库与 InkOS 的角色/物品/关系建模），让多轮对话后角色与世界观保持一致。",
+      "evidence_ids": ["E26", "E27", "E13", "E19"],
+      "acceptance_signal": "新增'剧情状态'数据模型并在正文生成时注入；50 轮对话测试中角色名、关系、已发生事件无遗漏或前后矛盾（人工抽查 5 个故事）。"
+    },
+    {
+      "id": "R3",
+      "priority": "P1",
+      "statement": "支持导入 SillyTavern 社区角色卡（Character Card v2/v3），让开源生态里已有的数万张角色卡可以直接在 WHnovel 里玩——这是借 SillyTavern 生态流量的最低成本入口。",
+      "evidence_ids": ["E1", "E3"],
+      "acceptance_signal": "能导入 v2/v3 角色卡 JSON（含作者/世界观/示例对话），导入后剧情与角色设定正确生效；单测覆盖损坏文件返回明确错误。"
+    },
+    {
+      "id": "R4",
+      "priority": "P1",
+      "statement": "增加剧情分支/重开能力：存档可回到任意剧情节点（时间线点击点）重新选择，类似 AI Dungeon 的冒险选择和 InkOS 的分支预测。",
+      "evidence_ids": ["E14", "E15", "E27"],
+      "acceptance_signal": "时间线上任意节点可'从此处重新开始'生成新分支且不影响原分支存档；分支切换后上下文正确。"
+    },
+    {
+      "id": "R5",
+      "priority": "P2",
+      "statement": "长对话自动摘要记忆：超过上下文阈值时自动生成剧情摘要并注入（参考 AI Dungeon 的自动摘要与 Character.AI 的 Story Memory）。",
+      "evidence_ids": ["E16", "E19", "E13"],
+      "acceptance_signal": "单条故事超过模型上下文时，摘要注入后新回合仍能引用早期事件；摘要可查看/编辑/关闭。"
+    },
+    {
+      "id": "R6",
+      "priority": "P2",
+      "statement": "会话导出为可回放的 HTML/分享链接，降低'玩过的人拉人入坑'的传播成本；同时维护一个公开示例故事库（内置预设开场已有基础）。",
+      "evidence_ids": ["E28", "E14"],
+      "acceptance_signal": "一键导出完整对话为可离线阅读的 HTML；新用户导入示例故事 3 步内开始玩。"
+    }
+  ]
+}
