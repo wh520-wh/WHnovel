@@ -1,10 +1,6 @@
 <template>
   <Transition name="immersive-fade">
-    <header
-      v-if="visible"
-      class="play-topbar"
-      :class="{ scrolled: topbarScrolled }"
-    >
+    <header v-if="visible" class="play-topbar" :class="{ scrolled: topbarScrolled }">
       <button class="topbar-back" @click="emit('back')">
         <svg
           width="20"
@@ -20,10 +16,7 @@
         </svg>
       </button>
       <div class="top-center" style="cursor: pointer" @click="emit('top-center-click')">
-        <div
-          class="char-avatar"
-          :class="{ 'char-avatar--img': avatarSrc && !avatarImgError }"
-        >
+        <div class="char-avatar" :class="{ 'char-avatar--img': avatarSrc && !avatarImgError }">
           <img
             v-if="avatarSrc && !avatarImgError"
             :src="avatarSrc"
@@ -37,9 +30,7 @@
         </div>
         <div class="char-info">
           <span class="char-name">{{ storyStore.currentStory?.title || '故事互动' }}</span>
-          <span v-if="currentChapter" class="char-subtitle char-chapter">{{
-            currentChapter
-          }}</span>
+          <span v-if="currentChapter" class="char-subtitle char-chapter">{{ currentChapter }}</span>
           <span v-else class="char-subtitle world-trigger">
             {{ storyStore.currentStory?.description?.slice(0, 12) || '私密会话' }}
             <svg

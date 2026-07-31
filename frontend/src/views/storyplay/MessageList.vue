@@ -11,9 +11,7 @@
       :key="msg.id"
       :msg="msg"
       :streaming="
-        chatStore.streaming &&
-        idx === chatStore.messages.length - 1 &&
-        msg.role === 'assistant'
+        chatStore.streaming && idx === chatStore.messages.length - 1 && msg.role === 'assistant'
       "
       :select-mode="selectMode"
       :selected="selectedMessageIds.has(msg.id)"

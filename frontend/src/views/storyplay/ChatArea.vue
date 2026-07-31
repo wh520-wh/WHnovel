@@ -31,15 +31,17 @@
               :key="openingBounceKey || undefined"
               v-model="openingRequirement"
               class="opening-textarea"
-              :placeholder="
-                storyStore.currentStory?.opening_requirement || '请输入开场要求...'
-              "
+              :placeholder="storyStore.currentStory?.opening_requirement || '请输入开场要求...'"
               :disabled="chatStore.sending"
               rows="5"
               @click="handleOpeningClick"
             ></textarea>
             <div class="starter-actions">
-              <button class="start-chat-btn" :disabled="chatStore.sending" @click="emit('start-story')">
+              <button
+                class="start-chat-btn"
+                :disabled="chatStore.sending"
+                @click="emit('start-story')"
+              >
                 <span v-if="chatStore.sending">生成中...</span>
                 <span v-else>开始聊天</span>
               </button>
