@@ -51,9 +51,22 @@ Existing AI roleplay tools are either **power-user frontends with no story layer
 - Admin panel: configure chat/image models, edit prompts, manage story options
 - Mobile-friendly: virtual-keyboard offset, 44px minimum touch targets, notch-safe areas
 
+## 🛡️ Privacy & Safety
+
+- **No telemetry, no tracking** — nothing phones home. The app never contacts any server except the model API you configured.
+- **Your data stays local** — stories, saves, and settings live in a local SQLite database.
+- **Your API keys stay yours** — keys are stored locally and only sent to the model provider you chose.
+- **You stay in control** — anything the app can do (start, stop, delete) is explicit; there is no background cleanup logic.
+
 ## 📸 Screenshots
 
-> TODO: add real screenshots under `docs/screenshots/` (e.g. `story-hall.png`, `chat-timeline.png`).
+**Story hall** — browse categories, pick a story, start your adventure:
+
+![Story hall](docs/screenshots/story-hall.png)
+
+**Chat & timeline** — the story navigator appears as plot tags appear, every beat clickable:
+
+![Chat with story timeline](docs/screenshots/chat-timeline.png)
 
 ## ⚡ Quick Start
 
